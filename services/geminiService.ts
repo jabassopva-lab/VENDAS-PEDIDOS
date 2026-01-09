@@ -2,9 +2,17 @@
 import { GoogleGenAI } from "@google/genai";
 import { SalesData } from "../types.ts";
 
+const getAIClient = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API Key não configurada. Configure a variável de ambiente API_KEY.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
+
 export const generateProductDescription = async (name: string, category: string, price: number): Promise<string> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = getAIClient();
     
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -24,7 +32,11 @@ export const generateProductDescription = async (name: string, category: string,
 
 export const generatePerformanceReport = async (salesHistory: SalesData[]): Promise<string> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    if (!salesHistory || salesHistory.length === 0) {
+      return "Ainda não há dados de vendas suficientes para gerar uma análise. Registre suas primeiras vendas para começar!";
+    }
+
+    const ai = getAIClient();
     
     const dataSummary = salesHistory.map(d => 
       `- Período: ${d.name} | Vendas: R$ ${d.revenue.toFixed(2)} | Lucro: R$ ${d.profit.toFixed(2)}`
@@ -42,7 +54,7 @@ export const generatePerformanceReport = async (salesHistory: SalesData[]): Prom
     return response.text || "Dados analisados com sucesso! Continue mantendo o foco nas vendas.";
   } catch (error) {
     console.error("Erro Gemini (Report):", error);
-    return "No momento não foi possível processar a análise avançada. Verifique se há vendas registradas ou tente novamente em alguns instantes.";
+    return "No momento a IA está processando outros dados. Verifique se a chave de API está configurada corretamente no ambiente.";
   }
 }
 

@@ -14,7 +14,8 @@ import {
   Package,
   AlertCircle,
   ImageOff,
-  Loader2
+  Loader2,
+  CheckCircle2
 } from 'lucide-react';
 import { BusinessProfile } from '../types';
 import { convertDriveLink } from '../App';
@@ -117,7 +118,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
                   </div>
                 )}
                 <p className="text-[9px] text-gray-400 leading-tight px-1 italic text-center md:text-left mt-2">
-                  * No Drive: botão direito > Compartilhar > Qualquer pessoa com o link.
+                  {"* No Drive: botão direito > Compartilhar > Qualquer pessoa com o link."}
                 </p>
               </div>
            </div>
@@ -219,12 +220,5 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
     </form>
   );
 };
-
-// Helper components missing from imports in lucide-react (simulated)
-const CheckCircle2 = ({ size, className }: { size: number, className: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"/><path d="m9 12 2 2 4-4"/>
-  </svg>
-);
 
 export default SettingsForm;
