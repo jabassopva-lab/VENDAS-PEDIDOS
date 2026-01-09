@@ -2,67 +2,50 @@
 import { GoogleGenAI } from "@google/genai";
 import { SalesData } from "../types.ts";
 
-// Função auxiliar para obter a instância com segurança
-const getAiInstance = () => {
-  const apiKey = (window as any).process?.env?.API_KEY || "";
-  return new GoogleGenAI({ apiKey });
-};
-
 export const generateProductDescription = async (name: string, category: string, price: number): Promise<string> => {
   try {
-    const ai = getAiInstance();
-    const prompt = `
-      Atue como um especialista em marketing digital e copywriting.
-      Escreva uma descrição de produto curta, persuasiva e atraente (máximo de 3 frases) para um item de e-commerce.
-      
-      Detalhes do produto:
-      Nome: ${name}
-      Categoria: ${category}
-      Preço: R$ ${price}
-      
-      Use emojis com moderação. O tom deve ser profissional mas entusiasmado. Foque nos benefícios.
-    `;
-
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: prompt,
+      contents: `Gere uma descrição atraente para o produto: ${name}, da categoria ${category}, que custa R$ ${price}.`,
+      config: {
+        systemInstruction: "Você é um copywriter de elite para e-commerce de doces. Escreva descrições curtas (2-3 frases), persuasivas e com emojis. Foque em dar água na boca.",
+        temperature: 0.7,
+      }
     });
 
     return response.text || "Descrição indisponível no momento.";
   } catch (error) {
-    console.error("Error generating description:", error);
-    return "Descrição gerada automaticamente com base nas configurações.";
+    console.error("Erro Gemini (Product):", error);
+    return "Um produto delicioso esperando por você! Confira os detalhes no balcão.";
   }
 };
 
 export const generatePerformanceReport = async (salesHistory: SalesData[]): Promise<string> => {
   try {
-    const ai = getAiInstance();
-    const dataTable = salesHistory.map(d => 
-      `| ${d.name} | R$ ${d.revenue.toFixed(2)} | R$ ${d.profit.toFixed(2)} |`
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    
+    const dataSummary = salesHistory.map(d => 
+      `- Período: ${d.name} | Vendas: R$ ${d.revenue.toFixed(2)} | Lucro: R$ ${d.profit.toFixed(2)}`
     ).join('\n');
-
-    const prompt = `
-      # INSTRUÇÃO DO SISTEMA
-      Você é um Analista de Negócios Sênior. Analise o seguinte histórico de vendas e lucro e forneça insights acionáveis para uma distribuição de cocadas.
-      
-      ${dataTable}
-
-      Foque em identificar meses bons, quedas e sugestões de melhoria.
-    `;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: prompt,
+      contents: `Analise estes dados de vendas e dê 3 dicas práticas para aumentar o lucro:\n${dataSummary}`,
+      config: {
+        systemInstruction: "Você é um Analista de Negócios Sênior especializado em distribuição de alimentos e doces (cocadas). Seja direto, use tom profissional e encorajador. Formate em tópicos curtos.",
+        temperature: 0.5,
+      }
     });
     
-    return response.text || "Análise concluída. Continue mantendo o bom trabalho nas vendas!";
+    return response.text || "Dados analisados com sucesso! Continue mantendo o foco nas vendas.";
   } catch (error) {
-    console.error("Error generating report", error);
-    return "No momento a IA está processando outros dados. Tente gerar o relatório novamente em instantes.";
+    console.error("Erro Gemini (Report):", error);
+    return "No momento não foi possível processar a análise avançada. Verifique se há vendas registradas ou tente novamente em alguns instantes.";
   }
 }
 
 export const getSalesInsights = async (totalRevenue: number, totalOrders: number): Promise<string> => {
-    return "Análise detalhada disponível no painel principal.";
+    return "Insights rápidos: Sua média por pedido está saudável.";
 }

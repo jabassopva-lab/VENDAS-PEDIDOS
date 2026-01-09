@@ -20,7 +20,7 @@ const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sale
   const handlePrint = () => {
     const logoUrl = convertDriveLink(profile.logoUrl || '');
     const companyName = profile.companyName || 'DOCE BOM';
-    const logoHtml = logoUrl ? `<img src="${logoUrl}" style="height: 60px; margin-bottom: 10px;">` : '';
+    const logoHtml = logoUrl ? `<img src="${logoUrl}" style="height: 100px; margin-bottom: 10px; object-fit: contain;">` : '';
 
     const printContent = `
       <html>
@@ -46,13 +46,13 @@ const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sale
             .header { 
               background: #0ea5e9; 
               color: white; 
-              padding: 30px; 
+              padding: 40px 30px; 
               text-align: center;
               border-bottom: 8px solid #fbbf24;
               position: relative;
             }
-            .header h1 { margin: 0; font-size: 28px; text-transform: uppercase; font-style: italic; font-weight: 800; }
-            .header p { margin: 5px 0 0; opacity: 0.9; font-size: 12px; font-weight: 600; }
+            .header h1 { margin: 0; font-size: 32px; text-transform: uppercase; font-style: italic; font-weight: 800; }
+            .header p { margin: 5px 0 0; opacity: 0.9; font-size: 14px; font-weight: 600; }
             
             .info-bar { 
               display: flex; 
@@ -175,7 +175,7 @@ const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sale
             </div>
             
             <div class="footer">
-                🌴 Doce Bom - Sabor da Ilha • Obrigado pela preferência! 🥥
+                Obrigado pela preferência!
             </div>
         </body>
       </html>
@@ -222,11 +222,11 @@ const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sale
           
           {/* Logo & Company Section */}
           <div className="flex flex-col items-center text-center pb-6 border-b-2 border-dashed border-slate-100">
-             <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center overflow-hidden mb-3 border-2 border-slate-50 shadow-inner group transition-transform hover:scale-105">
+             <div className="w-32 h-32 bg-slate-50 rounded-[2.5rem] flex items-center justify-center overflow-hidden mb-3 border-2 border-slate-50 shadow-inner group transition-transform hover:scale-105">
                 {(profile.logoUrl) ? (
                   <img src={currentLogo} className="w-full h-full object-contain p-2" alt="Logo" />
                 ) : (
-                  <Sun size={32} className="text-yellow-400" />
+                  <Sun size={48} className="text-yellow-400" />
                 )}
              </div>
              <h3 className="text-xl font-black text-slate-800 uppercase italic tracking-tighter leading-none">{profile.companyName || 'DOCE BOM'}</h3>

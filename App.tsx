@@ -62,13 +62,26 @@ const DEFAULT_PROFILE: BusinessProfile = {
   nextBilling: '20/12/2024'
 };
 
+/**
+ * Converte links do Google Drive para URLs de imagem diretas e otimizadas.
+ * Funciona com links de compartilhamento, visualização e edição.
+ */
 export const convertDriveLink = (url: string): string => {
-  if (!url) return '';
+  if (!url || typeof url !== 'string') return '';
+  
+  // Se for um link do Google Drive
   if (url.includes('drive.google.com')) {
-    const regExp = /\/file\/d\/([^/]+)\//;
-    const match = url.match(regExp);
-    if (match && match[1]) return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+    // Regex robusta para capturar o ID do arquivo (ID entre /d/ e a próxima barra ou id=ID)
+    const matches = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+    
+    if (matches && matches[1]) {
+      const fileId = matches[1];
+      // O endpoint de thumbnail é o mais confiável para exibição pública sem erros de CORS ou permissão 403
+      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+    }
   }
+  
+  // Se já for uma URL direta ou base64, retorna como está
   return url;
 };
 
@@ -229,8 +242,12 @@ const App: React.FC = () => {
               <ArrowLeft size={22} />
             </button>
           ) : (
-            <div onClick={() => setCurrentScreen('SETTINGS')} className="w-12 h-12 bg-white rounded-2xl p-1 shadow-lg cursor-pointer border-2 border-yellow-400 flex items-center justify-center">
-               <span className="text-[#0ea5e9] font-black text-lg italic leading-none">DB</span>
+            <div onClick={() => setCurrentScreen('SETTINGS')} className="w-20 h-20 bg-white rounded-3xl p-1.5 shadow-lg cursor-pointer border-2 border-yellow-400 flex items-center justify-center overflow-hidden">
+               {businessProfile.logoUrl ? (
+                 <img src={convertDriveLink(businessProfile.logoUrl)} className="w-full h-full object-contain" />
+               ) : (
+                 <span className="text-[#0ea5e9] font-black text-2xl italic leading-none">DB</span>
+               )}
             </div>
           )}
           <div className="min-w-0">

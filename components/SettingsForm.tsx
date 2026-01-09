@@ -13,7 +13,8 @@ import {
   Link as LinkIcon,
   Package,
   AlertCircle,
-  ImageOff
+  ImageOff,
+  Loader2
 } from 'lucide-react';
 import { BusinessProfile } from '../types';
 import { convertDriveLink } from '../App';
@@ -26,9 +27,13 @@ interface SettingsFormProps {
 const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
   const [formData, setFormData] = useState<BusinessProfile>(profile);
   const [logoPreviewError, setLogoPreviewError] = useState(false);
+  const [isLoadingLogo, setIsLoadingLogo] = useState(false);
 
   useEffect(() => {
     setLogoPreviewError(false);
+    if (formData.logoUrl) {
+      setIsLoadingLogo(true);
+    }
   }, [formData.logoUrl]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -55,48 +60,64 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
         </div>
       </div>
 
-      {/* Identidade Visual (Nova Seção) */}
+      {/* Identidade Visual */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
           <ImageIcon size={18} className="text-blue-600" />
           <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Identidade Visual</h3>
         </div>
         <div className="p-5 space-y-4">
-           <div className="flex flex-col md:flex-row items-center gap-6">
-              <div className="w-24 h-24 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden relative shadow-inner">
+           <div className="flex flex-col items-center gap-6">
+              <div className="w-48 h-48 bg-gray-50 rounded-[2.5rem] border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden relative shadow-inner">
+                  {isLoadingLogo && !logoPreviewError && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
+                      <Loader2 className="animate-spin text-blue-500" size={32} />
+                    </div>
+                  )}
+                  
                   {(formData.logoUrl && !logoPreviewError) ? (
                     <img 
                       src={currentLogo} 
                       alt="Logo Preview" 
-                      className="w-full h-full object-contain p-2"
-                      onError={() => setLogoPreviewError(true)}
+                      className="w-full h-full object-contain p-4"
+                      onLoad={() => setIsLoadingLogo(false)}
+                      onError={() => {
+                        setLogoPreviewError(true);
+                        setIsLoadingLogo(false);
+                      }}
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center text-gray-300">
-                      <ImageOff size={24} />
-                      <span className="text-[8px] mt-1 font-bold">SEM LOGO</span>
+                      <ImageOff size={48} />
+                      <span className="text-[10px] mt-2 font-black uppercase italic">Sem Logo</span>
                     </div>
                   )}
               </div>
               <div className="flex-1 w-full space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">URL da Logo (Drive ou Link Direto)</label>
+                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">URL da Logo (Google Drive)</label>
                 <div className="relative">
                   <LinkIcon className="absolute left-3 top-3.5 text-gray-400" size={16} />
                   <input 
                     className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all text-xs font-mono"
                     value={formData.logoUrl}
                     onChange={e => setFormData({...formData, logoUrl: e.target.value})}
-                    placeholder="https://drive.google.com/..."
+                    placeholder="Cole aqui o link de compartilhamento"
                   />
                 </div>
-                {formData.logoUrl?.includes('drive.google.com') && (
+                {formData.logoUrl?.includes('drive.google.com') && !logoPreviewError && (
                   <div className="flex items-center gap-1.5 px-2">
                     <CheckCircle2 size={12} className="text-green-500" />
-                    <span className="text-[9px] font-bold text-green-600 uppercase">Drive Link Otimizado</span>
+                    <span className="text-[9px] font-bold text-green-600 uppercase italic">Link do Drive Identificado</span>
                   </div>
                 )}
-                <p className="text-[9px] text-gray-400 leading-tight px-1 italic">
-                  * Recomendamos imagens PNG com fundo transparente.
+                {logoPreviewError && formData.logoUrl && (
+                  <div className="flex items-center gap-1.5 px-2">
+                    <AlertCircle size={12} className="text-red-500" />
+                    <span className="text-[9px] font-bold text-red-600 uppercase italic">Verifique o acesso do link</span>
+                  </div>
+                )}
+                <p className="text-[9px] text-gray-400 leading-tight px-1 italic text-center md:text-left mt-2">
+                  * No Drive: botão direito > Compartilhar > Qualquer pessoa com o link.
                 </p>
               </div>
            </div>
