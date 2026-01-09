@@ -30,31 +30,31 @@ export const generateProductDescription = async (name: string, category: string,
   }
 };
 
-export const generatePerformanceReport = async (salesHistory: SalesData[]): Promise<string> => {
+export const generatePerformanceReport = async (monthlyData: SalesData[]): Promise<string> => {
   try {
-    if (!salesHistory || salesHistory.length === 0) {
-      return "Ainda não há dados de vendas suficientes para gerar uma análise. Registre suas primeiras vendas para começar!";
+    if (!monthlyData || monthlyData.length === 0) {
+      return "Ainda não há dados de vendas suficientes para gerar uma análise mensal. Registre suas primeiras vendas para começar!";
     }
 
     const ai = getAIClient();
     
-    const dataSummary = salesHistory.map(d => 
-      `- Período: ${d.name} | Vendas: R$ ${d.revenue.toFixed(2)} | Lucro: R$ ${d.profit.toFixed(2)}`
+    const dataSummary = monthlyData.map(d => 
+      `- Mês: ${d.name} | Receita: R$ ${d.revenue.toFixed(2)} | Lucro: R$ ${d.profit.toFixed(2)} | Qtd Pedidos: ${d.sales}`
     ).join('\n');
 
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Analise estes dados de vendas e dê 3 dicas práticas para aumentar o lucro:\n${dataSummary}`,
+      contents: `Analise este desempenho mensal e forneça um relatório estratégico:\n${dataSummary}`,
       config: {
-        systemInstruction: "Você é um Analista de Negócios Sênior especializado em distribuição de alimentos e doces (cocadas). Seja direto, use tom profissional e encorajador. Formate em tópicos curtos.",
-        temperature: 0.5,
+        systemInstruction: "Você é um Consultor de Negócios especializado em docerias. Compare o desempenho entre os meses listados. Identifique qual mês foi melhor, sugira melhorias para os meses mais fracos e dê 3 conselhos práticos para o próximo mês. Use tom motivador e profissional.",
+        temperature: 0.6,
       }
     });
     
-    return response.text || "Dados analisados com sucesso! Continue mantendo o foco nas vendas.";
+    return response.text || "Relatório gerado! Continue acompanhando seus resultados mensais.";
   } catch (error) {
     console.error("Erro Gemini (Report):", error);
-    return "No momento a IA está processando outros dados. Verifique se a chave de API está configurada corretamente no ambiente.";
+    return "Ocorreu um erro ao processar o relatório mensal. Verifique sua conexão e tente novamente.";
   }
 }
 

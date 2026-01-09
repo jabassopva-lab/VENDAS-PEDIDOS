@@ -25,14 +25,15 @@ import {
   AlertCircle,
   Download,
   Upload,
-  Database
+  Database,
+  BarChart3
 } from 'lucide-react';
 import ProductModal from './components/ProductModal.tsx';
 import ClientForm from './components/ClientForm.tsx';
 import NewSaleModal from './components/NewSaleModal.tsx';
 import SaleDetailModal from './components/SaleDetailModal.tsx';
 import SettingsForm from './components/SettingsForm.tsx';
-import { Product, Client, ModalType, Screen, Sale, BusinessProfile } from './types.ts';
+import { Product, Client, ModalType, Screen, Sale, BusinessProfile, SalesData } from './types.ts';
 import { generatePerformanceReport } from './services/geminiService.ts';
 
 // CHAVES DEFINITIVAS - NÃO MUDAR NUNCA
@@ -62,26 +63,15 @@ const DEFAULT_PROFILE: BusinessProfile = {
   nextBilling: '20/12/2024'
 };
 
-/**
- * Converte links do Google Drive para URLs de imagem diretas e otimizadas.
- * Funciona com links de compartilhamento, visualização e edição.
- */
 export const convertDriveLink = (url: string): string => {
   if (!url || typeof url !== 'string') return '';
-  
-  // Se for um link do Google Drive
   if (url.includes('drive.google.com')) {
-    // Regex robusta para capturar o ID do arquivo (ID entre /d/ e a próxima barra ou id=ID)
     const matches = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
-    
     if (matches && matches[1]) {
       const fileId = matches[1];
-      // O endpoint de thumbnail é o mais confiável para exibição pública sem erros de CORS ou permissão 403
       return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
     }
   }
-  
-  // Se já for uma URL direta ou base64, retorna como está
   return url;
 };
 
@@ -108,7 +98,6 @@ const App: React.FC = () => {
     try {
       const saved = localStorage.getItem(key);
       if (saved) return JSON.parse(saved);
-
       for (const lKey of LEGACY_KEYS) {
         if (patterns.some(p => lKey.toLowerCase().includes(p))) {
           const legacyData = localStorage.getItem(lKey);
@@ -156,7 +145,6 @@ const App: React.FC = () => {
     const updated = productModal.type === ModalType.EDIT && productModal.data
       ? products.map(p => p.id === productModal.data!.id ? { ...data, id: p.id } : p)
       : [{ ...data, id: `P-${Date.now()}` }, ...products];
-    
     setProducts(updated);
     setProductModal({ type: ModalType.NONE });
     triggerNotify('Produto Salvo!');
@@ -166,7 +154,6 @@ const App: React.FC = () => {
     const updated = clientModal.type === ModalType.EDIT && clientModal.data
       ? clients.map(c => c.id === clientModal.data!.id ? { ...data, id: c.id } : c)
       : [{ ...data, id: `C-${Date.now()}` }, ...clients];
-    
     setClients(updated);
     setClientModal({ type: ModalType.NONE });
     triggerNotify('Cliente Salvo!');
@@ -175,7 +162,6 @@ const App: React.FC = () => {
   const handleFinishSale = (data: { clientId: string, items: any[], total: number, paymentMethod: string, paymentTerms: string }) => {
     const client = clients.find(c => c.id === data.clientId);
     const cost = data.items.reduce((acc, item) => acc + (item.costPrice * item.quantity), 0);
-    
     const newSale: Sale = {
       id: Math.random().toString(36).substr(2, 6).toUpperCase(),
       clientId: data.clientId,
@@ -188,7 +174,6 @@ const App: React.FC = () => {
       date: new Date().toLocaleDateString('pt-BR'),
       time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     };
-
     setSalesHistory([newSale, ...salesHistory]);
     setProducts(products.map(p => {
       const sold = data.items.find(i => i.id === p.id);
@@ -196,6 +181,25 @@ const App: React.FC = () => {
     }));
     setSaleModal(false);
     triggerNotify('Venda Realizada!');
+  };
+
+  const getMonthlyStats = (): SalesData[] => {
+    const months: { [key: string]: SalesData } = {};
+    salesHistory.forEach(sale => {
+      const [day, month, year] = sale.date.split('/');
+      const key = `${month}/${year}`;
+      if (!months[key]) {
+        months[key] = { name: key, revenue: 0, profit: 0, sales: 0 };
+      }
+      months[key].revenue += sale.total;
+      months[key].profit += sale.profit || 0;
+      months[key].sales += 1;
+    });
+    return Object.values(months).sort((a, b) => {
+      const [ma, ya] = a.name.split('/').map(Number);
+      const [mb, yb] = b.name.split('/').map(Number);
+      return ya !== yb ? yb - ya : mb - ma;
+    });
   };
 
   const exportBackup = () => {
@@ -233,8 +237,6 @@ const App: React.FC = () => {
       <div className="absolute top-0 right-0 p-4 opacity-10 rotate-12 pointer-events-none">
         <Palmtree size={120} />
       </div>
-      <div className="absolute -bottom-10 -left-6 w-32 h-32 bg-yellow-400 rounded-full opacity-20 blur-3xl pointer-events-none" />
-      
       <div className="flex items-center justify-between relative z-10">
         <div className="flex items-center gap-4">
           {showBack ? (
@@ -254,7 +256,7 @@ const App: React.FC = () => {
             <h1 className="text-lg font-black tracking-tighter uppercase italic leading-none truncate drop-shadow-sm">
               {currentScreen === 'SETTINGS' ? 'Meu Perfil' : title}
             </h1>
-            {!showBack && <p className="text-yellow-300 text-[8px] font-black uppercase tracking-[0.2em] mt-1">Sabor da Ilha</p>}
+            {!showBack && <p className="text-yellow-300 text-[8px] font-black uppercase tracking-[0.2em] mt-1">Gestão Inteligente</p>}
           </div>
         </div>
         <div className="flex gap-2">
@@ -298,14 +300,9 @@ const App: React.FC = () => {
                </div>
             </div>
 
-            <button 
-              onClick={() => setSaleModal(true)} 
-              className="w-full bg-yellow-400 text-[#1e293b] p-6 rounded-[2.8rem] shadow-xl shadow-yellow-200/50 flex items-center justify-between group active:scale-[0.96] transition-all border-b-8 border-yellow-600"
-            >
+            <button onClick={() => setSaleModal(true)} className="w-full bg-yellow-400 text-[#1e293b] p-6 rounded-[2.8rem] shadow-xl shadow-yellow-200/50 flex items-center justify-between group active:scale-[0.96] transition-all border-b-8 border-yellow-600">
               <div className="flex items-center gap-4">
-                 <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-yellow-500 shadow-inner">
-                    <Plus size={30} strokeWidth={4} />
-                 </div>
+                 <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-yellow-500 shadow-inner"><Plus size={30} strokeWidth={4} /></div>
                  <div className="text-left">
                     <h3 className="text-xl font-black uppercase italic tracking-tighter leading-none">Nova Venda</h3>
                     <p className="text-amber-900/60 text-[8px] font-black uppercase mt-1">Registrar Pedido</p>
@@ -329,13 +326,8 @@ const App: React.FC = () => {
                </button>
                <button onClick={() => setCurrentScreen('REPORTS')} className="bg-[#1e293b] p-6 rounded-[2.5rem] shadow-md border-b-4 border-black flex flex-col items-center gap-2 active:scale-95 transition-all group text-white">
                   <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-yellow-400 group-hover:bg-yellow-400 group-hover:text-black transition-all"><Sparkles size={28} /></div>
-                  <p className="font-black uppercase text-[9px] tracking-widest">IA Insights</p>
+                  <p className="font-black uppercase text-[9px] tracking-widest">Relatório Mensal</p>
                </button>
-            </div>
-            
-            <div className="bg-white/50 border border-slate-200 rounded-3xl p-4 flex items-center gap-3 justify-center">
-               <Database size={14} className="text-slate-400" />
-               <span className="text-[8px] font-black uppercase text-slate-500 tracking-widest">Dados Sincronizados Localmente</span>
             </div>
           </main>
         </>
@@ -349,9 +341,7 @@ const App: React.FC = () => {
               clients.map(c => (
                 <div key={c.id} onClick={() => setClientModal({ type: ModalType.EDIT, data: c })} className="bg-white p-4 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all cursor-pointer group">
                   <div className="flex items-center gap-4">
-                     <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center text-sky-600 font-black text-xl border border-sky-100 shadow-inner group-hover:bg-sky-500 group-hover:text-white transition-all">
-                        {c.name.charAt(0)}
-                     </div>
+                     <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center text-sky-600 font-black text-xl border border-sky-100 shadow-inner group-hover:bg-sky-500 group-hover:text-white transition-all">{c.name.charAt(0)}</div>
                      <div>
                         <h4 className="font-black text-slate-800 text-base leading-tight uppercase italic">{c.name}</h4>
                         <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{c.phone || 'Sem Contato'}</p>
@@ -371,8 +361,8 @@ const App: React.FC = () => {
           <div className="px-6 py-8 space-y-4">
              {products.length === 0 ? <CocoMascot message="Estoque Vazio!" /> : (
                products.map(p => (
-                 <div key={p.id} onClick={() => setProductModal({ type: ModalType.EDIT, data: p })} className="bg-white p-4 rounded-[2.5rem] shadow-lg flex items-center gap-4 active:scale-95 transition-all cursor-pointer border-b-4 border-slate-100 hover:border-red-200 group">
-                    <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center overflow-hidden border border-red-50 flex-shrink-0 shadow-inner group-hover:bg-red-100">
+                 <div key={p.id} onClick={() => setProductModal({ type: ModalType.EDIT, data: p })} className="bg-white p-4 rounded-[2.5rem] shadow-lg flex items-center gap-4 active:scale-95 transition-all cursor-pointer border-b-4 border-slate-100 group">
+                    <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center overflow-hidden flex-shrink-0 shadow-inner group-hover:bg-red-100">
                        {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <Package className="text-red-200" size={32} />}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -390,21 +380,16 @@ const App: React.FC = () => {
       {currentScreen === 'SETTINGS' && (
         <div className="min-h-screen">
           <Header title="Configurações" showBack />
-          <SettingsForm profile={businessProfile} onSave={(newProfile) => {
-            setBusinessProfile(newProfile);
-            triggerNotify('Perfil Atualizado!');
-          }} />
+          <SettingsForm profile={businessProfile} onSave={(newProfile) => { setBusinessProfile(newProfile); triggerNotify('Perfil Atualizado!'); }} />
           <div className="px-6 pb-20 space-y-4">
              <div className="bg-white rounded-3xl p-6 shadow-md border border-slate-100">
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Database size={14}/> Gestão de Dados</h3>
                 <div className="grid grid-cols-2 gap-3">
                    <button onClick={exportBackup} className="flex flex-col items-center gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-100 active:scale-95 transition-all text-slate-600 hover:bg-sky-50 hover:text-sky-600 hover:border-sky-100">
-                      <Download size={24} />
-                      <span className="text-[9px] font-black uppercase">Exportar</span>
+                      <Download size={24} /><span className="text-[9px] font-black uppercase">Exportar</span>
                    </button>
                    <label className="flex flex-col items-center gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-100 active:scale-95 transition-all text-slate-600 cursor-pointer hover:bg-green-50 hover:text-green-600 hover:border-green-100">
-                      <Upload size={24} />
-                      <span className="text-[9px] font-black uppercase">Importar</span>
+                      <Upload size={24} /><span className="text-[9px] font-black uppercase">Importar</span>
                       <input type="file" accept=".json" className="hidden" onChange={importBackup} />
                    </label>
                 </div>
@@ -412,11 +397,6 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
-
-      <ProductModal isOpen={productModal.type !== ModalType.NONE} onClose={() => setProductModal({ type: ModalType.NONE })} onSave={handleSaveProduct} initialData={productModal.data} />
-      <ClientForm isOpen={clientModal.type !== ModalType.NONE} onClose={() => setClientModal({ type: ModalType.NONE })} onSave={handleSaveClient} initialData={clientModal.data} />
-      <NewSaleModal isOpen={saleModal} onClose={() => setSaleModal(false)} products={products} clients={clients} onFinishSale={handleFinishSale} />
-      <SaleDetailModal isOpen={!!selectedSale} onClose={() => setSelectedSale(null)} sale={selectedSale} profile={businessProfile} clients={clients} />
 
       {currentScreen === 'MONTHLY_SALES' && (
         <div className="min-h-screen">
@@ -426,9 +406,7 @@ const App: React.FC = () => {
               salesHistory.map(sale => (
                 <div key={sale.id} onClick={() => setSelectedSale(sale)} className="bg-white p-5 rounded-[2.2rem] shadow-md border-b-6 border-slate-50 flex items-center justify-between active:scale-95 transition-all group">
                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-600 group-hover:rotate-12 transition-transform">
-                         <ShoppingBag size={24} />
-                      </div>
+                      <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-600 group-hover:rotate-12 transition-transform"><ShoppingBag size={24} /></div>
                       <div className="min-w-0">
                          <h4 className="font-black text-slate-800 text-sm uppercase italic leading-tight truncate">{sale.clientName}</h4>
                          <p className="text-[8px] font-black text-slate-400 uppercase mt-0.5">{sale.date} • {sale.time}</p>
@@ -447,14 +425,37 @@ const App: React.FC = () => {
 
       {currentScreen === 'REPORTS' && (
         <div className="min-h-screen">
-          <Header title="Estratégia IA" showBack />
-          <div className="p-6">
+          <Header title="Relatório Mensal" showBack />
+          <div className="p-6 space-y-6">
+             <div className="bg-white rounded-[3rem] p-6 shadow-lg border-b-4 border-slate-100">
+                <div className="flex items-center gap-3 mb-4">
+                   <div className="bg-sky-50 p-2 rounded-xl text-sky-600"><BarChart3 size={20}/></div>
+                   <h3 className="font-black uppercase italic text-sm text-slate-800">Desempenho por Mês</h3>
+                </div>
+                <div className="space-y-2">
+                   {getMonthlyStats().length === 0 ? <p className="text-[10px] font-bold text-slate-400 uppercase text-center py-4">Aguardando dados de vendas...</p> : 
+                    getMonthlyStats().slice(0, 6).map(m => (
+                      <div key={m.name} className="flex justify-between items-center p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                         <div>
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">{m.name}</span>
+                            <span className="text-[10px] font-bold text-slate-600 uppercase italic">{m.sales} Pedidos</span>
+                         </div>
+                         <div className="text-right">
+                            <span className="text-xs font-black text-[#0ea5e9] block">R$ {m.revenue.toFixed(2)}</span>
+                            <span className="text-[8px] font-black text-green-500 uppercase">Lucro: R$ {m.profit.toFixed(2)}</span>
+                         </div>
+                      </div>
+                    ))
+                   }
+                </div>
+             </div>
+
              <div className="bg-white rounded-[3.5rem] p-8 shadow-xl border-b-[10px] border-sky-100">
                 <div className="flex items-center gap-4 mb-6">
                    <div className="w-14 h-14 bg-yellow-400 rounded-2xl flex items-center justify-center text-blue-900 shadow-md rotate-3"><Sparkles size={28} /></div>
                    <div>
-                      <h3 className="text-xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">Análise</h3>
-                      <p className="text-[8px] font-black text-sky-500 uppercase tracking-widest mt-1">Inteligência Doce Bom</p>
+                      <h3 className="text-xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">Consultoria IA</h3>
+                      <p className="text-[8px] font-black text-sky-500 uppercase tracking-widest mt-1">Análise Estratégica Doce Bom</p>
                    </div>
                 </div>
                 
@@ -462,32 +463,35 @@ const App: React.FC = () => {
                   {loadingReport ? (
                     <div className="flex flex-col items-center gap-4 py-8">
                        <Loader2 className="animate-spin text-sky-500" size={32} />
-                       <span className="font-black uppercase tracking-widest text-[10px] text-slate-400 italic">Consultando a IA...</span>
+                       <span className="font-black uppercase tracking-widest text-[10px] text-slate-400 italic">Processando Histórico Mensal...</span>
                     </div>
                   ) : (
-                    <div className="prose prose-sm font-bold text-slate-600 whitespace-pre-wrap">
-                      {aiReport || "Toque abaixo para analisar o desempenho da sua distribuição de cocadas."}
+                    <div className="prose prose-sm font-bold text-slate-600 whitespace-pre-wrap italic">
+                      {aiReport || "Toque no botão abaixo para que a IA analise a evolução das suas vendas mês a mês e dê dicas de crescimento."}
                     </div>
                   )}
                 </div>
                 
-                {!aiReport && !loadingReport && (
+                {!loadingReport && (
                   <button onClick={async () => {
                     setLoadingReport(true);
-                    const rData = salesHistory.length > 0 ? 
-                      [{ name: 'Atual', revenue: salesHistory.reduce((a,b)=>a+b.total,0), profit: salesHistory.reduce((a,b)=>a+(b.profit||0),0), sales: salesHistory.length }] :
-                      [{ name: 'Base', revenue: 0, profit: 0, sales: 0 }];
-                    const rep = await generatePerformanceReport(rData);
+                    const mData = getMonthlyStats();
+                    const rep = await generatePerformanceReport(mData);
                     setAiReport(rep);
                     setLoadingReport(false);
                   }} className="mt-8 w-full bg-[#0ea5e9] text-white py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-lg shadow-sky-200 active:scale-95 transition-all border-b-6 border-sky-800 italic">
-                    Gerar Análise
+                    {aiReport ? "Atualizar Análise" : "Gerar Relatório Mensal"}
                   </button>
                 )}
              </div>
           </div>
         </div>
       )}
+
+      <ProductModal isOpen={productModal.type !== ModalType.NONE} onClose={() => setProductModal({ type: ModalType.NONE })} onSave={handleSaveProduct} initialData={productModal.data} />
+      <ClientForm isOpen={clientModal.type !== ModalType.NONE} onClose={() => setClientModal({ type: ModalType.NONE })} onSave={handleSaveClient} initialData={clientModal.data} />
+      <NewSaleModal isOpen={saleModal} onClose={() => setSaleModal(false)} products={products} clients={clients} onFinishSale={handleFinishSale} />
+      <SaleDetailModal isOpen={!!selectedSale} onClose={() => setSelectedSale(null)} sale={selectedSale} profile={businessProfile} clients={clients} />
     </div>
   );
 };
