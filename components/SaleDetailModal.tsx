@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { X, Printer, Package, Building2, Calendar, Clock, CreditCard, User, Palmtree, Sun, ShoppingBag } from 'lucide-react';
+import { X, Printer, Package, Building2, Calendar, Clock, CreditCard, User, Palmtree, Sun, ShoppingBag, MessageSquare, Share2 } from 'lucide-react';
 import { Sale, BusinessProfile, Client } from '../types';
 import { convertDriveLink } from '../App';
 
@@ -16,6 +16,38 @@ const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sale
   if (!isOpen || !sale) return null;
 
   const clientData = clients.find(c => c.id === sale.clientId);
+
+  const handleShareWhatsApp = () => {
+    const companyName = profile.companyName || 'DOCE BOM';
+    const itemsText = sale.items.map(item => `• ${item.quantity}x ${item.name} - R$ ${(item.price * item.quantity).toFixed(2)}`).join('\n');
+    
+    const message = `*${companyName} - Pedido #${sale.id}*
+---------------------------
+👤 *Cliente:* ${sale.clientName}
+📅 *Data:* ${sale.date} às ${sale.time}
+
+📦 *Itens:*
+${itemsText}
+
+💰 *Total: R$ ${sale.total.toFixed(2)}*
+💳 *Pagamento:* ${sale.paymentMethod || 'Não informado'}
+🗓️ *Vencimento:* ${sale.paymentTerms || 'À vista'}
+
+Obrigado pela preferência!`;
+
+    const encodedText = encodeURIComponent(message);
+    // Limpa o telefone para conter apenas números
+    const cleanPhone = clientData?.phone ? clientData.phone.replace(/\D/g, '') : '';
+    
+    // Se o telefone tiver 10 ou 11 dígitos, adiciona o DDI 55 (Brasil)
+    const finalPhone = cleanPhone.length >= 10 ? `55${cleanPhone}` : cleanPhone;
+    
+    const whatsappUrl = finalPhone 
+      ? `https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodedText}`
+      : `https://api.whatsapp.com/send?text=${encodedText}`;
+
+    window.open(whatsappUrl, '_blank');
+  };
 
   const handlePrint = () => {
     const logoUrl = convertDriveLink(profile.logoUrl || '');
@@ -293,7 +325,14 @@ const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sale
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+        <div className="p-6 bg-slate-50 border-t border-slate-100 flex flex-col md:flex-row gap-3">
+          <button 
+            onClick={handleShareWhatsApp}
+            className="flex-1 bg-emerald-500 text-white py-4 rounded-[1.8rem] flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-100 hover:bg-emerald-600 active:scale-95 transition-all"
+          >
+            <MessageSquare size={18} /> 
+            Enviar WhatsApp
+          </button>
           <button 
             onClick={handlePrint}
             className="flex-1 bg-white border-b-4 border-slate-200 py-4 rounded-[1.8rem] flex items-center justify-center gap-3 font-black text-slate-700 hover:bg-slate-100 active:scale-95 transition-all text-xs uppercase tracking-widest shadow-sm"
