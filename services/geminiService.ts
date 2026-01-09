@@ -1,12 +1,9 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { SalesData } from "../types";
+import { SalesData } from "../types.ts";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-/**
- * Generates a creative sales description for a product based on its name and category.
- */
 export const generateProductDescription = async (name: string, category: string, price: number): Promise<string> => {
   try {
     const prompt = `
@@ -21,13 +18,11 @@ export const generateProductDescription = async (name: string, category: string,
       Use emojis com moderação. O tom deve ser profissional mas entusiasmado. Foque nos benefícios.
     `;
 
-    // Using gemini-3-flash-preview for text generation tasks
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
 
-    // Access the .text property directly
     return response.text || "Descrição indisponível no momento.";
   } catch (error) {
     console.error("Error generating description:", error);
@@ -35,45 +30,26 @@ export const generateProductDescription = async (name: string, category: string,
   }
 };
 
-/**
- * Generates a full business performance report based on the provided sales history.
- */
 export const generatePerformanceReport = async (salesHistory: SalesData[]): Promise<string> => {
   try {
-    // Format data for the prompt
     const dataTable = salesHistory.map(d => 
       `| ${d.name} | R$ ${d.revenue.toFixed(2)} | R$ ${d.profit.toFixed(2)} |`
     ).join('\n');
 
     const prompt = `
-      # INSTRUÇÃO DO SISTEMA (Papel do Modelo)
-      Você é um Analista de Negócios Sênior, focado em vendas e lucratividade. Sua tarefa é analisar o desempenho mensal fornecido, identificar tendências e fornecer insights acionáveis de forma concisa e profissional.
-
-      # DADOS DE ENTRADA (Histórico de Vendas Mensais)
-      Analise o seguinte histórico de vendas (Venda, Lucro):
-      | Mês | Venda Total (R$) | Lucro Estimado (R$) |
-      | :--- | :--- | :--- |
+      # INSTRUÇÃO DO SISTEMA
+      Você é um Analista de Negócios Sênior. Analise o seguinte histórico de vendas e lucro e forneça insights acionáveis.
+      
       ${dataTable}
 
-      # REQUISITOS DE ANÁLISE
-      Com base nos dados fornecidos:
-      1.  **Melhor e Pior Performance:** Identifique qual foi o mês com **maior Lucro** e qual foi o mês com **menor Lucro**.
-      2.  **Anomalia de Dezembro:** Identifique a **anomalia** de Dezembro (queda acentuada). Calcule o percentual de queda da Venda Total de Novembro para Dezembro e proponha **duas causas prováveis** para essa discrepância.
-      3.  **Métrica de Eficiência:** Calcule a **Margem de Lucro Bruta** (Lucro / Venda) para o mês de Novembro e comente o resultado.
-      4.  **Sugestão Acionável:** Sugira uma meta de Venda Total e Lucro para o próximo mês (Janeiro), assumindo uma recuperação de 80% da média de Setembro a Novembro.
-
-      # FORMATO DA RESPOSTA
-      Estruture a sua resposta em três seções claras: Resumo de Performance, Análise da Queda e Metas Sugeridas.
-      Use formatação Markdown simples (negrito, listas). Não use tabelas Markdown na resposta, use texto corrido ou tópicos.
+      Foque em identificar meses bons, quedas e sugestões de melhoria.
     `;
 
-    // Using gemini-3-flash-preview for complex analysis tasks
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
     
-    // Access the .text property directly
     return response.text || "Não foi possível gerar o relatório.";
   } catch (error) {
     console.error("Error generating report", error);
@@ -81,9 +57,6 @@ export const generatePerformanceReport = async (salesHistory: SalesData[]): Prom
   }
 }
 
-/**
- * Legacy function for simple insights (kept for compatibility if needed, but report is preferred)
- */
 export const getSalesInsights = async (totalRevenue: number, totalOrders: number): Promise<string> => {
     return "Análise detalhada disponível no painel principal.";
 }

@@ -27,13 +27,13 @@ import {
   Upload,
   Database
 } from 'lucide-react';
-import ProductModal from './components/ProductModal';
-import ClientForm from './components/ClientForm';
-import NewSaleModal from './components/NewSaleModal';
-import SaleDetailModal from './components/SaleDetailModal';
-import SettingsForm from './components/SettingsForm';
-import { Product, Client, ModalType, Screen, Sale, BusinessProfile } from './types';
-import { generatePerformanceReport } from './services/geminiService';
+import ProductModal from './components/ProductModal.tsx';
+import ClientForm from './components/ClientForm.tsx';
+import NewSaleModal from './components/NewSaleModal.tsx';
+import SaleDetailModal from './components/SaleDetailModal.tsx';
+import SettingsForm from './components/SettingsForm.tsx';
+import { Product, Client, ModalType, Screen, Sale, BusinessProfile } from './types.ts';
+import { generatePerformanceReport } from './services/geminiService.ts';
 
 // CHAVES DEFINITIVAS - NÃO MUDAR NUNCA
 const DB_KEYS = {
@@ -91,18 +91,15 @@ const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<Screen>('HOME');
   const [saveNotify, setSaveNotify] = useState<{show: boolean, msg: string}>({show: false, msg: ''});
   
-  // Lógica de Carregamento Ultra-Resiliente
   const loadData = (key: string, patterns: string[], def: any) => {
     try {
       const saved = localStorage.getItem(key);
       if (saved) return JSON.parse(saved);
 
-      // Migração de chaves antigas
       for (const lKey of LEGACY_KEYS) {
         if (patterns.some(p => lKey.toLowerCase().includes(p))) {
           const legacyData = localStorage.getItem(lKey);
           if (legacyData) {
-            console.log(`Migrando de ${lKey} para ${key}`);
             localStorage.setItem(key, legacyData);
             return JSON.parse(legacyData);
           }
@@ -126,7 +123,6 @@ const App: React.FC = () => {
   const [loadingReport, setLoadingReport] = useState(false);
   const [aiReport, setAiReport] = useState<string>('');
 
-  // Persistência Automática com Verificação
   useEffect(() => {
     try {
       localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(products));
@@ -268,7 +264,6 @@ const App: React.FC = () => {
         <>
           <Header title={businessProfile.companyName} />
           <main className="px-6 -mt-6 relative z-30 space-y-5 pt-1">
-            
             <div className="grid grid-cols-2 gap-3">
                <div className="bg-white p-5 rounded-[2.2rem] shadow-lg border-b-4 border-[#0ea5e9]/10 flex flex-col justify-between h-32 active:scale-95 transition-all">
                   <div className="bg-[#0ea5e9] w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md"><Wallet size={20}/></div>
@@ -321,7 +316,6 @@ const App: React.FC = () => {
                </button>
             </div>
             
-            {/* Status de Armazenamento */}
             <div className="bg-white/50 border border-slate-200 rounded-3xl p-4 flex items-center gap-3 justify-center">
                <Database size={14} className="text-slate-400" />
                <span className="text-[8px] font-black uppercase text-slate-500 tracking-widest">Dados Sincronizados Localmente</span>
@@ -330,7 +324,6 @@ const App: React.FC = () => {
         </>
       )}
 
-      {/* Telas Secundárias */}
       {currentScreen === 'CLIENTS' && (
         <div className="min-h-screen">
           <Header title="Clientes" showBack rightAction={<button onClick={() => setClientModal({ type: ModalType.ADD })} className="bg-white/20 p-2.5 rounded-2xl"><Plus size={22} /></button>} />
@@ -384,8 +377,6 @@ const App: React.FC = () => {
             setBusinessProfile(newProfile);
             triggerNotify('Perfil Atualizado!');
           }} />
-          
-          {/* Sessão de Backup Adicional */}
           <div className="px-6 pb-20 space-y-4">
              <div className="bg-white rounded-3xl p-6 shadow-md border border-slate-100">
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Database size={14}/> Gestão de Dados</h3>
@@ -400,13 +391,11 @@ const App: React.FC = () => {
                       <input type="file" accept=".json" className="hidden" onChange={importBackup} />
                    </label>
                 </div>
-                <p className="text-[8px] text-slate-400 mt-4 leading-tight text-center uppercase font-bold">* Use o backup se for trocar de celular ou navegador.</p>
              </div>
           </div>
         </div>
       )}
 
-      {/* Modais */}
       <ProductModal isOpen={productModal.type !== ModalType.NONE} onClose={() => setProductModal({ type: ModalType.NONE })} onSave={handleSaveProduct} initialData={productModal.data} />
       <ClientForm isOpen={clientModal.type !== ModalType.NONE} onClose={() => setClientModal({ type: ModalType.NONE })} onSave={handleSaveClient} initialData={clientModal.data} />
       <NewSaleModal isOpen={saleModal} onClose={() => setSaleModal(false)} products={products} clients={clients} onFinishSale={handleFinishSale} />

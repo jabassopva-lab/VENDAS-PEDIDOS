@@ -10,12 +10,11 @@
     <style>
       body {
         font-family: 'Fredoka', sans-serif;
-        background-color: #fffbeb; /* Amarelo clarinho de fundo */
+        background-color: #fffbeb;
         color: #1e293b;
         -webkit-tap-highlight-color: transparent;
       }
       
-      /* Padrão sutil de fundo tropical */
       .tropical-bg {
         background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5c2 5 5 10 10 10s10-5 10-10M10 30c5 2 10 5 10 10s-5 10-10 10M50 30c-5 2-10 5-10 10s5 10 10 10' stroke='%23fde68a' stroke-width='1' fill='none' opacity='0.3'/%3E%3C/svg%3E");
       }
@@ -44,5 +43,7 @@
 </head>
   <body class="tropical-bg">
     <div id="root"></div>
+    <!-- Script essencial para carregar o App -->
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>
