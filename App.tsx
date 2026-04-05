@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Users, 
   Package, 
@@ -26,42 +26,35 @@ import {
   Download,
   Upload,
   Database,
-  BarChart3
+  BarChart3,
+  ChevronLeft,
+  FileText,
+  ArrowRight,
+  LogOut,
+  Store,
+  Info
 } from 'lucide-react';
 import ProductModal from './components/ProductModal.tsx';
 import ClientForm from './components/ClientForm.tsx';
 import NewSaleModal from './components/NewSaleModal.tsx';
 import SaleDetailModal from './components/SaleDetailModal.tsx';
 import SettingsForm from './components/SettingsForm.tsx';
+import AuthScreen from './components/AuthScreen.tsx';
+import { supabase, db, isConfigured } from './services/supabase.ts';
 import { Product, Client, ModalType, Screen, Sale, BusinessProfile, SalesData } from './types.ts';
-import { generatePerformanceReport } from './services/geminiService.ts';
-
-// CHAVES DEFINITIVAS - NÃO MUDAR NUNCA
-const DB_KEYS = {
-  PRODUCTS: 'DOCEBOM_DATA_PRODUCTS_FINAL',
-  CLIENTS: 'DOCEBOM_DATA_CLIENTS_FINAL',
-  SALES: 'DOCEBOM_DATA_SALES_FINAL',
-  PROFILE: 'DOCEBOM_DATA_PROFILE_FINAL'
-};
-
-const LEGACY_KEYS = [
-  'docebom_inventory_v1', 'docebom_inventory_v2', 'docebom_inventory_v3',
-  'docebom_customers_v1', 'docebom_customers_v2', 'docebom_customers_v3',
-  'docebom_history_v1', 'docebom_history_v2', 'docebom_history_v3',
-  'DOCEBOM_STABLE_PRODUCTS_LIST', 'DOCEBOM_STABLE_CLIENTS_LIST', 
-  'DOCEBOM_STABLE_SALES_HISTORY', 'DOCEBOM_STABLE_BUSINESS_PROFILE'
-];
 
 const DEFAULT_PROFILE: BusinessProfile = {
-  companyName: 'DOCE BOM',
-  document: '32.785.943/0001-63',
-  phone: '66 99967-0612',
-  email: 'contato@docebom.com',
-  address: 'Distribuição de Cocadas',
+  companyName: 'Minha Empresa',
+  document: '',
+  phone: '',
+  email: '',
+  address: '',
   logoUrl: '',
-  planStatus: 'PREMIUM',
-  nextBilling: '20/12/2024'
+  planStatus: 'START',
+  nextBilling: '-'
 };
+
+const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
 export const convertDriveLink = (url: string): string => {
   if (!url || typeof url !== 'string') return '';
@@ -75,161 +68,236 @@ export const convertDriveLink = (url: string): string => {
   return url;
 };
 
-const CocoMascot = ({ message }: { message: string }) => (
+const EmptyState = ({ message, icon: Icon = Store }: { message: string, icon?: any }) => (
   <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-in fade-in zoom-in duration-500">
-    <div className="w-24 h-24 bg-amber-900 rounded-full border-4 border-amber-950 flex items-center justify-center relative shadow-xl mb-4 overflow-hidden">
-      <div className="flex flex-col items-center">
-        <div className="flex gap-2 mb-1">
-          <div className="w-3 h-3 bg-black rounded-full" />
-          <div className="w-3 h-3 bg-black rounded-full" />
-        </div>
-        <div className="w-6 h-3 border-b-2 border-white rounded-full" />
-      </div>
+    <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center text-amber-200 mb-4">
+      <Icon size={40} />
     </div>
-    <h3 className="text-lg font-black text-amber-900 uppercase italic leading-tight">{message}</h3>
+    <h3 className="text-lg font-black text-amber-900/40 uppercase tracking-widest leading-tight">{message}</h3>
   </div>
 );
 
 const App: React.FC = () => {
+  const [session, setSession] = useState<any>(null);
+  const [isTestMode, setIsTestMode] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<Screen>('HOME');
   const [saveNotify, setSaveNotify] = useState<{show: boolean, msg: string}>({show: false, msg: ''});
+  const [loading, setLoading] = useState(true);
   
-  const loadData = (key: string, patterns: string[], def: any) => {
-    try {
-      const saved = localStorage.getItem(key);
-      if (saved) return JSON.parse(saved);
-      for (const lKey of LEGACY_KEYS) {
-        if (patterns.some(p => lKey.toLowerCase().includes(p))) {
-          const legacyData = localStorage.getItem(lKey);
-          if (legacyData) {
-            localStorage.setItem(key, legacyData);
-            return JSON.parse(legacyData);
-          }
-        }
-      }
-      return def;
-    } catch (e) {
-      return def;
-    }
-  };
+  const [products, setProducts] = useState<Product[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [salesHistory, setSalesHistory] = useState<Sale[]>([]);
+  const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(DEFAULT_PROFILE);
+  
+  const [reportTab, setReportTab] = useState<'DIARIO' | 'MENSAL' | 'ANUAL'>('MENSAL');
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-  const [products, setProducts] = useState<Product[]>(() => loadData(DB_KEYS.PRODUCTS, ['inventory', 'product'], []));
-  const [clients, setClients] = useState<Client[]>(() => loadData(DB_KEYS.CLIENTS, ['customer', 'client'], []));
-  const [salesHistory, setSalesHistory] = useState<Sale[]>(() => loadData(DB_KEYS.SALES, ['history', 'sale'], []));
-  const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(() => loadData(DB_KEYS.PROFILE, ['profile', 'biz'], DEFAULT_PROFILE));
-  
   const [productModal, setProductModal] = useState<{ type: ModalType; data?: Product }>({ type: ModalType.NONE });
   const [clientModal, setClientModal] = useState<{ type: ModalType; data?: Client }>({ type: ModalType.NONE });
   const [saleModal, setSaleModal] = useState<boolean>(false);
+  const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
-  const [loadingReport, setLoadingReport] = useState(false);
-  const [aiReport, setAiReport] = useState<string>('');
 
   useEffect(() => {
-    try {
-      localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(products));
-      localStorage.setItem(DB_KEYS.CLIENTS, JSON.stringify(clients));
-      localStorage.setItem(DB_KEYS.SALES, JSON.stringify(salesHistory));
-      localStorage.setItem(DB_KEYS.PROFILE, JSON.stringify(businessProfile));
-    } catch (e) {
-      console.error("Erro ao persistir dados", e);
+    const savedTest = localStorage.getItem('omnivenda_test_session');
+    if (savedTest) {
+      setSession({ user: { email: 'demo@omnivenda.com' } });
+      setIsTestMode(true);
+      fetchAllData();
+      return;
     }
-  }, [products, clients, salesHistory, businessProfile]);
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) fetchAllData();
+      else setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) fetchAllData();
+      else setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      const [p, c, s, prof] = await Promise.all([
+        db.products.getAll(),
+        db.clients.getAll(),
+        db.sales.getAll(),
+        db.profile.get()
+      ]);
+      setProducts(p || []);
+      setClients(c || []);
+      setSalesHistory(s || []);
+      if (prof) setBusinessProfile(prof);
+    } catch (e) {
+      console.error("Erro ao sincronizar dados", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAuthSuccess = (isTest?: boolean) => {
+    if (isTest) {
+      setIsTestMode(true);
+      setSession({ user: { email: 'demo@omnivenda.com' } });
+      localStorage.setItem('omnivenda_test_session', 'active');
+      fetchAllData();
+    }
+  };
 
   const triggerNotify = (msg: string = 'Dados Salvos!') => {
     setSaveNotify({show: true, msg});
     setTimeout(() => setSaveNotify({show: false, msg: ''}), 2000);
   };
 
-  const handleSaveProduct = (data: Omit<Product, 'id'>) => {
-    const updated = productModal.type === ModalType.EDIT && productModal.data
-      ? products.map(p => p.id === productModal.data!.id ? { ...data, id: p.id } : p)
-      : [{ ...data, id: `P-${Date.now()}` }, ...products];
-    setProducts(updated);
-    setProductModal({ type: ModalType.NONE });
-    triggerNotify('Produto Salvo!');
+  const handleSaveProduct = async (data: Omit<Product, 'id'>) => {
+    try {
+      const isEdit = productModal.type === ModalType.EDIT && !!productModal.data;
+      const editId = productModal.data?.id;
+      const payload = isEdit ? { ...data, id: editId } : { ...data };
+      const saved = await db.products.upsert(payload);
+      setProducts(prev => isEdit ? prev.map(p => p.id === editId ? (saved as Product) : p) : [saved as Product, ...prev]);
+      setProductModal({ type: ModalType.NONE });
+      triggerNotify('Produto Salvo!');
+    } catch (e) {
+      alert("Erro ao salvar produto.");
+    }
   };
 
   const handleSaveClient = async (data: Omit<Client, 'id'>) => {
-    const updated = clientModal.type === ModalType.EDIT && clientModal.data
-      ? clients.map(c => c.id === clientModal.data!.id ? { ...data, id: c.id } : c)
-      : [{ ...data, id: `C-${Date.now()}` }, ...clients];
-    setClients(updated);
-    setClientModal({ type: ModalType.NONE });
-    triggerNotify('Cliente Salvo!');
+    try {
+      const isEdit = clientModal.type === ModalType.EDIT && !!clientModal.data;
+      const editId = clientModal.data?.id;
+      const payload = isEdit ? { ...data, id: editId } : { ...data };
+      const saved = await db.clients.upsert(payload);
+      setClients(prev => isEdit ? prev.map(c => c.id === editId ? (saved as Client) : c) : [saved as Client, ...prev]);
+      setClientModal({ type: ModalType.NONE });
+      triggerNotify('Cliente Salvo!');
+    } catch (e) {
+      alert("Erro ao salvar cliente.");
+    }
   };
 
-  const handleFinishSale = (data: { clientId: string, items: any[], total: number, paymentMethod: string, paymentTerms: string }) => {
-    const client = clients.find(c => c.id === data.clientId);
-    const cost = data.items.reduce((acc, item) => acc + (item.costPrice * item.quantity), 0);
-    const newSale: Sale = {
-      id: Math.random().toString(36).substr(2, 6).toUpperCase(),
-      clientId: data.clientId,
-      clientName: client?.name || 'Venda Avulsa',
-      items: data.items,
-      total: data.total,
-      profit: data.total - cost,
-      paymentMethod: data.paymentMethod,
-      paymentTerms: data.paymentTerms,
-      date: new Date().toLocaleDateString('pt-BR'),
-      time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-    };
-    setSalesHistory([newSale, ...salesHistory]);
-    setProducts(products.map(p => {
-      const sold = data.items.find(i => i.id === p.id);
-      return sold ? { ...p, stock: Math.max(0, p.stock - sold.quantity) } : p;
-    }));
-    setSaleModal(false);
-    triggerNotify('Venda Realizada!');
-  };
+  const handleFinishSale = async (data: Partial<Sale>) => {
+    try {
+      const isUpdate = !!data.id;
+      const client = clients.find(c => c.id === data.clientId);
+      
+      const salePayload = {
+        id: data.id,
+        clientId: data.clientId!,
+        clientName: client?.name || 'Venda Avulsa',
+        items: data.items!,
+        total: data.total!,
+        profit: data.profit || 0,
+        paymentMethod: data.paymentMethod || 'Dinheiro',
+        paymentTerms: data.paymentTerms || 'À vista',
+        installments: data.installments || 1,
+        date: isUpdate ? salesHistory.find(s => s.id === data.id)?.date : new Date().toLocaleDateString('pt-BR'),
+        time: isUpdate ? salesHistory.find(s => s.id === data.id)?.time : new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        status: data.status || 'FINALIZADA',
+        isPaid: data.isPaid ?? true,
+        deliveryStatus: data.deliveryStatus || 'ENTREGUE'
+      };
 
-  const getMonthlyStats = (): SalesData[] => {
-    const months: { [key: string]: SalesData } = {};
-    salesHistory.forEach(sale => {
-      const [day, month, year] = sale.date.split('/');
-      const key = `${month}/${year}`;
-      if (!months[key]) {
-        months[key] = { name: key, revenue: 0, profit: 0, sales: 0 };
+      let savedSale;
+      if (isUpdate) {
+        savedSale = await db.sales.update(salePayload);
+        setSalesHistory(prev => prev.map(s => s.id === savedSale.id ? savedSale : s));
+      } else {
+        savedSale = await db.sales.create(salePayload);
+        setSalesHistory(prev => [savedSale, ...prev]);
       }
-      months[key].revenue += sale.total;
-      months[key].profit += sale.profit || 0;
-      months[key].sales += 1;
-    });
-    return Object.values(months).sort((a, b) => {
-      const [ma, ya] = a.name.split('/').map(Number);
-      const [mb, yb] = b.name.split('/').map(Number);
-      return ya !== yb ? yb - ya : mb - ma;
-    });
-  };
-
-  const exportBackup = () => {
-    const data = { products, clients, salesHistory, businessProfile };
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `DOCEBOM_BACKUP_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    triggerNotify('Backup Criado!');
-  };
-
-  const importBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = JSON.parse(event.target?.result as string);
-        if (data.products) setProducts(data.products);
-        if (data.clients) setClients(data.clients);
-        if (data.salesHistory) setSalesHistory(data.salesHistory);
-        if (data.businessProfile) setBusinessProfile(data.businessProfile);
-        triggerNotify('Dados Importados!');
-      } catch (err) {
-        alert("Arquivo de backup inválido.");
+      
+      if (savedSale.status === 'FINALIZADA') {
+        const oldItems = isUpdate ? (salesHistory.find(s => s.id === data.id)?.items || []) : [];
+        const newItems = data.items!;
+        const allProductIds = Array.from(new Set([...oldItems.map(i => i.id), ...newItems.map(i => i.id)]));
+        
+        const productUpdates = products.map(p => {
+          if (allProductIds.includes(p.id)) {
+            const oldQty = oldItems.find(i => i.id === p.id)?.quantity || 0;
+            const newQty = newItems.find(i => i.id === p.id)?.quantity || 0;
+            const delta = newQty - oldQty;
+            
+            if (delta !== 0) {
+              const newStock = Math.max(0, p.stock - delta);
+              db.products.upsert({ ...p, stock: newStock });
+              return { ...p, stock: newStock };
+            }
+          }
+          return p;
+        });
+        setProducts(productUpdates);
       }
+      
+      setSaleModal(false);
+      setEditingSale(null);
+      triggerNotify(isUpdate ? 'Pedido Atualizado!' : (savedSale.status === 'ORCAMENTO' ? 'Orçamento Salvo!' : 'Venda Realizada!'));
+    } catch (e) {
+      alert("Erro ao processar venda.");
+    }
+  };
+
+  const handleOpenEditSale = (sale: Sale) => {
+    setEditingSale(sale);
+    setSelectedSale(null);
+    setSaleModal(true);
+  };
+
+  const handleLogout = async () => {
+    if (isTestMode) {
+      localStorage.removeItem('omnivenda_test_session');
+      setIsTestMode(false);
+    } else {
+      await supabase.auth.signOut();
+    }
+    setSession(null);
+    setCurrentScreen('HOME');
+  };
+
+  const currentSummary = useMemo(() => {
+    const d = currentDate;
+    const dayStr = d.toLocaleDateString('pt-BR');
+    const monthStr = (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getFullYear();
+    const yearStr = d.getFullYear().toString();
+
+    const filtered = salesHistory.filter(s => {
+      if (reportTab === 'DIARIO') return s.date === dayStr;
+      if (reportTab === 'MENSAL') return s.date.endsWith(monthStr);
+      if (reportTab === 'ANUAL') return s.date.endsWith(yearStr);
+      return false;
+    });
+
+    const stats = {
+      vendasCount: 0, vendasTotal: 0, lucro: 0, recebidoCount: 0, recebidoTotal: 0,
+      aReceberCount: 0, aReceberTotal: 0, orcamentosCount: 0, orcamentosTotal: 0,
+      entregaCount: 0, entregaTotal: 0
     };
-    reader.readAsText(file);
+
+    filtered.forEach(s => {
+      if (s.status === 'FINALIZADA') {
+        stats.vendasCount++; stats.vendasTotal += Number(s.total); stats.lucro += Number(s.profit || 0);
+        if (s.isPaid) { stats.recebidoCount++; stats.recebidoTotal += Number(s.total); }
+        else { stats.aReceberCount++; stats.aReceberTotal += Number(s.total); }
+        if (s.deliveryStatus === 'PENDENTE') { stats.entregaCount++; stats.entregaTotal += Number(s.total); }
+      } else { stats.orcamentosCount++; stats.orcamentosTotal += Number(s.total); }
+    });
+    return stats;
+  }, [salesHistory, reportTab, currentDate]);
+
+  const changeDate = (delta: number) => {
+    const next = new Date(currentDate);
+    if (reportTab === 'DIARIO') next.setDate(next.getDate() + delta);
+    else if (reportTab === 'MENSAL') next.setMonth(next.getMonth() + delta);
+    else if (reportTab === 'ANUAL') next.setFullYear(next.getFullYear() + delta);
+    setCurrentDate(next);
   };
 
   const Header = ({ title, showBack = false, rightAction }: { title: string, showBack?: boolean, rightAction?: React.ReactNode }) => (
@@ -244,32 +312,50 @@ const App: React.FC = () => {
               <ArrowLeft size={22} />
             </button>
           ) : (
-            <div onClick={() => setCurrentScreen('SETTINGS')} className="w-20 h-20 bg-white rounded-3xl p-1.5 shadow-lg cursor-pointer border-2 border-yellow-400 flex items-center justify-center overflow-hidden">
+            <div onClick={() => setCurrentScreen('SETTINGS')} className="w-16 h-16 bg-white rounded-2xl p-1 shadow-lg cursor-pointer border-2 border-yellow-400 flex items-center justify-center overflow-hidden">
                {businessProfile.logoUrl ? (
                  <img src={convertDriveLink(businessProfile.logoUrl)} className="w-full h-full object-contain" />
                ) : (
-                 <span className="text-[#0ea5e9] font-black text-2xl italic leading-none">DB</span>
+                 <span className="text-[#0ea5e9] font-black text-xl italic leading-none">{businessProfile.companyName?.charAt(0) || 'O'}</span>
                )}
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="text-lg font-black tracking-tighter uppercase italic leading-none truncate drop-shadow-sm">
-              {currentScreen === 'SETTINGS' ? 'Meu Perfil' : title}
+            <h1 className="text-lg font-black tracking-tighter uppercase italic leading-none truncate drop-shadow-sm max-w-[180px]">
+              {title}
             </h1>
-            {!showBack && <p className="text-yellow-300 text-[8px] font-black uppercase tracking-[0.2em] mt-1">Gestão Inteligente</p>}
+            <p className="text-yellow-300 text-[8px] font-black uppercase tracking-[0.2em] mt-1">
+              {isTestMode ? 'Modo Teste Offline' : 'Conectado OmniVenda Cloud'}
+            </p>
           </div>
         </div>
         <div className="flex gap-2">
+          {rightAction}
           {!showBack && (
-            <button onClick={() => setCurrentScreen('SETTINGS')} className="p-2.5 bg-white/20 rounded-2xl border border-white/10 active:scale-90">
-              <SettingsIcon size={20} />
+            <button onClick={handleLogout} className="p-2.5 bg-red-500/20 rounded-2xl border border-white/10 active:scale-90">
+              <LogOut size={20} />
             </button>
           )}
-          {rightAction}
         </div>
       </div>
     </header>
   );
+
+  if (!session) {
+    return <AuthScreen onAuthSuccess={handleAuthSuccess} />;
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#fffbeb]">
+        <div className="relative">
+           <Loader2 className="animate-spin text-blue-500 mb-4" size={48} />
+           <Sun className="absolute inset-0 m-auto text-yellow-400" size={24} />
+        </div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Sincronizando com a Nuvem...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-32 bg-[#fffbeb]">
@@ -279,33 +365,42 @@ const App: React.FC = () => {
         </div>
       )}
 
+      {isTestMode && currentScreen === 'HOME' && (
+        <div className="bg-amber-100 border-b border-amber-200 px-6 py-1 flex items-center justify-center gap-2">
+           <Info size={12} className="text-amber-600" />
+           <span className="text-[8px] font-black uppercase text-amber-700 tracking-widest">Aviso: Você está no Modo de Teste. Dados salvos apenas neste navegador.</span>
+        </div>
+      )}
+
       {currentScreen === 'HOME' && (
         <>
-          <Header title={businessProfile.companyName} />
+          <Header title={businessProfile.companyName || 'Minha Empresa'} />
           <main className="px-6 -mt-6 relative z-30 space-y-5 pt-1">
             <div className="grid grid-cols-2 gap-3">
-               <div className="bg-white p-5 rounded-[2.2rem] shadow-lg border-b-4 border-[#0ea5e9]/10 flex flex-col justify-between h-32 active:scale-95 transition-all">
+               <div className="bg-white p-5 rounded-[2.2rem] shadow-lg border-b-4 border-[#0ea5e9]/10 flex flex-col h-32 justify-between active:scale-95 transition-all">
                   <div className="bg-[#0ea5e9] w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md"><Wallet size={20}/></div>
                   <div>
-                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Vendas</p>
-                    <h4 className="text-lg font-black text-[#0ea5e9]">R$ {salesHistory.reduce((a,b)=>a+b.total,0).toFixed(2)}</h4>
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Total Vendas</p>
+                    <h4 className="text-lg font-black text-[#0ea5e9]">R$ {currentSummary.vendasTotal.toFixed(2)}</h4>
                   </div>
                </div>
-               <div className="bg-white p-5 rounded-[2.2rem] shadow-lg border-b-4 border-green-200/50 flex flex-col justify-between h-32 active:scale-95 transition-all">
+               <div className="bg-white p-5 rounded-[2.2rem] shadow-lg border-b-4 border-green-200/50 flex flex-col h-32 justify-between active:scale-95 transition-all">
                   <div className="bg-green-500 w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md"><TrendingUp size={20}/></div>
                   <div>
-                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Lucro</p>
-                    <h4 className="text-lg font-black text-green-600">R$ {salesHistory.reduce((a,b)=>a+(b.profit||0),0).toFixed(2)}</h4>
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Lucro Líquido</p>
+                    <h4 className="text-lg font-black text-green-600">R$ {currentSummary.lucro.toFixed(2)}</h4>
                   </div>
                </div>
             </div>
 
-            <button onClick={() => setSaleModal(true)} className="w-full bg-yellow-400 text-[#1e293b] p-6 rounded-[2.8rem] shadow-xl shadow-yellow-200/50 flex items-center justify-between group active:scale-[0.96] transition-all border-b-8 border-yellow-600">
+            <button onClick={() => { setEditingSale(null); setSaleModal(true); }} className="w-full bg-yellow-400 text-[#1e293b] p-6 rounded-[2.8rem] shadow-xl shadow-yellow-200/50 flex items-center justify-between group active:scale-[0.96] transition-all border-b-8 border-yellow-600">
               <div className="flex items-center gap-4">
                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-yellow-500 shadow-inner"><Plus size={30} strokeWidth={4} /></div>
                  <div className="text-left">
-                    <h3 className="text-xl font-black uppercase italic tracking-tighter leading-none">Nova Venda</h3>
-                    <p className="text-amber-900/60 text-[8px] font-black uppercase mt-1">Registrar Pedido</p>
+                    <h3 className="text-xl font-black uppercase italic tracking-tighter leading-none">Novo Pedido</h3>
+                    <p className="text-amber-900/60 text-[8px] font-black uppercase mt-1">
+                      {isTestMode ? 'Teste Local (Offline)' : 'Nuvem Multi-Empresa'}
+                    </p>
                  </div>
               </div>
               <ChevronRight size={28} className="text-amber-900/20" />
@@ -318,26 +413,37 @@ const App: React.FC = () => {
                </button>
                <button onClick={() => setCurrentScreen('PRODUCTS')} className="bg-white p-6 rounded-[2.5rem] shadow-md border-b-4 border-slate-50 flex flex-col items-center gap-2 active:scale-95 transition-all group">
                   <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 group-hover:bg-red-500 group-hover:text-white transition-all"><Package size={28} /></div>
-                  <p className="font-black text-slate-800 uppercase text-[9px] tracking-widest">Estoque ({products.length})</p>
+                  <p className="font-black text-slate-800 uppercase text-[9px] tracking-widest">Catálogo ({products.length})</p>
                </button>
                <button onClick={() => setCurrentScreen('MONTHLY_SALES')} className="bg-white p-6 rounded-[2.5rem] shadow-md border-b-4 border-slate-50 flex flex-col items-center gap-2 active:scale-95 transition-all group">
                   <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-500 group-hover:bg-green-500 group-hover:text-white transition-all"><ClipboardList size={28} /></div>
                   <p className="font-black text-slate-800 uppercase text-[9px] tracking-widest">Histórico</p>
                </button>
                <button onClick={() => setCurrentScreen('REPORTS')} className="bg-[#1e293b] p-6 rounded-[2.5rem] shadow-md border-b-4 border-black flex flex-col items-center gap-2 active:scale-95 transition-all group text-white">
-                  <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-yellow-400 group-hover:bg-yellow-400 group-hover:text-black transition-all"><Sparkles size={28} /></div>
-                  <p className="font-black uppercase text-[9px] tracking-widest">Relatório Mensal</p>
+                  <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-yellow-400 group-hover:bg-yellow-400 group-hover:text-black transition-all"><BarChart3 size={28} /></div>
+                  <p className="font-black uppercase text-[9px] tracking-widest">Relatório</p>
                </button>
             </div>
           </main>
         </>
       )}
 
+      {currentScreen === 'SETTINGS' && (
+        <div className="min-h-screen">
+          <Header title="Configurações" showBack />
+          <SettingsForm profile={businessProfile} onSave={async (newProfile) => { 
+            const saved = await db.profile.update(newProfile);
+            setBusinessProfile(saved);
+            triggerNotify('Perfil Atualizado!'); 
+          }} />
+        </div>
+      )}
+
       {currentScreen === 'CLIENTS' && (
         <div className="min-h-screen">
           <Header title="Clientes" showBack rightAction={<button onClick={() => setClientModal({ type: ModalType.ADD })} className="bg-white/20 p-2.5 rounded-2xl"><Plus size={22} /></button>} />
           <div className="px-6 py-8 space-y-3">
-            {clients.length === 0 ? <CocoMascot message="Nenhum cliente?" /> : (
+            {clients.length === 0 ? <EmptyState message="Nenhum cliente" icon={Users} /> : (
               clients.map(c => (
                 <div key={c.id} onClick={() => setClientModal({ type: ModalType.EDIT, data: c })} className="bg-white p-4 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all cursor-pointer group">
                   <div className="flex items-center gap-4">
@@ -357,9 +463,9 @@ const App: React.FC = () => {
 
       {currentScreen === 'PRODUCTS' && (
         <div className="min-h-screen">
-          <Header title="Meu Estoque" showBack rightAction={<button onClick={() => setProductModal({ type: ModalType.ADD })} className="bg-white/20 p-2.5 rounded-2xl"><Plus size={22} /></button>} />
+          <Header title="Catálogo" showBack rightAction={<button onClick={() => setProductModal({ type: ModalType.ADD })} className="bg-white/20 p-2.5 rounded-2xl"><Plus size={22} /></button>} />
           <div className="px-6 py-8 space-y-4">
-             {products.length === 0 ? <CocoMascot message="Estoque Vazio!" /> : (
+             {products.length === 0 ? <EmptyState message="Estoque Vazio" icon={Package} /> : (
                products.map(p => (
                  <div key={p.id} onClick={() => setProductModal({ type: ModalType.EDIT, data: p })} className="bg-white p-4 rounded-[2.5rem] shadow-lg flex items-center gap-4 active:scale-95 transition-all cursor-pointer border-b-4 border-slate-100 group">
                     <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center overflow-hidden flex-shrink-0 shadow-inner group-hover:bg-red-100">
@@ -368,7 +474,7 @@ const App: React.FC = () => {
                     <div className="flex-1 min-w-0">
                        <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-lg text-[8px] font-black uppercase mb-1 inline-block">QTD: {p.stock}</span>
                        <h3 className="font-black text-slate-800 text-base truncate mb-0.5 uppercase italic leading-none">{p.name}</h3>
-                       <p className="text-xl font-black text-[#0ea5e9]">R$ {p.price.toFixed(2)}</p>
+                       <p className="text-xl font-black text-[#0ea5e9]">R$ {Number(p.price).toFixed(2)}</p>
                     </div>
                  </div>
                ))
@@ -377,44 +483,25 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {currentScreen === 'SETTINGS' && (
-        <div className="min-h-screen">
-          <Header title="Configurações" showBack />
-          <SettingsForm profile={businessProfile} onSave={(newProfile) => { setBusinessProfile(newProfile); triggerNotify('Perfil Atualizado!'); }} />
-          <div className="px-6 pb-20 space-y-4">
-             <div className="bg-white rounded-3xl p-6 shadow-md border border-slate-100">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Database size={14}/> Gestão de Dados</h3>
-                <div className="grid grid-cols-2 gap-3">
-                   <button onClick={exportBackup} className="flex flex-col items-center gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-100 active:scale-95 transition-all text-slate-600 hover:bg-sky-50 hover:text-sky-600 hover:border-sky-100">
-                      <Download size={24} /><span className="text-[9px] font-black uppercase">Exportar</span>
-                   </button>
-                   <label className="flex flex-col items-center gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-100 active:scale-95 transition-all text-slate-600 cursor-pointer hover:bg-green-50 hover:text-green-600 hover:border-green-100">
-                      <Upload size={24} /><span className="text-[9px] font-black uppercase">Importar</span>
-                      <input type="file" accept=".json" className="hidden" onChange={importBackup} />
-                   </label>
-                </div>
-             </div>
-          </div>
-        </div>
-      )}
-
       {currentScreen === 'MONTHLY_SALES' && (
         <div className="min-h-screen">
-          <Header title="Vendas" showBack />
+          <Header title="Histórico" showBack />
           <div className="px-6 py-8 space-y-3">
-            {salesHistory.length === 0 ? <CocoMascot message="Sem vendas!" /> : (
+            {salesHistory.length === 0 ? <EmptyState message="Sem vendas registradas" icon={ClipboardList} /> : (
               salesHistory.map(sale => (
                 <div key={sale.id} onClick={() => setSelectedSale(sale)} className="bg-white p-5 rounded-[2.2rem] shadow-md border-b-6 border-slate-50 flex items-center justify-between active:scale-95 transition-all group">
                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-600 group-hover:rotate-12 transition-transform"><ShoppingBag size={24} /></div>
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform ${sale.status === 'ORCAMENTO' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600'}`}>
+                        {sale.status === 'ORCAMENTO' ? <FileText size={24}/> : <ShoppingBag size={24} />}
+                      </div>
                       <div className="min-w-0">
                          <h4 className="font-black text-slate-800 text-sm uppercase italic leading-tight truncate">{sale.clientName}</h4>
-                         <p className="text-[8px] font-black text-slate-400 uppercase mt-0.5">{sale.date} • {sale.time}</p>
+                         <p className="text-[8px] font-black text-slate-400 uppercase mt-0.5">{sale.date} • {sale.status}</p>
                       </div>
                    </div>
                    <div className="text-right flex-shrink-0">
-                      <p className="text-lg font-black text-[#0ea5e9]">R$ {sale.total.toFixed(2)}</p>
-                      <p className="text-[8px] font-black text-yellow-500 italic uppercase">#{sale.id}</p>
+                      <p className="text-lg font-black text-[#0ea5e9]">R$ {Number(sale.total).toFixed(2)}</p>
+                      <p className={`text-[8px] font-black uppercase italic ${sale.isPaid ? 'text-green-500' : 'text-red-400'}`}>{sale.isPaid ? 'Pago' : 'Pendente'}</p>
                    </div>
                 </div>
               ))
@@ -424,74 +511,89 @@ const App: React.FC = () => {
       )}
 
       {currentScreen === 'REPORTS' && (
-        <div className="min-h-screen">
-          <Header title="Relatório Mensal" showBack />
-          <div className="p-6 space-y-6">
-             <div className="bg-white rounded-[3rem] p-6 shadow-lg border-b-4 border-slate-100">
-                <div className="flex items-center gap-3 mb-4">
-                   <div className="bg-sky-50 p-2 rounded-xl text-sky-600"><BarChart3 size={20}/></div>
-                   <h3 className="font-black uppercase italic text-sm text-slate-800">Desempenho por Mês</h3>
-                </div>
-                <div className="space-y-2">
-                   {getMonthlyStats().length === 0 ? <p className="text-[10px] font-bold text-slate-400 uppercase text-center py-4">Aguardando dados de vendas...</p> : 
-                    getMonthlyStats().slice(0, 6).map(m => (
-                      <div key={m.name} className="flex justify-between items-center p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                         <div>
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">{m.name}</span>
-                            <span className="text-[10px] font-bold text-slate-600 uppercase italic">{m.sales} Pedidos</span>
-                         </div>
-                         <div className="text-right">
-                            <span className="text-xs font-black text-[#0ea5e9] block">R$ {m.revenue.toFixed(2)}</span>
-                            <span className="text-[8px] font-black text-green-500 uppercase">Lucro: R$ {m.profit.toFixed(2)}</span>
-                         </div>
-                      </div>
-                    ))
-                   }
-                </div>
+        <div className="min-h-screen bg-[#f3f4f6]">
+          <div className="bg-[#0ea5e9] text-white pt-2 shadow-md">
+             <div className="flex justify-between px-10 pb-4">
+                <button onClick={() => setReportTab('DIARIO')} className={`text-sm font-black uppercase tracking-widest pb-2 border-b-4 transition-all ${reportTab === 'DIARIO' ? 'border-yellow-400' : 'border-transparent text-white/60'}`}>Diário</button>
+                <button onClick={() => setReportTab('MENSAL')} className={`text-sm font-black uppercase tracking-widest pb-2 border-b-4 transition-all ${reportTab === 'MENSAL' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-white/60'}`}>Mensal</button>
+                <button onClick={() => setReportTab('ANUAL')} className={`text-sm font-black uppercase tracking-widest pb-2 border-b-4 transition-all ${reportTab === 'ANUAL' ? 'border-yellow-400' : 'border-transparent text-white/60'}`}>Anual</button>
              </div>
-
-             <div className="bg-white rounded-[3.5rem] p-8 shadow-xl border-b-[10px] border-sky-100">
-                <div className="flex items-center gap-4 mb-6">
-                   <div className="w-14 h-14 bg-yellow-400 rounded-2xl flex items-center justify-center text-blue-900 shadow-md rotate-3"><Sparkles size={28} /></div>
-                   <div>
-                      <h3 className="text-xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">Consultoria IA</h3>
-                      <p className="text-[8px] font-black text-sky-500 uppercase tracking-widest mt-1">Análise Estratégica Doce Bom</p>
-                   </div>
-                </div>
-                
-                <div className="bg-slate-50 rounded-[2rem] p-6 text-sm leading-relaxed font-bold text-slate-600 border border-slate-100 shadow-inner min-h-[220px] flex flex-col justify-center">
-                  {loadingReport ? (
-                    <div className="flex flex-col items-center gap-4 py-8">
-                       <Loader2 className="animate-spin text-sky-500" size={32} />
-                       <span className="font-black uppercase tracking-widest text-[10px] text-slate-400 italic">Processando Histórico Mensal...</span>
-                    </div>
-                  ) : (
-                    <div className="prose prose-sm font-bold text-slate-600 whitespace-pre-wrap italic">
-                      {aiReport || "Toque no botão abaixo para que a IA analise a evolução das suas vendas mês a mês e dê dicas de crescimento."}
-                    </div>
-                  )}
-                </div>
-                
-                {!loadingReport && (
-                  <button onClick={async () => {
-                    setLoadingReport(true);
-                    const mData = getMonthlyStats();
-                    const rep = await generatePerformanceReport(mData);
-                    setAiReport(rep);
-                    setLoadingReport(false);
-                  }} className="mt-8 w-full bg-[#0ea5e9] text-white py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-lg shadow-sky-200 active:scale-95 transition-all border-b-6 border-sky-800 italic">
-                    {aiReport ? "Atualizar Análise" : "Gerar Relatório Mensal"}
-                  </button>
-                )}
+             <div className="bg-sky-600/50 flex items-center justify-between px-12 py-3">
+                <button onClick={() => changeDate(-1)} className="p-1 active:scale-75 transition-transform"><ChevronLeft size={28}/></button>
+                <span className="text-xl font-medium">
+                  {reportTab === 'DIARIO' ? currentDate.toLocaleDateString('pt-BR') : 
+                   reportTab === 'MENSAL' ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}` : 
+                   currentDate.getFullYear()}
+                </span>
+                <button onClick={() => changeDate(1)} className="p-1 active:scale-75 transition-transform"><ChevronRight size={28}/></button>
              </div>
           </div>
+
+          <div className="p-4 pb-20">
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+               <div className="p-5 border-b border-slate-100 bg-slate-50/50">
+                  <h3 className="text-xl font-bold text-slate-800">Indicadores Financeiros</h3>
+               </div>
+               
+               <div className="p-2 divide-y divide-slate-100">
+                  <div className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
+                     <div className="flex items-center gap-3">
+                        <div className="w-1 h-10 bg-blue-500 rounded-full"/>
+                        <span className="text-xl font-medium text-slate-900">Vendas</span>
+                     </div>
+                     <div className="flex items-center gap-4">
+                        <span className="text-xl font-bold text-yellow-500">{currentSummary.vendasCount}</span>
+                        <span className="text-xl font-bold text-[#0ea5e9]">R$ {currentSummary.vendasTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <ChevronRight className="text-slate-300" size={20}/>
+                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-slate-50/20">
+                     <div className="flex items-center gap-3 pl-4">
+                        <span className="text-xl font-medium text-slate-800">Lucro Estimado</span>
+                     </div>
+                     <div className="flex items-center gap-4 pr-10">
+                        <span className="text-xl font-bold text-green-600">R$ {currentSummary.lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
+                     <div className="flex items-center gap-3">
+                        <div className="w-1 h-10 bg-green-600 rounded-full"/>
+                        <span className="text-xl font-medium text-slate-900">Recebido</span>
+                     </div>
+                     <div className="flex items-center gap-4">
+                        <span className="text-xl font-bold text-yellow-500">{currentSummary.recebidoCount}</span>
+                        <span className="text-xl font-bold text-green-600">R$ {currentSummary.recebidoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <ChevronRight className="text-slate-300" size={20}/>
+                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
+                     <div className="flex items-center gap-3">
+                        <div className="w-1 h-10 bg-amber-600 rounded-full"/>
+                        <span className="text-xl font-medium text-slate-900">A Receber</span>
+                     </div>
+                     <div className="flex items-center gap-4">
+                        <span className="text-xl font-bold text-yellow-500">{currentSummary.aReceberCount}</span>
+                        <span className="text-xl font-bold text-amber-700">R$ {currentSummary.aReceberTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <ChevronRight className="text-slate-300" size={20}/>
+                     </div>
+                  </div>
+               </div>
+            </div>
+          </div>
+
+          <button onClick={() => setCurrentScreen('HOME')} className="fixed bottom-6 right-6 w-14 h-14 bg-[#0ea5e9] text-white rounded-full shadow-2xl flex items-center justify-center active:scale-90 border-4 border-white">
+            <ArrowLeft size={24}/>
+          </button>
         </div>
       )}
 
       <ProductModal isOpen={productModal.type !== ModalType.NONE} onClose={() => setProductModal({ type: ModalType.NONE })} onSave={handleSaveProduct} initialData={productModal.data} />
       <ClientForm isOpen={clientModal.type !== ModalType.NONE} onClose={() => setClientModal({ type: ModalType.NONE })} onSave={handleSaveClient} initialData={clientModal.data} />
-      <NewSaleModal isOpen={saleModal} onClose={() => setSaleModal(false)} products={products} clients={clients} onFinishSale={handleFinishSale} />
-      <SaleDetailModal isOpen={!!selectedSale} onClose={() => setSelectedSale(null)} sale={selectedSale} profile={businessProfile} clients={clients} />
+      <NewSaleModal isOpen={saleModal} onClose={() => { setSaleModal(false); setEditingSale(null); }} products={products} clients={clients} onFinishSale={handleFinishSale} initialData={editingSale} />
+      <SaleDetailModal isOpen={!!selectedSale} onClose={() => setSelectedSale(null)} sale={selectedSale} profile={businessProfile} clients={clients} onEdit={handleOpenEditSale} />
     </div>
   );
 };

@@ -28,29 +28,33 @@ export interface CartItem extends Product {
   quantity: number;
 }
 
-export interface Sale {
-  id: string;
-  clientId: string;
-  clientName: string;
-  items: CartItem[];
-  total: number;
-  profit?: number;
-  date: string;
-  time?: string;
-  paymentMethod?: string;
-  paymentTerms?: string;
-}
-
 export interface BusinessProfile {
   companyName: string;
   document: string;
   phone: string;
   email: string;
   address: string;
-  logoUrl?: string; // Novo campo para centralizar a logo
+  logoUrl: string;
+  planStatus: string;
+  nextBilling: string;
   pixKey?: string;
-  planStatus: 'FREE' | 'PREMIUM' | 'PRO';
-  nextBilling?: string;
+}
+
+export interface Sale {
+  id: string;
+  clientId: string;
+  clientName: string;
+  items: CartItem[];
+  total: number;
+  profit: number;
+  date: string;
+  time: string;
+  paymentMethod: string;
+  paymentTerms: string;
+  installments: number;
+  status: 'FINALIZADA' | 'ORCAMENTO'; // Novo
+  isPaid: boolean; // Novo
+  deliveryStatus: 'PENDENTE' | 'ENTREGUE'; // Novo
 }
 
 export interface SalesData {
@@ -58,14 +62,19 @@ export interface SalesData {
   revenue: number;
   profit: number;
   sales: number;
+  received: number;
+  toReceive: number;
+  budgets: number;
+  pendingDelivery: number;
 }
 
+// Added StatCardProps interface for StatCard component
 export interface StatCardProps {
   title: string;
   value: string | number;
   trend?: string;
   positive?: boolean;
-  icon?: React.ReactNode;
+  icon: React.ReactNode;
 }
 
 export enum ModalType {

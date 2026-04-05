@@ -2,17 +2,11 @@
 import { GoogleGenAI } from "@google/genai";
 import { SalesData } from "../types.ts";
 
-const getAIClient = () => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    throw new Error("API Key não configurada. Configure a variável de ambiente API_KEY.");
-  }
-  return new GoogleGenAI({ apiKey });
-};
-
+// Removed helper function to follow the requirement of creating a new instance right before use
 export const generateProductDescription = async (name: string, category: string, price: number): Promise<string> => {
   try {
-    const ai = getAIClient();
+    // Initializing GoogleGenAI directly using process.env.API_KEY right before calling generateContent
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -36,7 +30,8 @@ export const generatePerformanceReport = async (monthlyData: SalesData[]): Promi
       return "Ainda não há dados de vendas suficientes para gerar uma análise mensal. Registre suas primeiras vendas para começar!";
     }
 
-    const ai = getAIClient();
+    // Initializing GoogleGenAI directly using process.env.API_KEY right before calling generateContent
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     const dataSummary = monthlyData.map(d => 
       `- Mês: ${d.name} | Receita: R$ ${d.revenue.toFixed(2)} | Lucro: R$ ${d.profit.toFixed(2)} | Qtd Pedidos: ${d.sales}`
