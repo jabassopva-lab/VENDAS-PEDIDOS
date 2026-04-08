@@ -42,8 +42,8 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, onSave, initia
     try {
       await onSave(formData);
       onClose();
-    } catch (error) {
-      // O erro será tratado pelo alert no componente pai (App.tsx)
+    } catch (error: any) {
+      console.error("Erro ao salvar cliente:", error);
     } finally {
       setIsSaving(false);
     }

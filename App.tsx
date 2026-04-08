@@ -135,8 +135,9 @@ const App: React.FC = () => {
       setClients(c || []);
       setSalesHistory(s || []);
       if (prof) setBusinessProfile(prof);
-    } catch (e) {
-      console.error("Erro ao sincronizar dados", e);
+    } catch (e: any) {
+      console.error("Erro ao sincronizar dados:", e);
+      alert(`Erro de conexão com o Banco de Dados: ${e.message || 'Verifique sua internet ou as chaves do Supabase.'}`);
     } finally {
       setLoading(false);
     }
@@ -165,8 +166,9 @@ const App: React.FC = () => {
       setProducts(prev => isEdit ? prev.map(p => p.id === editId ? (saved as Product) : p) : [saved as Product, ...prev]);
       setProductModal({ type: ModalType.NONE });
       triggerNotify('Produto Salvo!');
-    } catch (e) {
-      alert("Erro ao salvar produto.");
+    } catch (e: any) {
+      console.error("Erro ao salvar produto:", e);
+      alert(`Erro ao salvar produto: ${e.message || 'Verifique se as tabelas foram criadas no Supabase.'}`);
     }
   };
 
@@ -176,11 +178,21 @@ const App: React.FC = () => {
       const editId = clientModal.data?.id;
       const payload = isEdit ? { ...data, id: editId } : { ...data };
       const saved = await db.clients.upsert(payload);
-      setClients(prev => isEdit ? prev.map(c => c.id === editId ? (saved as Client) : c) : [saved as Client, ...prev]);
+      
+      if (!saved || !saved.id) {
+        throw new Error("O banco de dados não retornou um ID válido após salvar.");
+      }
+
+      setClients(prev => isEdit 
+        ? prev.map(c => c.id === editId ? (saved as Client) : c) 
+        : [saved as Client, ...prev]
+      );
+      
       setClientModal({ type: ModalType.NONE });
       triggerNotify('Cliente Salvo!');
-    } catch (e) {
-      alert("Erro ao salvar cliente.");
+    } catch (e: any) {
+      console.error("Erro ao salvar cliente:", e);
+      alert(`Erro ao salvar cliente: ${e.message || 'Verifique sua conexão.'}`);
     }
   };
 
