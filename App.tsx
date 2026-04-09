@@ -452,9 +452,14 @@ const App: React.FC = () => {
         <div className="min-h-screen">
           <Header title="Configurações" showBack />
           <SettingsForm profile={businessProfile} onSave={async (newProfile) => { 
-            const saved = await db.profile.update(newProfile);
-            setBusinessProfile(saved);
-            triggerNotify('Perfil Atualizado!'); 
+            try {
+              const saved = await db.profile.update(newProfile);
+              setBusinessProfile(saved);
+              triggerNotify('Perfil Atualizado!'); 
+            } catch (e: any) {
+              console.error("Erro ao salvar perfil:", e);
+              alert(`Erro ao salvar configurações: ${e.message || 'Verifique sua conexão.'}`);
+            }
           }} />
         </div>
       )}

@@ -29,6 +29,8 @@ export interface CartItem extends Product {
 }
 
 export interface BusinessProfile {
+  id?: string;
+  user_id?: string;
   companyName: string;
   document: string;
   phone: string;

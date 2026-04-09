@@ -22,13 +22,18 @@ import { convertDriveLink } from '../App';
 
 interface SettingsFormProps {
   profile: BusinessProfile;
-  onSave: (profile: BusinessProfile) => void;
+  onSave: (profile: BusinessProfile) => Promise<void>;
 }
 
 const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
   const [formData, setFormData] = useState<BusinessProfile>(profile);
   const [logoPreviewError, setLogoPreviewError] = useState(false);
   const [isLoadingLogo, setIsLoadingLogo] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setFormData(profile);
+  }, [profile]);
 
   useEffect(() => {
     setLogoPreviewError(false);
@@ -37,10 +42,14 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
     }
   }, [formData.logoUrl]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
-    alert('Configurações salvas com sucesso!');
+    setIsSaving(true);
+    try {
+      await onSave(formData);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const currentLogo = convertDriveLink(formData.logoUrl || '');
@@ -211,10 +220,15 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
 
       <button 
         type="submit"
-        className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        disabled={isSaving}
+        className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <Save size={20} />
-        SALVAR CONFIGURAÇÕES
+        {isSaving ? (
+          <Loader2 className="animate-spin" size={20} />
+        ) : (
+          <Save size={20} />
+        )}
+        {isSaving ? 'SALVANDO...' : 'SALVAR CONFIGURAÇÕES'}
       </button>
 
     </form>

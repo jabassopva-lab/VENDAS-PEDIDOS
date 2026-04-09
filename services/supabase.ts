@@ -28,6 +28,11 @@ if (isConfigured) {
 const getLocal = (key: string) => JSON.parse(localStorage.getItem(`omnivenda_${key}`) || '[]');
 const setLocal = (key: string, data: any) => localStorage.setItem(`omnivenda_${key}`, JSON.stringify(data));
 
+const getUserId = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user?.id;
+};
+
 export const db = {
   products: {
     getAll: async () => {
@@ -47,9 +52,13 @@ export const db = {
         setLocal('products', products);
         return newProduct;
       }
-      const { data, error } = await supabase.from('products').upsert(product).select();
+      
+      const userId = await getUserId();
+      const payload = { ...product, user_id: userId };
+      
+      const { data, error } = await supabase.from('products').upsert(payload).select();
       if (error) throw error;
-      if (!data || data.length === 0) throw new Error("O banco de dados salvou, mas não permitiu a leitura. Verifique se o RLS está desativado ou se há políticas de acesso no Supabase.");
+      if (!data || data.length === 0) throw new Error("Erro ao salvar produto. Verifique as permissões do RLS.");
       return data[0];
     },
     delete: async (id: string) => {
@@ -65,13 +74,8 @@ export const db = {
   clients: {
     getAll: async () => {
       if (!isConfigured) return getLocal('clients');
-      console.log("Buscando clientes no Supabase...");
       const { data, error } = await supabase.from('clients').select('*').order('name');
-      if (error) {
-        console.error("Erro Supabase (clients):", error);
-        throw error;
-      }
-      console.log(`Clientes encontrados: ${data?.length || 0}`);
+      if (error) throw error;
       return data || [];
     },
     upsert: async (client: any) => {
@@ -86,14 +90,12 @@ export const db = {
         return newClient;
       }
       
-      const { data, error } = await supabase.from('clients').upsert(client).select();
+      const userId = await getUserId();
+      const payload = { ...client, user_id: userId };
       
+      const { data, error } = await supabase.from('clients').upsert(payload).select();
       if (error) throw error;
-      
-      if (!data || data.length === 0) {
-        throw new Error("O banco de dados salvou, mas não permitiu a leitura. Verifique se o RLS está desativado ou se há políticas de acesso no Supabase.");
-      }
-      
+      if (!data || data.length === 0) throw new Error("Erro ao salvar cliente. Verifique as permissões do RLS.");
       return data[0];
     }
   },
@@ -112,9 +114,13 @@ export const db = {
         setLocal('sales', sales);
         return newSale;
       }
-      const { data, error } = await supabase.from('sales').insert(sale).select();
+      
+      const userId = await getUserId();
+      const payload = { ...sale, user_id: userId };
+      
+      const { data, error } = await supabase.from('sales').insert(payload).select();
       if (error) throw error;
-      if (!data || data.length === 0) throw new Error("Venda registrada, mas não foi possível ler o retorno. Verifique o RLS.");
+      if (!data || data.length === 0) throw new Error("Erro ao registrar venda. Verifique as permissões do RLS.");
       return data[0];
     },
     update: async (sale: any) => {
@@ -127,7 +133,11 @@ export const db = {
         }
         return sales[index];
       }
-      const { data, error } = await supabase.from('sales').update(sale).eq('id', sale.id).select();
+      
+      const userId = await getUserId();
+      const payload = { ...sale, user_id: userId };
+      
+      const { data, error } = await supabase.from('sales').update(payload).eq('id', sale.id).select();
       if (error) throw error;
       return data[0];
     }
@@ -135,19 +145,69 @@ export const db = {
   profile: {
     get: async () => {
       if (!isConfigured) return JSON.parse(localStorage.getItem('omnivenda_profile') || 'null');
-      const { data, error } = await supabase.from('profiles').select('*').single();
-      if (error) return null;
-      return data;
+      const { data, error } = await supabase.from('profiles').select('*').maybeSingle();
+      if (error) {
+        console.error("Erro ao buscar perfil:", error);
+        return null;
+      }
+      if (!data) return null;
+      
+      // Mapeia de snake_case para camelCase
+      return {
+        ...data,
+        companyName: data.company_name || data.companyName,
+        logoUrl: data.logo_url || data.logoUrl,
+        planStatus: data.plan_status || data.planStatus,
+        nextBilling: data.next_billing || data.nextBilling,
+        pixKey: data.pix_key || data.pixKey
+      };
     },
     update: async (profile: any) => {
       if (!isConfigured) {
         localStorage.setItem('omnivenda_profile', JSON.stringify(profile));
         return profile;
       }
-      const { data, error } = await supabase.from('profiles').upsert(profile).select();
-      if (error) throw error;
-      if (!data || data.length === 0) throw new Error("Perfil atualizado, mas não foi possível ler o retorno. Verifique o RLS.");
-      return data[0];
+      
+      const userId = await getUserId();
+      if (!userId) throw new Error("Usuário não autenticado.");
+
+      // Mapeamento para snake_case (padrão Postgres)
+      const payload = { 
+        id: userId,
+        user_id: userId,
+        company_name: profile.companyName,
+        document: profile.document,
+        phone: profile.phone,
+        email: profile.email,
+        address: profile.address,
+        logo_url: profile.logoUrl,
+        plan_status: profile.planStatus || 'START',
+        next_billing: profile.nextBilling,
+        pix_key: profile.pixKey
+      };
+      
+      console.log("Salvando perfil no Supabase:", payload);
+      const { data, error } = await supabase.from('profiles').upsert(payload).select();
+      
+      if (error) {
+        console.error("Erro detalhado Supabase (profile):", error);
+        throw error;
+      }
+      
+      if (!data || data.length === 0) {
+        throw new Error("O banco de dados não retornou dados. Verifique o RLS.");
+      }
+      
+      // Mapeia de volta para camelCase
+      const saved = data[0];
+      return {
+        ...saved,
+        companyName: saved.company_name,
+        logoUrl: saved.logo_url,
+        planStatus: saved.plan_status,
+        nextBilling: saved.next_billing,
+        pixKey: saved.pix_key
+      };
     }
   }
 };
