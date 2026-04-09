@@ -134,7 +134,15 @@ const App: React.FC = () => {
       setProducts(p || []);
       setClients(c || []);
       setSalesHistory(s || []);
-      if (prof) setBusinessProfile(prof);
+      
+      if (prof) {
+        setBusinessProfile(prof);
+      } else if (session?.user?.user_metadata?.company_name) {
+        setBusinessProfile(prev => ({
+          ...prev,
+          companyName: session.user.user_metadata.company_name
+        }));
+      }
     } catch (e: any) {
       console.error("Erro ao sincronizar dados:", e);
       alert(`Erro de conexão com o Banco de Dados: ${e.message || 'Verifique sua internet ou as chaves do Supabase.'}`);
@@ -143,10 +151,10 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAuthSuccess = (isTest?: boolean) => {
+  const handleAuthSuccess = (isTest?: boolean, testName?: string) => {
     if (isTest) {
       setIsTestMode(true);
-      setSession({ user: { email: 'demo@omnivenda.com' } });
+      setSession({ user: { email: 'demo@omnivenda.com', user_metadata: { company_name: testName } } });
       localStorage.setItem('omnivenda_test_session', 'active');
       fetchAllData();
     }

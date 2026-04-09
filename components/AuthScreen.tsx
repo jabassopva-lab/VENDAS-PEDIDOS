@@ -1,16 +1,17 @@
 
 import React, { useState } from 'react';
 import { supabase, isConfigured } from '../services/supabase';
-import { Sun, Mail, Lock, Loader2, ArrowRight, UserPlus, LogIn, Palmtree, Store, Cloud, DatabaseZap } from 'lucide-react';
+import { Sun, Mail, Lock, Loader2, ArrowRight, UserPlus, LogIn, Palmtree, Store, Cloud, DatabaseZap, Eye, EyeOff } from 'lucide-react';
 
 interface AuthScreenProps {
-  onAuthSuccess: (isTest?: boolean) => void;
+  onAuthSuccess: (isTest?: boolean, testName?: string) => void;
 }
 
 const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,20 +25,29 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
     setLoading(true);
     setError(null);
 
+    // Converte o identificador em um formato de e-mail para o Supabase Auth
+    // Usamos um domínio mais comum para evitar filtros de validação de domínio do Supabase
+    const loginEmail = identifier.includes('@') 
+      ? identifier 
+      : `${identifier.toLowerCase().trim().replace(/\s+/g, '.')}@omnivenda.com`;
+
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
         if (error) throw error;
       } else {
         const { error } = await supabase.auth.signUp({ 
-          email, 
+          email: loginEmail, 
           password,
           options: {
-            data: { company_name: 'Minha Empresa' }
+            data: { 
+              company_name: identifier,
+              username: identifier.toLowerCase().trim()
+            }
           }
         });
         if (error) throw error;
-        alert('Conta criada! Verifique seu e-mail para confirmar seu acesso.');
+        alert('Conta criada com sucesso! Você já pode acessar o sistema.');
       }
       onAuthSuccess();
     } catch (err: any) {
@@ -48,7 +58,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   };
 
   const handleTestMode = () => {
-    onAuthSuccess(true);
+    onAuthSuccess(true, identifier || 'Empresa de Teste');
   };
 
   return (
@@ -71,13 +81,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
 
         <form onSubmit={handleAuth} className="space-y-4">
           <div className="relative">
-            <Mail className="absolute left-4 top-4 text-slate-400" size={18} />
+            <Store className="absolute left-4 top-4 text-slate-400" size={18} />
             <input 
-              type="email" 
-              placeholder="E-mail profissional" 
+              type="text" 
+              placeholder="Nome da Empresa ou Usuário" 
               className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
+              value={identifier}
+              onChange={e => setIdentifier(e.target.value)}
               required
             />
           </div>
@@ -85,13 +95,21 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
           <div className="relative">
             <Lock className="absolute left-4 top-4 text-slate-400" size={18} />
             <input 
-              type="password" 
-              placeholder="Senha de acesso" 
-              className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
+              type={showPassword ? "text" : "password"} 
+              placeholder="Senha de acesso (mín. 6 caracteres)" 
+              className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
+              minLength={6}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
 
           {error && (
