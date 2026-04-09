@@ -321,9 +321,9 @@ const App: React.FC = () => {
   };
 
   const Header = ({ title, showBack = false, rightAction }: { title: string, showBack?: boolean, rightAction?: React.ReactNode }) => (
-    <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-10 pb-12 px-6 shadow-xl rounded-b-[3.5rem] sticky top-0 z-40 relative overflow-hidden border-b-4 border-yellow-400">
+    <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-6 pb-8 px-6 shadow-xl rounded-b-[2.5rem] sticky top-0 z-40 relative overflow-hidden border-b-4 border-yellow-400">
       <div className="absolute top-0 right-0 p-4 opacity-10 rotate-12 pointer-events-none">
-        <Palmtree size={120} />
+        <Palmtree size={80} />
       </div>
       <div className="flex items-center justify-between relative z-10">
         <div className="flex items-center gap-4">
@@ -332,11 +332,11 @@ const App: React.FC = () => {
               <ArrowLeft size={22} />
             </button>
           ) : (
-            <div onClick={() => setCurrentScreen('SETTINGS')} className="w-16 h-16 bg-white rounded-2xl p-1 shadow-lg cursor-pointer border-2 border-yellow-400 flex items-center justify-center overflow-hidden">
+            <div onClick={() => setCurrentScreen('SETTINGS')} className="w-12 h-12 bg-white rounded-xl p-1 shadow-lg cursor-pointer border-2 border-yellow-400 flex items-center justify-center overflow-hidden">
                {businessProfile.logoUrl ? (
                  <img src={convertDriveLink(businessProfile.logoUrl)} className="w-full h-full object-contain" />
                ) : (
-                 <span className="text-[#0ea5e9] font-black text-xl italic leading-none">{businessProfile.companyName?.charAt(0) || 'O'}</span>
+                 <span className="text-[#0ea5e9] font-black text-lg italic leading-none">{businessProfile.companyName?.charAt(0) || 'O'}</span>
                )}
             </div>
           )}
@@ -395,7 +395,7 @@ const App: React.FC = () => {
       {currentScreen === 'HOME' && (
         <>
           <Header title={businessProfile.companyName || 'Minha Empresa'} />
-          <main className="px-6 -mt-6 relative z-30 space-y-5 pt-1">
+          <main className="px-6 -mt-4 relative z-30 space-y-5 pt-1">
             <div className="grid grid-cols-2 gap-3">
                <div className="bg-white p-5 rounded-[2.2rem] shadow-lg border-b-4 border-[#0ea5e9]/10 flex flex-col h-32 justify-between active:scale-95 transition-all">
                   <div className="bg-[#0ea5e9] w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md"><Wallet size={20}/></div>
