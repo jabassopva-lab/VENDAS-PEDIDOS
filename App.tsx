@@ -321,30 +321,30 @@ const App: React.FC = () => {
   };
 
   const Header = ({ title, showBack = false, rightAction }: { title: string, showBack?: boolean, rightAction?: React.ReactNode }) => (
-    <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-6 pb-8 px-6 shadow-xl rounded-b-[2.5rem] sticky top-0 z-40 relative overflow-hidden border-b-4 border-yellow-400">
+    <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-4 pb-6 px-6 shadow-xl rounded-b-[1.8rem] sticky top-0 z-40 relative overflow-hidden border-b-4 border-yellow-400">
       <div className="absolute top-0 right-0 p-4 opacity-10 rotate-12 pointer-events-none">
-        <Palmtree size={80} />
+        <Palmtree size={60} />
       </div>
       <div className="flex items-center justify-between relative z-10">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {showBack ? (
-            <button onClick={() => setCurrentScreen('HOME')} className="bg-white/20 p-2.5 rounded-2xl active:scale-90 transition-all">
-              <ArrowLeft size={22} />
+            <button onClick={() => setCurrentScreen('HOME')} className="bg-white/20 p-2 rounded-xl active:scale-90 transition-all">
+              <ArrowLeft size={20} />
             </button>
           ) : (
-            <div onClick={() => setCurrentScreen('SETTINGS')} className="w-12 h-12 bg-white rounded-xl p-1 shadow-lg cursor-pointer border-2 border-yellow-400 flex items-center justify-center overflow-hidden">
+            <div onClick={() => setCurrentScreen('SETTINGS')} className="w-10 h-10 bg-white rounded-lg p-1 shadow-lg cursor-pointer border-2 border-yellow-400 flex items-center justify-center overflow-hidden">
                {businessProfile.logoUrl ? (
                  <img src={convertDriveLink(businessProfile.logoUrl)} className="w-full h-full object-contain" />
                ) : (
-                 <span className="text-[#0ea5e9] font-black text-lg italic leading-none">{businessProfile.companyName?.charAt(0) || 'O'}</span>
+                 <span className="text-[#0ea5e9] font-black text-base italic leading-none">{businessProfile.companyName?.charAt(0) || 'O'}</span>
                )}
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="text-lg font-black tracking-tighter uppercase italic leading-none truncate drop-shadow-sm max-w-[180px]">
+            <h1 className="text-base font-black tracking-tighter uppercase italic leading-none truncate drop-shadow-sm max-w-[160px]">
               {title}
             </h1>
-            <p className="text-yellow-300 text-[8px] font-black uppercase tracking-[0.2em] mt-1">
+            <p className="text-yellow-300 text-[7px] font-black uppercase tracking-[0.2em] mt-0.5">
               {isTestMode ? 'Modo Teste Offline' : 'Conectado OmniVenda Cloud'}
             </p>
           </div>
@@ -395,7 +395,7 @@ const App: React.FC = () => {
       {currentScreen === 'HOME' && (
         <>
           <Header title={businessProfile.companyName || 'Minha Empresa'} />
-          <main className="px-6 -mt-4 relative z-30 space-y-5 pt-1">
+          <main className="px-6 -mt-3 relative z-30 space-y-5 pt-1">
             <div className="grid grid-cols-2 gap-3">
                <div className="bg-white p-5 rounded-[2.2rem] shadow-lg border-b-4 border-[#0ea5e9]/10 flex flex-col h-32 justify-between active:scale-95 transition-all">
                   <div className="bg-[#0ea5e9] w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md"><Wallet size={20}/></div>
