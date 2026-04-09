@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { X, Printer, Package, Building2, Calendar, Clock, CreditCard, User, Palmtree, Sun, ShoppingBag, MessageSquare, Share2, Edit3 } from 'lucide-react';
+import { X, Printer, Package, Building2, Calendar, Clock, CreditCard, User, Palmtree, Sun, ShoppingBag, MessageSquare, Share2, Edit3, Trash2 } from 'lucide-react';
 import { Sale, BusinessProfile, Client } from '../types';
 import { convertDriveLink } from '../App';
 
@@ -11,16 +11,27 @@ interface SaleDetailModalProps {
   profile: BusinessProfile;
   clients: Client[];
   onEdit: (sale: Sale) => void;
+  onDelete: (saleId: string) => void;
 }
 
-const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sale, profile, clients, onEdit }) => {
+const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sale, profile, clients, onEdit, onDelete }) => {
   if (!isOpen || !sale) return null;
 
   const clientData = clients.find(c => c.id === sale.clientId);
 
+  const handleDelete = () => {
+    if (window.confirm('Tem certeza que deseja excluir este pedido?')) {
+      onDelete(sale.id);
+      onClose();
+    }
+  };
+
   const handleShareWhatsApp = () => {
     const companyName = profile.companyName || 'OMNIVENDA';
-    const itemsText = sale.items.map(item => `• ${item.quantity}x ${item.name} - R$ ${(item.price * item.quantity).toFixed(2)}`).join('\n');
+    const itemsText = sale.items.map(item => {
+      const unitPrice = item.price - (item.discount || 0);
+      return `• ${item.quantity}x ${item.name} - R$ ${(unitPrice * item.quantity).toFixed(2)}`;
+    }).join('\n');
     
     const message = `*${companyName} - Pedido #${sale.id}*
 ---------------------------
@@ -163,14 +174,17 @@ Obrigado pela preferência!`;
                             </tr>
                         </thead>
                         <tbody>
-                            ${sale.items.map(item => `
-                            <tr>
-                                <td style="font-weight: 600;">${item.name}</td>
-                                <td style="text-align: center;">${item.quantity}</td>
-                                <td style="text-align: right;">R$ ${item.price.toFixed(2)}</td>
-                                <td style="text-align: right; font-weight: 700;">R$ ${(item.price * item.quantity).toFixed(2)}</td>
-                            </tr>
-                            `).join('')}
+                            ${sale.items.map(item => {
+                                const unitPrice = item.price - (item.discount || 0);
+                                return `
+                                <tr>
+                                    <td style="font-weight: 600;">${item.name}</td>
+                                    <td style="text-align: center;">${item.quantity}</td>
+                                    <td style="text-align: right;">R$ ${unitPrice.toFixed(2)}</td>
+                                    <td style="text-align: right; font-weight: 700;">R$ ${(unitPrice * item.quantity).toFixed(2)}</td>
+                                </tr>
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -222,6 +236,9 @@ Obrigado pela preferência!`;
               </div>
            </div>
            <div className="flex gap-2">
+              <button onClick={handleDelete} className="bg-red-50 p-2 rounded-xl hover:bg-red-100 transition-colors text-red-600" title="Excluir Pedido">
+                <Trash2 size={20} />
+              </button>
               <button onClick={() => onEdit(sale)} className="bg-blue-50 p-2 rounded-xl hover:bg-blue-100 transition-colors text-blue-600" title="Editar Pedido">
                 <Edit3 size={20} />
               </button>
@@ -274,9 +291,14 @@ Obrigado pela preferência!`;
                       <div className="text-[10px] font-black text-slate-300 w-6">
                          {item.quantity}x
                       </div>
-                      <span className="font-bold text-slate-700 text-xs uppercase italic">{item.name}</span>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-700 text-xs uppercase italic">{item.name}</span>
+                        {item.discount > 0 && (
+                          <span className="text-[8px] font-black text-red-500 uppercase">Desc. R$ {item.discount.toFixed(2)} un.</span>
+                        )}
+                      </div>
                   </div>
-                  <span className="font-black text-slate-900 text-xs">R$ {(item.quantity * item.price).toFixed(2)}</span>
+                  <span className="font-black text-slate-900 text-xs">R$ {((item.price - (item.discount || 0)) * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
               
@@ -305,13 +327,13 @@ Obrigado pela preferência!`;
         <div className="p-6 bg-white border-t border-slate-50 flex gap-3">
           <button 
             onClick={handleShareWhatsApp}
-            className="flex-1 bg-white border border-emerald-100 text-emerald-600 py-4 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest hover:bg-emerald-50 active:scale-95 transition-all"
+            className="flex-1 bg-white border border-emerald-100 text-emerald-600 py-4 rounded-2xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest hover:bg-emerald-50 active:scale-95 transition-all"
           >
             <MessageSquare size={16} /> WhatsApp
           </button>
           <button 
             onClick={handlePrint}
-            className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 active:scale-95 transition-all"
+            className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest hover:bg-slate-200 active:scale-95 transition-all"
           >
             <Printer size={16} /> Imprimir
           </button>

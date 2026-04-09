@@ -78,8 +78,20 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
       if (existing) {
         return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, { ...product, quantity: 1, useWholesale: false, discount: 0 }];
     });
+  };
+
+  const toggleWholesale = (productId: string) => {
+    setCart(prev => prev.map(item => {
+      if (item.id === productId) {
+        const newUseWholesale = !item.useWholesale;
+        const product = products.find(p => p.id === productId);
+        const newPrice = newUseWholesale && product?.wholesalePrice ? product.wholesalePrice : (product?.price || item.price);
+        return { ...item, useWholesale: newUseWholesale, price: newPrice, discount: 0 };
+      }
+      return item;
+    }));
   };
 
   const updateQuantity = (productId: string, delta: number) => {
@@ -91,7 +103,16 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
     }).filter(item => item.quantity > 0));
   };
 
-  const cartTotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const updateDiscount = (productId: string, discount: number) => {
+    setCart(prev => prev.map(item => {
+      if (item.id === productId) {
+        return { ...item, discount: Math.max(0, discount) };
+      }
+      return item;
+    }));
+  };
+
+  const cartTotal = cart.reduce((acc, item) => acc + ((item.price - (item.discount || 0)) * item.quantity), 0);
   const cartCost = cart.reduce((acc, item) => acc + ((item.costPrice || 0) * item.quantity), 0);
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -183,19 +204,19 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
               {filteredProducts.map(product => {
                 const inCart = cart.find(c => c.id === product.id);
                 return (
-                  <div key={product.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center active:scale-[0.99] transition-transform">
-                    <div className="flex items-center gap-3">
-                         <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden shadow-inner">
-                            {product.imageUrl ? <img src={product.imageUrl} alt="" className="w-full h-full object-cover" /> : <Package size={20} className="text-gray-300" />}
+                  <div key={product.id} className="bg-white p-2.5 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center active:scale-[0.99] transition-transform">
+                    <div className="flex items-center gap-2">
+                         <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden shadow-inner">
+                            {product.imageUrl ? <img src={product.imageUrl} alt="" className="w-full h-full object-cover" /> : <Package size={18} className="text-gray-300" />}
                          </div>
                          <div>
-                            <h4 className="font-black text-slate-800 uppercase text-xs italic leading-none">{product.name}</h4>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase mt-1">Estoque: {product.stock}</p>
-                            <p className="font-black text-blue-600 mt-1">R$ {product.price.toFixed(2)}</p>
+                            <h4 className="font-black text-slate-800 uppercase text-[10px] italic leading-tight max-w-[140px] truncate">{product.name}</h4>
+                            <p className="text-[9px] font-bold text-gray-400 uppercase mt-0.5">Estoque: {product.stock}</p>
+                            <p className="font-black text-blue-600 text-xs mt-0.5">R$ {product.price.toFixed(2)}</p>
                         </div>
                     </div>
                     {inCart ? (
@@ -232,7 +253,7 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
                          className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border-2 transition-all active:scale-95 ${isActive ? `border-blue-500 ${method.bg}` : 'border-slate-50 bg-slate-50 opacity-60'}`}
                        >
                          <Icon size={20} className={isActive ? method.color : 'text-slate-400'} />
-                         <span className={`text-[8px] font-black uppercase italic ${isActive ? 'text-slate-800' : 'text-slate-400'}`}>{method.id}</span>
+                         <span className={`text-[10px] font-black uppercase italic ${isActive ? 'text-slate-800' : 'text-slate-400'}`}>{method.id}</span>
                        </button>
                      );
                    })}
@@ -242,13 +263,13 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
                <div className="grid grid-cols-2 gap-3 mb-2">
                  <button 
                   onClick={() => setIsPaid(!isPaid)} 
-                  className={`flex items-center justify-center gap-2 p-3 rounded-2xl border-2 transition-all font-black text-[10px] uppercase italic ${isPaid ? 'bg-green-50 border-green-500 text-green-700' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
+                  className={`flex items-center justify-center gap-2 p-3 rounded-2xl border-2 transition-all font-black text-xs uppercase italic ${isPaid ? 'bg-green-50 border-green-500 text-green-700' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
                  >
                    <Banknote size={16}/> {isPaid ? 'Valor Recebido' : 'A Receber'}
                  </button>
                  <button 
                   onClick={() => setIsPendingDelivery(!isPendingDelivery)} 
-                  className={`flex items-center justify-center gap-2 p-3 rounded-2xl border-2 transition-all font-black text-[10px] uppercase italic ${isPendingDelivery ? 'bg-purple-50 border-purple-500 text-purple-700' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
+                  className={`flex items-center justify-center gap-2 p-3 rounded-2xl border-2 transition-all font-black text-xs uppercase italic ${isPendingDelivery ? 'bg-purple-50 border-purple-500 text-purple-700' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
                  >
                    <Truck size={16}/> {isPendingDelivery ? 'Entrega Pendente' : 'Entregue'}
                  </button>
@@ -256,8 +277,8 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
 
                <div className="space-y-4">
                  <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-2xl">
-                    <button onClick={() => setPaymentType('A_VISTA')} className={`py-2 rounded-xl font-black text-[10px] uppercase transition-all ${paymentType === 'A_VISTA' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}>À Vista</button>
-                    <button onClick={() => setPaymentType('PARCELADO')} className={`py-2 rounded-xl font-black text-[10px] uppercase transition-all ${paymentType === 'PARCELADO' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}>Parcelado</button>
+                    <button onClick={() => setPaymentType('A_VISTA')} className={`py-2 rounded-xl font-black text-xs uppercase transition-all ${paymentType === 'A_VISTA' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}>À Vista</button>
+                    <button onClick={() => setPaymentType('PARCELADO')} className={`py-2 rounded-xl font-black text-xs uppercase transition-all ${paymentType === 'PARCELADO' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}>Parcelado</button>
                  </div>
 
                  <div className="grid grid-cols-2 gap-4">
@@ -276,16 +297,46 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
              </div>
 
              <div className="space-y-2">
-               {cart.map(item => (
-                 <div key={item.id} className="bg-white p-3 rounded-xl border border-gray-100 flex justify-between items-center">
-                   <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center font-black text-blue-600 text-[10px]">{item.quantity}x</div>
-                      <h4 className="font-black text-slate-800 uppercase italic text-[10px]">{item.name}</h4>
-                   </div>
-                   <span className="font-black text-slate-900 text-[10px]">R$ {(item.price * item.quantity).toFixed(2)}</span>
-                 </div>
-               ))}
-             </div>
+                {cart.map(item => (
+                  <div key={item.id} className="bg-white p-3 rounded-2xl border border-gray-100 flex flex-col gap-2 shadow-sm">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                         <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center font-black text-blue-600 text-[10px] border border-blue-100">{item.quantity}x</div>
+                         <h4 className="font-black text-slate-800 uppercase italic text-[10px] truncate max-w-[180px] leading-tight">{item.name}</h4>
+                      </div>
+                      <span className="font-black text-slate-900 text-[11px] tabular-nums">R$ {((item.price - (item.discount || 0)) * item.quantity).toFixed(2)}</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 bg-red-50/50 p-2 rounded-xl border border-red-100 flex-1 group focus-within:border-red-300 transition-colors">
+                        <span className="text-[8px] font-black text-red-400 uppercase ml-1 tracking-wider">Desc. Unit.</span>
+                        <div className="flex items-center gap-1 flex-1 justify-end">
+                          <span className="text-[10px] font-black text-red-300">R$</span>
+                          <input 
+                            type="number" 
+                            step="0.01"
+                            min="0"
+                            placeholder="0,00"
+                            className="w-16 bg-transparent outline-none text-[11px] font-black text-red-600 text-right placeholder:text-red-200"
+                            value={item.discount || ''}
+                            onChange={(e) => updateDiscount(item.id, parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+                      </div>
+
+                      {item.wholesalePrice && (
+                        <button 
+                          type="button"
+                          onClick={() => toggleWholesale(item.id)}
+                          className={`text-[9px] font-black px-3 py-2 rounded-xl border transition-all whitespace-nowrap active:scale-95 ${item.useWholesale ? 'bg-purple-600 border-purple-600 text-white shadow-md' : 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100'}`}
+                        >
+                          {item.useWholesale ? 'ATACADO ATIVO' : 'USAR ATACADO'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
           </div>
         )}
       </div>
@@ -301,12 +352,12 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
 
         <div className="flex gap-3">
           {step === 'SELECTION' ? (
-             <button onClick={() => setStep('CART')} className="flex-1 bg-slate-100 text-slate-600 font-black py-4 rounded-2xl uppercase text-[10px] italic" disabled={cart.length === 0}>Revisar Alterações</button>
+             <button onClick={() => setStep('CART')} className="flex-1 bg-slate-100 text-slate-600 font-black py-4 rounded-2xl uppercase text-xs italic" disabled={cart.length === 0}>Revisar Alterações</button>
           ) : (
             <>
-              <button onClick={() => setStep('SELECTION')} className="flex-1 bg-slate-100 text-slate-600 font-black py-4 rounded-2xl uppercase text-[10px] italic">Voltar</button>
-              <button onClick={() => handleFinish('ORCAMENTO')} className="flex-1 bg-amber-100 text-amber-700 font-black py-4 rounded-2xl uppercase text-[10px] italic flex items-center justify-center gap-1 border-2 border-amber-200"><FileText size={16}/> Orçamento</button>
-              <button onClick={() => handleFinish('FINALIZADA')} className="flex-[1.5] bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 uppercase text-[10px] italic"><Check size={20} strokeWidth={4} /> {initialData ? 'Salvar Edição' : 'Finalizar'}</button>
+              <button onClick={() => setStep('SELECTION')} className="flex-1 bg-slate-100 text-slate-600 font-black py-4 rounded-2xl uppercase text-xs italic">Voltar</button>
+              <button onClick={() => handleFinish('ORCAMENTO')} className="flex-1 bg-amber-100 text-amber-700 font-black py-4 rounded-2xl uppercase text-xs italic flex items-center justify-center gap-1 border-2 border-amber-200"><FileText size={16}/> Orçamento</button>
+              <button onClick={() => handleFinish('FINALIZADA')} className="flex-[1.5] bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 uppercase text-xs italic"><Check size={20} strokeWidth={4} /> {initialData ? 'Salvar Edição' : 'Finalizar'}</button>
             </>
           )}
         </div>

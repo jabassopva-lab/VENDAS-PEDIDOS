@@ -39,7 +39,10 @@ export const db = {
       if (!isConfigured) return getLocal('products');
       const { data, error } = await supabase.from('products').select('*').order('name');
       if (error) throw error;
-      return data || [];
+      return (data || []).map((p: any) => ({
+        ...p,
+        wholesalePrice: p.wholesale_price
+      }));
     },
     upsert: async (product: any) => {
       if (!isConfigured) {
@@ -54,12 +57,22 @@ export const db = {
       }
       
       const userId = await getUserId();
-      const payload = { ...product, user_id: userId };
+      const payload = { 
+        ...product, 
+        user_id: userId,
+        wholesale_price: product.wholesalePrice 
+      };
+      delete payload.wholesalePrice;
       
       const { data, error } = await supabase.from('products').upsert(payload).select();
       if (error) throw error;
       if (!data || data.length === 0) throw new Error("Erro ao salvar produto. Verifique as permissões do RLS.");
-      return data[0];
+      
+      const saved = data[0];
+      return {
+        ...saved,
+        wholesalePrice: saved.wholesale_price
+      };
     },
     delete: async (id: string) => {
       if (!isConfigured) {
@@ -140,6 +153,15 @@ export const db = {
       const { data, error } = await supabase.from('sales').update(payload).eq('id', sale.id).select();
       if (error) throw error;
       return data[0];
+    },
+    delete: async (id: string) => {
+      if (!isConfigured) {
+        const sales = getLocal('sales').filter((s: any) => s.id !== id);
+        setLocal('sales', sales);
+        return;
+      }
+      const { error } = await supabase.from('sales').delete().eq('id', id);
+      if (error) throw error;
     }
   },
   profile: {

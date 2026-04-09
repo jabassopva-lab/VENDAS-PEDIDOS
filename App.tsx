@@ -97,6 +97,7 @@ const App: React.FC = () => {
   const [saleModal, setSaleModal] = useState<boolean>(false);
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [catalogSearch, setCatalogSearch] = useState('');
 
   useEffect(() => {
     const savedTest = localStorage.getItem('omnivenda_test_session');
@@ -271,6 +272,34 @@ const App: React.FC = () => {
     setSaleModal(true);
   };
 
+  const handleDeleteSale = async (saleId: string) => {
+    try {
+      const saleToDelete = salesHistory.find(s => s.id === saleId);
+      if (!saleToDelete) return;
+
+      // Se a venda estava finalizada, devolve o estoque
+      if (saleToDelete.status === 'FINALIZADA') {
+        const productUpdates = products.map(p => {
+          const item = saleToDelete.items.find(i => i.id === p.id);
+          if (item) {
+            const newStock = p.stock + item.quantity;
+            db.products.upsert({ ...p, stock: newStock });
+            return { ...p, stock: newStock };
+          }
+          return p;
+        });
+        setProducts(productUpdates);
+      }
+
+      await db.sales.delete(saleId);
+      setSalesHistory(prev => prev.filter(s => s.id !== saleId));
+      triggerNotify('Pedido Excluído!');
+    } catch (e) {
+      console.error("Erro ao excluir venda:", e);
+      alert("Erro ao excluir pedido.");
+    }
+  };
+
   const handleLogout = async () => {
     if (isTestMode) {
       localStorage.removeItem('omnivenda_test_session');
@@ -413,35 +442,35 @@ const App: React.FC = () => {
                </div>
             </div>
 
-            <button onClick={() => { setEditingSale(null); setSaleModal(true); }} className="w-full bg-yellow-400 text-[#1e293b] p-6 rounded-[2.8rem] shadow-xl shadow-yellow-200/50 flex items-center justify-between group active:scale-[0.96] transition-all border-b-8 border-yellow-600">
+            <button onClick={() => { setEditingSale(null); setSaleModal(true); }} className="w-full bg-yellow-400 text-[#1e293b] py-4 px-6 rounded-[2.5rem] shadow-xl shadow-yellow-200/50 flex items-center justify-between group active:scale-[0.96] transition-all border-b-6 border-yellow-600">
               <div className="flex items-center gap-4">
-                 <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-yellow-500 shadow-inner"><Plus size={30} strokeWidth={4} /></div>
+                 <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-yellow-500 shadow-inner"><Plus size={24} strokeWidth={4} /></div>
                  <div className="text-left">
-                    <h3 className="text-xl font-black uppercase italic tracking-tighter leading-none">Novo Pedido</h3>
-                    <p className="text-amber-900/60 text-[8px] font-black uppercase mt-1">
+                    <h3 className="text-lg font-black uppercase italic tracking-tighter leading-none">Novo Pedido</h3>
+                    <p className="text-amber-900/60 text-[7px] font-black uppercase mt-1">
                       {isTestMode ? 'Teste Local (Offline)' : 'Nuvem Multi-Empresa'}
                     </p>
                  </div>
               </div>
-              <ChevronRight size={28} className="text-amber-900/20" />
+              <ChevronRight size={24} className="text-amber-900/20" />
             </button>
 
             <div className="grid grid-cols-2 gap-3">
                <button onClick={() => setCurrentScreen('CLIENTS')} className="bg-white p-6 rounded-[2.5rem] shadow-md border-b-4 border-slate-50 flex flex-col items-center gap-2 active:scale-95 transition-all group">
                   <div className="w-14 h-14 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-500 group-hover:bg-sky-500 group-hover:text-white transition-all"><Users size={28} /></div>
-                  <p className="font-black text-slate-800 uppercase text-[9px] tracking-widest">Clientes ({clients.length})</p>
+                  <p className="font-black text-slate-800 uppercase text-[10px] tracking-widest">Clientes ({clients.length})</p>
                </button>
                <button onClick={() => setCurrentScreen('PRODUCTS')} className="bg-white p-6 rounded-[2.5rem] shadow-md border-b-4 border-slate-50 flex flex-col items-center gap-2 active:scale-95 transition-all group">
                   <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 group-hover:bg-red-500 group-hover:text-white transition-all"><Package size={28} /></div>
-                  <p className="font-black text-slate-800 uppercase text-[9px] tracking-widest">Catálogo ({products.length})</p>
+                  <p className="font-black text-slate-800 uppercase text-[10px] tracking-widest">Catálogo ({products.length})</p>
                </button>
                <button onClick={() => setCurrentScreen('MONTHLY_SALES')} className="bg-white p-6 rounded-[2.5rem] shadow-md border-b-4 border-slate-50 flex flex-col items-center gap-2 active:scale-95 transition-all group">
                   <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-500 group-hover:bg-green-500 group-hover:text-white transition-all"><ClipboardList size={28} /></div>
-                  <p className="font-black text-slate-800 uppercase text-[9px] tracking-widest">Histórico</p>
+                  <p className="font-black text-slate-800 uppercase text-[10px] tracking-widest">Histórico</p>
                </button>
                <button onClick={() => setCurrentScreen('REPORTS')} className="bg-[#1e293b] p-6 rounded-[2.5rem] shadow-md border-b-4 border-black flex flex-col items-center gap-2 active:scale-95 transition-all group text-white">
                   <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-yellow-400 group-hover:bg-yellow-400 group-hover:text-black transition-all"><BarChart3 size={28} /></div>
-                  <p className="font-black uppercase text-[9px] tracking-widest">Relatório</p>
+                  <p className="font-black uppercase text-[10px] tracking-widest">Relatório</p>
                </button>
             </div>
           </main>
@@ -489,17 +518,33 @@ const App: React.FC = () => {
       {currentScreen === 'PRODUCTS' && (
         <div className="min-h-screen">
           <Header title="Catálogo" showBack rightAction={<button onClick={() => setProductModal({ type: ModalType.ADD })} className="bg-white/20 p-2.5 rounded-2xl"><Plus size={22} /></button>} />
-          <div className="px-6 py-8 space-y-4">
-             {products.length === 0 ? <EmptyState message="Estoque Vazio" icon={Package} /> : (
-               products.map(p => (
-                 <div key={p.id} onClick={() => setProductModal({ type: ModalType.EDIT, data: p })} className="bg-white p-4 rounded-[2.5rem] shadow-lg flex items-center gap-4 active:scale-95 transition-all cursor-pointer border-b-4 border-slate-100 group">
-                    <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center overflow-hidden flex-shrink-0 shadow-inner group-hover:bg-red-100">
-                       {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <Package className="text-red-200" size={32} />}
+          
+          <div className="px-6 pt-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 text-gray-400" size={18} />
+              <input 
+                type="text" 
+                placeholder="Buscar produto por nome..." 
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition-all font-medium shadow-sm"
+                value={catalogSearch}
+                onChange={(e) => setCatalogSearch(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="px-6 py-6 space-y-3">
+             {products.filter(p => p.name.toLowerCase().includes(catalogSearch.toLowerCase())).length === 0 ? <EmptyState message={catalogSearch ? "Nenhum produto encontrado" : "Estoque Vazio"} icon={Package} /> : (
+               products
+                .filter(p => p.name.toLowerCase().includes(catalogSearch.toLowerCase()))
+                .map(p => (
+                 <div key={p.id} onClick={() => setProductModal({ type: ModalType.EDIT, data: p })} className="bg-white p-3 rounded-2xl shadow-lg flex items-center gap-3 active:scale-95 transition-all cursor-pointer border-b-4 border-slate-100 group">
+                    <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0 shadow-inner group-hover:bg-red-100">
+                       {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <Package className="text-red-200" size={28} />}
                     </div>
                     <div className="flex-1 min-w-0">
                        <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-lg text-[8px] font-black uppercase mb-1 inline-block">QTD: {p.stock}</span>
-                       <h3 className="font-black text-slate-800 text-base truncate mb-0.5 uppercase italic leading-none">{p.name}</h3>
-                       <p className="text-xl font-black text-[#0ea5e9]">R$ {Number(p.price).toFixed(2)}</p>
+                       <h3 className="font-black text-slate-800 text-sm truncate mb-0.5 uppercase italic leading-none">{p.name}</h3>
+                       <p className="text-lg font-black text-[#0ea5e9]">R$ {Number(p.price).toFixed(2)}</p>
                     </div>
                  </div>
                ))
@@ -511,22 +556,22 @@ const App: React.FC = () => {
       {currentScreen === 'MONTHLY_SALES' && (
         <div className="min-h-screen">
           <Header title="Histórico" showBack />
-          <div className="px-6 py-8 space-y-3">
+          <div className="px-6 py-6 space-y-2">
             {salesHistory.length === 0 ? <EmptyState message="Sem vendas registradas" icon={ClipboardList} /> : (
               salesHistory.map(sale => (
-                <div key={sale.id} onClick={() => setSelectedSale(sale)} className="bg-white p-5 rounded-[2.2rem] shadow-md border-b-6 border-slate-50 flex items-center justify-between active:scale-95 transition-all group">
-                   <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform ${sale.status === 'ORCAMENTO' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600'}`}>
-                        {sale.status === 'ORCAMENTO' ? <FileText size={24}/> : <ShoppingBag size={24} />}
+                <div key={sale.id} onClick={() => setSelectedSale(sale)} className="bg-white p-3 rounded-2xl shadow-md border-b-4 border-slate-50 flex items-center justify-between active:scale-95 transition-all group">
+                   <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform ${sale.status === 'ORCAMENTO' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600'}`}>
+                        {sale.status === 'ORCAMENTO' ? <FileText size={20}/> : <ShoppingBag size={20} />}
                       </div>
                       <div className="min-w-0">
-                         <h4 className="font-black text-slate-800 text-sm uppercase italic leading-tight truncate">{sale.clientName}</h4>
-                         <p className="text-[8px] font-black text-slate-400 uppercase mt-0.5">{sale.date} • {sale.status}</p>
+                         <h4 className="font-black text-slate-800 text-xs uppercase italic leading-tight truncate max-w-[120px]">{sale.clientName}</h4>
+                         <p className="text-[7px] font-black text-slate-400 uppercase mt-0.5">{sale.date} • {sale.status}</p>
                       </div>
                    </div>
                    <div className="text-right flex-shrink-0">
-                      <p className="text-lg font-black text-[#0ea5e9]">R$ {Number(sale.total).toFixed(2)}</p>
-                      <p className={`text-[8px] font-black uppercase italic ${sale.isPaid ? 'text-green-500' : 'text-red-400'}`}>{sale.isPaid ? 'Pago' : 'Pendente'}</p>
+                      <p className="text-base font-black text-[#0ea5e9]">R$ {Number(sale.total).toFixed(2)}</p>
+                      <p className={`text-[7px] font-black uppercase italic ${sale.isPaid ? 'text-green-500' : 'text-red-400'}`}>{sale.isPaid ? 'Pago' : 'Pendente'}</p>
                    </div>
                 </div>
               ))
@@ -618,7 +663,7 @@ const App: React.FC = () => {
       <ProductModal isOpen={productModal.type !== ModalType.NONE} onClose={() => setProductModal({ type: ModalType.NONE })} onSave={handleSaveProduct} initialData={productModal.data} />
       <ClientForm isOpen={clientModal.type !== ModalType.NONE} onClose={() => setClientModal({ type: ModalType.NONE })} onSave={handleSaveClient} initialData={clientModal.data} />
       <NewSaleModal isOpen={saleModal} onClose={() => { setSaleModal(false); setEditingSale(null); }} products={products} clients={clients} onFinishSale={handleFinishSale} initialData={editingSale} />
-      <SaleDetailModal isOpen={!!selectedSale} onClose={() => setSelectedSale(null)} sale={selectedSale} profile={businessProfile} clients={clients} onEdit={handleOpenEditSale} />
+      <SaleDetailModal isOpen={!!selectedSale} onClose={() => setSelectedSale(null)} sale={selectedSale} profile={businessProfile} clients={clients} onEdit={handleOpenEditSale} onDelete={handleDeleteSale} />
     </div>
   );
 };

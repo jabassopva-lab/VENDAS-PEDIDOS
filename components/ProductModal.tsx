@@ -31,6 +31,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
   const [barcode, setBarcode] = useState('');
   const [costPrice, setCostPrice] = useState('');
   const [sellPrice, setSellPrice] = useState('');
+  const [wholesalePrice, setWholesalePrice] = useState('');
   const [supplier, setSupplier] = useState('');
   const [stock, setStock] = useState('');
   const [description, setDescription] = useState('');
@@ -45,6 +46,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
       setBarcode(initialData.barcode || '');
       setCostPrice(initialData.costPrice.toString());
       setSellPrice(initialData.price.toString());
+      setWholesalePrice(initialData.wholesalePrice?.toString() || '');
       setSupplier(initialData.supplier || '');
       setStock(initialData.stock.toString());
       setDescription(initialData.description || '');
@@ -61,6 +63,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
     setBarcode('');
     setCostPrice('');
     setSellPrice('');
+    setWholesalePrice('');
     setSupplier('');
     setStock('');
     setDescription('');
@@ -109,6 +112,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
       barcode,
       costPrice: cost,
       price: sell,
+      wholesalePrice: parseFloat(wholesalePrice) || undefined,
       supplier,
       stock: parseInt(stock) || 0,
       description,
@@ -246,6 +250,20 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
                     value={sellPrice}
                     onChange={e => setSellPrice(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none font-black text-blue-700 text-lg"
+                    placeholder="0,00"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Preço de Atacado (Desconto)</label>
+                <div className="relative mt-1">
+                  <span className="absolute left-4 top-3.5 text-purple-400 font-bold text-sm">R$</span>
+                  <input 
+                    type="number"
+                    step="0.01"
+                    value={wholesalePrice}
+                    onChange={e => setWholesalePrice(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none font-bold text-purple-700"
                     placeholder="0,00"
                   />
                 </div>

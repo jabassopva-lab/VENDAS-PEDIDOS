@@ -6,6 +6,7 @@ export interface Product {
   name: string;
   price: number;
   costPrice: number;
+  wholesalePrice?: number;
   category: string;
   description: string;
   stock: number;
@@ -26,6 +27,8 @@ export interface Client {
 
 export interface CartItem extends Product {
   quantity: number;
+  useWholesale?: boolean;
+  discount?: number;
 }
 
 export interface BusinessProfile {
