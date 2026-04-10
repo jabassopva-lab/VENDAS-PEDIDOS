@@ -433,7 +433,7 @@ const App: React.FC = () => {
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="text-xl font-black tracking-tighter uppercase italic leading-none truncate drop-shadow-sm max-w-[200px]">
+            <h1 className="text-3xl font-black tracking-tighter uppercase italic leading-none truncate drop-shadow-sm max-w-[220px]">
               {title}
             </h1>
             <p className="text-yellow-300 text-[9px] font-black uppercase tracking-[0.2em] mt-1">
@@ -880,6 +880,12 @@ const App: React.FC = () => {
       <ClientForm isOpen={clientModal.type !== ModalType.NONE} onClose={() => setClientModal({ type: ModalType.NONE })} onSave={handleSaveClient} initialData={clientModal.data} />
       <NewSaleModal isOpen={saleModal} onClose={() => { setSaleModal(false); setEditingSale(null); }} products={products} clients={clients} onFinishSale={handleFinishSale} initialData={editingSale} />
       <SaleDetailModal isOpen={!!selectedSale} onClose={() => setSelectedSale(null)} sale={selectedSale} profile={businessProfile} clients={clients} onEdit={handleOpenEditSale} onDelete={handleDeleteSale} />
+      
+      <footer className="py-6 text-center border-t border-slate-100 bg-white/50">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+          © {new Date().getFullYear()} Todos os direitos reservados JABASSO
+        </p>
+      </footer>
     </div>
   );
 };
