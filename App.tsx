@@ -413,30 +413,30 @@ const App: React.FC = () => {
   };
 
   const Header = ({ title, showBack = false, rightAction }: { title: string, showBack?: boolean, rightAction?: React.ReactNode }) => (
-    <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-4 pb-6 px-6 shadow-xl rounded-b-[1.8rem] sticky top-0 z-40 relative overflow-hidden border-b-4 border-yellow-400">
+    <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-5 pb-7 px-6 shadow-xl rounded-b-[1.8rem] sticky top-0 z-40 relative overflow-hidden border-b-4 border-yellow-400">
       <div className="absolute top-0 right-0 p-4 opacity-10 rotate-12 pointer-events-none">
         <Palmtree size={60} />
       </div>
       <div className="flex items-center justify-between relative z-10">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {showBack ? (
             <button onClick={() => setCurrentScreen('HOME')} className="bg-white/20 p-2 rounded-xl active:scale-90 transition-all">
               <ArrowLeft size={20} />
             </button>
           ) : (
-            <div onClick={() => setCurrentScreen('SETTINGS')} className="w-10 h-10 bg-white rounded-lg p-1 shadow-lg cursor-pointer border-2 border-yellow-400 flex items-center justify-center overflow-hidden">
+            <div onClick={() => setCurrentScreen('SETTINGS')} className="w-14 h-14 bg-white rounded-xl shadow-lg cursor-pointer border-2 border-yellow-400 flex items-center justify-center overflow-hidden">
                {businessProfile.logoUrl ? (
-                 <img src={convertDriveLink(businessProfile.logoUrl)} className="w-full h-full object-contain" />
+                 <img src={convertDriveLink(businessProfile.logoUrl)} className="w-full h-full object-cover" />
                ) : (
-                 <span className="text-[#0ea5e9] font-black text-base italic leading-none">{businessProfile.companyName?.charAt(0) || 'O'}</span>
+                 <span className="text-[#0ea5e9] font-black text-xl italic leading-none">{businessProfile.companyName?.charAt(0) || 'O'}</span>
                )}
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="text-base font-black tracking-tighter uppercase italic leading-none truncate drop-shadow-sm max-w-[160px]">
+            <h1 className="text-xl font-black tracking-tighter uppercase italic leading-none truncate drop-shadow-sm max-w-[200px]">
               {title}
             </h1>
-            <p className="text-yellow-300 text-[7px] font-black uppercase tracking-[0.2em] mt-0.5">
+            <p className="text-yellow-300 text-[9px] font-black uppercase tracking-[0.2em] mt-1">
               {isTestMode ? 'Modo Teste Offline' : 'Conectado OmniVenda Cloud'}
             </p>
           </div>

@@ -89,7 +89,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
                     <img 
                       src={currentLogo} 
                       alt="Logo Preview" 
-                      className="w-full h-full object-contain p-4"
+                      className="w-full h-full object-cover"
                       onLoad={() => setIsLoadingLogo(false)}
                       onError={() => {
                         setLogoPreviewError(true);

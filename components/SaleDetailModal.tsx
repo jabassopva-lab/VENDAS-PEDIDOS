@@ -252,9 +252,9 @@ Obrigado pela preferência!`;
           
           {/* Company Section */}
           <div className="flex flex-col items-center text-center pb-2">
-             <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center overflow-hidden mb-3 border border-slate-100 p-2">
+             <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center overflow-hidden mb-3 border border-slate-100">
                 {(profile.logoUrl) ? (
-                  <img src={currentLogo} className="w-full h-full object-contain" alt="Logo" />
+                  <img src={currentLogo} className="w-full h-full object-cover" alt="Logo" />
                 ) : (
                   <Sun size={24} className="text-yellow-400" />
                 )}
