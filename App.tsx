@@ -413,18 +413,18 @@ const App: React.FC = () => {
   };
 
   const Header = ({ title, showBack = false, rightAction }: { title: string, showBack?: boolean, rightAction?: React.ReactNode }) => (
-    <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-5 pb-7 px-6 shadow-xl rounded-b-[1.8rem] sticky top-0 z-40 relative overflow-hidden border-b-4 border-yellow-400">
-      <div className="absolute top-0 right-0 p-4 opacity-10 rotate-12 pointer-events-none">
-        <Palmtree size={60} />
+    <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-5 pb-4 px-6 shadow-xl rounded-b-[1.8rem] sticky top-0 z-40 relative overflow-hidden border-b-4 border-yellow-400">
+      <div className="absolute top-2 right-0 p-4 opacity-10 rotate-12 pointer-events-none">
+        <Palmtree size={50} />
       </div>
       <div className="flex items-center justify-between relative z-10">
         <div className="flex items-center gap-4">
           {showBack ? (
-            <button onClick={() => setCurrentScreen('HOME')} className="bg-white/20 p-2 rounded-xl active:scale-90 transition-all">
-              <ArrowLeft size={20} />
+            <button onClick={() => setCurrentScreen('HOME')} className="bg-white/20 p-1.5 rounded-lg active:scale-90 transition-all">
+              <ArrowLeft size={18} />
             </button>
           ) : (
-            <div onClick={() => setCurrentScreen('SETTINGS')} className="w-14 h-14 bg-white rounded-xl shadow-lg cursor-pointer border-2 border-yellow-400 flex items-center justify-center overflow-hidden">
+            <div onClick={() => setCurrentScreen('SETTINGS')} className="w-12 h-12 bg-white rounded-xl shadow-lg cursor-pointer border-2 border-yellow-400 flex items-center justify-center overflow-hidden">
                {businessProfile.logoUrl ? (
                  <img src={convertDriveLink(businessProfile.logoUrl)} className="w-full h-full object-cover" />
                ) : (
@@ -444,8 +444,8 @@ const App: React.FC = () => {
         <div className="flex gap-2">
           {rightAction}
           {!showBack && (
-            <button onClick={handleLogout} className="p-2.5 bg-red-500/20 rounded-2xl border border-white/10 active:scale-90">
-              <LogOut size={20} />
+            <button onClick={handleLogout} className="p-2 bg-red-500/20 rounded-xl border border-white/10 active:scale-90">
+              <LogOut size={18} />
             </button>
           )}
         </div>
