@@ -98,6 +98,9 @@ const App: React.FC = () => {
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [catalogSearch, setCatalogSearch] = useState('');
+  const [filterClientId, setFilterClientId] = useState<string>('ALL');
+  const [filterProductId, setFilterProductId] = useState<string>('ALL');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     const savedTest = localStorage.getItem('omnivenda_test_session');
@@ -341,6 +344,66 @@ const App: React.FC = () => {
     return stats;
   }, [salesHistory, reportTab, currentDate]);
 
+  const clientRanking = useMemo(() => {
+    const d = currentDate;
+    const dayStr = d.toLocaleDateString('pt-BR');
+    const monthStr = (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getFullYear();
+    const yearStr = d.getFullYear().toString();
+
+    const filtered = salesHistory.filter(s => {
+      if (s.status !== 'FINALIZADA') return false;
+      if (reportTab === 'DIARIO') return s.date === dayStr;
+      if (reportTab === 'MENSAL') return s.date.endsWith(monthStr);
+      if (reportTab === 'ANUAL') return s.date.endsWith(yearStr);
+      return false;
+    });
+
+    const clientsMap: Record<string, { name: string, salesCount: number, totalSold: number, totalProfit: number }> = {};
+
+    filtered.forEach(sale => {
+      if (!clientsMap[sale.clientId]) {
+        clientsMap[sale.clientId] = { name: sale.clientName, salesCount: 0, totalSold: 0, totalProfit: 0 };
+      }
+      clientsMap[sale.clientId].salesCount += 1;
+      clientsMap[sale.clientId].totalSold += Number(sale.total);
+      clientsMap[sale.clientId].totalProfit += Number(sale.profit || 0);
+    });
+
+    return Object.values(clientsMap).sort((a, b) => b.totalSold - a.totalSold);
+  }, [salesHistory, currentDate, reportTab]);
+
+  const productRanking = useMemo(() => {
+    const d = currentDate;
+    const dayStr = d.toLocaleDateString('pt-BR');
+    const monthStr = (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getFullYear();
+    const yearStr = d.getFullYear().toString();
+
+    const filtered = salesHistory.filter(s => {
+      if (s.status !== 'FINALIZADA') return false;
+      if (reportTab === 'DIARIO') return s.date === dayStr;
+      if (reportTab === 'MENSAL') return s.date.endsWith(monthStr);
+      if (reportTab === 'ANUAL') return s.date.endsWith(yearStr);
+      return false;
+    });
+
+    const productsMap: Record<string, { name: string, salesCount: number, totalSold: number, totalProfit: number }> = {};
+
+    filtered.forEach(sale => {
+      sale.items.forEach(item => {
+        if (!productsMap[item.id]) {
+          productsMap[item.id] = { name: item.name, salesCount: 0, totalSold: 0, totalProfit: 0 };
+        }
+        productsMap[item.id].salesCount += item.quantity;
+        productsMap[item.id].totalSold += Number(item.price * item.quantity);
+        const cost = item.costPrice || 0;
+        const profit = (item.price - cost) * item.quantity;
+        productsMap[item.id].totalProfit += profit;
+      });
+    });
+
+    return Object.values(productsMap).sort((a, b) => b.totalSold - a.totalSold);
+  }, [salesHistory, currentDate, reportTab]);
+
   const changeDate = (delta: number) => {
     const next = new Date(currentDate);
     if (reportTab === 'DIARIO') next.setDate(next.getDate() + delta);
@@ -462,7 +525,7 @@ const App: React.FC = () => {
                </button>
                <button onClick={() => setCurrentScreen('PRODUCTS')} className="bg-white p-6 rounded-[2.5rem] shadow-md border-b-4 border-slate-50 flex flex-col items-center gap-2 active:scale-95 transition-all group">
                   <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 group-hover:bg-red-500 group-hover:text-white transition-all"><Package size={28} /></div>
-                  <p className="font-black text-slate-800 uppercase text-[10px] tracking-widest">Catálogo ({products.length})</p>
+                  <p className="font-black text-slate-800 uppercase text-[10px] tracking-widest">Produtos/Estoques ({products.length})</p>
                </button>
                <button onClick={() => setCurrentScreen('MONTHLY_SALES')} className="bg-white p-6 rounded-[2.5rem] shadow-md border-b-4 border-slate-50 flex flex-col items-center gap-2 active:scale-95 transition-all group">
                   <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-500 group-hover:bg-green-500 group-hover:text-white transition-all"><ClipboardList size={28} /></div>
@@ -517,7 +580,7 @@ const App: React.FC = () => {
 
       {currentScreen === 'PRODUCTS' && (
         <div className="min-h-screen">
-          <Header title="Catálogo" showBack rightAction={<button onClick={() => setProductModal({ type: ModalType.ADD })} className="bg-white/20 p-2.5 rounded-2xl"><Plus size={22} /></button>} />
+          <Header title="Produtos/Estoques" showBack rightAction={<button onClick={() => setProductModal({ type: ModalType.ADD })} className="bg-white/20 p-2.5 rounded-2xl"><Plus size={22} /></button>} />
           
           <div className="px-6 pt-4">
             <div className="relative">
@@ -555,26 +618,103 @@ const App: React.FC = () => {
 
       {currentScreen === 'MONTHLY_SALES' && (
         <div className="min-h-screen">
-          <Header title="Histórico" showBack />
-          <div className="px-6 py-6 space-y-2">
-            {salesHistory.length === 0 ? <EmptyState message="Sem vendas registradas" icon={ClipboardList} /> : (
-              salesHistory.map(sale => (
-                <div key={sale.id} onClick={() => setSelectedSale(sale)} className="bg-white p-3 rounded-2xl shadow-md border-b-4 border-slate-50 flex items-center justify-between active:scale-95 transition-all group">
-                   <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform ${sale.status === 'ORCAMENTO' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600'}`}>
-                        {sale.status === 'ORCAMENTO' ? <FileText size={20}/> : <ShoppingBag size={20} />}
-                      </div>
-                      <div className="min-w-0">
-                         <h4 className="font-black text-slate-800 text-xs uppercase italic leading-tight truncate max-w-[120px]">{sale.clientName}</h4>
-                         <p className="text-[7px] font-black text-slate-400 uppercase mt-0.5">{sale.date} • {sale.status}</p>
-                      </div>
-                   </div>
-                   <div className="text-right flex-shrink-0">
-                      <p className="text-base font-black text-[#0ea5e9]">R$ {Number(sale.total).toFixed(2)}</p>
-                      <p className={`text-[7px] font-black uppercase italic ${sale.isPaid ? 'text-green-500' : 'text-red-400'}`}>{sale.isPaid ? 'Pago' : 'Pendente'}</p>
-                   </div>
+          <Header 
+            title="Histórico" 
+            showBack 
+            rightAction={
+              <button 
+                onClick={() => setShowFilters(!showFilters)} 
+                className={`p-2.5 rounded-2xl border transition-all active:scale-90 ${showFilters ? 'bg-yellow-400 border-yellow-500 text-slate-800 shadow-md' : 'bg-white/20 border-white/10 text-white'}`}
+              >
+                <Filter size={20} />
+              </button>
+            } 
+          />
+          
+          {showFilters && (
+            <div className="px-6 pt-4 space-y-3 animate-in slide-in-from-top-4 duration-300">
+              <div className="bg-white p-4 rounded-[2rem] shadow-lg border border-slate-100 space-y-4">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Vendas por Clientes</label>
+                  <select 
+                    value={filterClientId}
+                    onChange={(e) => setFilterClientId(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-blue-500 transition-all appearance-none"
+                  >
+                    <option value="ALL">Todos os Clientes</option>
+                    {clients.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
                 </div>
-              ))
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Vendas por Produtos</label>
+                  <select 
+                    value={filterProductId}
+                    onChange={(e) => setFilterProductId(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-blue-500 transition-all appearance-none"
+                  >
+                    <option value="ALL">Todos os Produtos</option>
+                    {products.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <button 
+                    onClick={() => setCurrentScreen('CLIENT_REPORT')}
+                    className="bg-blue-50 text-blue-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all"
+                  >
+                    <Users size={14} /> Ranking Clientes
+                  </button>
+                  <button 
+                    onClick={() => setCurrentScreen('PRODUCT_REPORT')}
+                    className="bg-red-50 text-red-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all"
+                  >
+                    <Package size={14} /> Ranking Produtos
+                  </button>
+                </div>
+                {(filterClientId !== 'ALL' || filterProductId !== 'ALL') && (
+                  <button 
+                    onClick={() => { setFilterClientId('ALL'); setFilterProductId('ALL'); }}
+                    className="w-full py-2 text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors"
+                  >
+                    Limpar Filtros
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="px-6 py-6 space-y-2">
+            {salesHistory.filter(sale => {
+              const matchesClient = filterClientId === 'ALL' || sale.clientId === filterClientId;
+              const matchesProduct = filterProductId === 'ALL' || sale.items.some(item => item.id === filterProductId);
+              return matchesClient && matchesProduct;
+            }).length === 0 ? <EmptyState message="Nenhum pedido encontrado" icon={ClipboardList} /> : (
+              salesHistory
+                .filter(sale => {
+                  const matchesClient = filterClientId === 'ALL' || sale.clientId === filterClientId;
+                  const matchesProduct = filterProductId === 'ALL' || sale.items.some(item => item.id === filterProductId);
+                  return matchesClient && matchesProduct;
+                })
+                .map(sale => (
+                  <div key={sale.id} onClick={() => setSelectedSale(sale)} className="bg-white p-3 rounded-2xl shadow-md border-b-4 border-slate-50 flex items-center justify-between active:scale-95 transition-all group">
+                     <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform ${sale.status === 'ORCAMENTO' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600'}`}>
+                          {sale.status === 'ORCAMENTO' ? <FileText size={20}/> : <ShoppingBag size={20} />}
+                        </div>
+                        <div className="min-w-0">
+                           <h4 className="font-black text-slate-800 text-xs uppercase italic leading-tight truncate max-w-[120px]">{sale.clientName}</h4>
+                           <p className="text-[7px] font-black text-slate-400 uppercase mt-0.5">{sale.date} • {sale.status}</p>
+                        </div>
+                     </div>
+                     <div className="text-right flex-shrink-0">
+                        <p className="text-base font-black text-[#0ea5e9]">R$ {Number(sale.total).toFixed(2)}</p>
+                        <p className={`text-[7px] font-black uppercase italic ${sale.isPaid ? 'text-green-500' : 'text-red-400'}`}>{sale.isPaid ? 'Pago' : 'Pendente'}</p>
+                     </div>
+                  </div>
+                ))
             )}
           </div>
         </div>
@@ -657,6 +797,82 @@ const App: React.FC = () => {
           <button onClick={() => setCurrentScreen('HOME')} className="fixed bottom-6 right-6 w-14 h-14 bg-[#0ea5e9] text-white rounded-full shadow-2xl flex items-center justify-center active:scale-90 border-4 border-white">
             <ArrowLeft size={24}/>
           </button>
+        </div>
+      )}
+
+      {(currentScreen === 'CLIENT_REPORT' || currentScreen === 'PRODUCT_REPORT') && (
+        <div className="min-h-screen bg-white flex flex-col animate-in slide-in-from-right duration-300">
+          <div className="bg-[#0ea5e9] text-white pt-2 shadow-md flex-shrink-0">
+             <div className="flex items-center px-6 py-2">
+                <button onClick={() => setCurrentScreen('MONTHLY_SALES')} className="bg-white/20 p-2 rounded-xl active:scale-90 transition-all mr-4">
+                  <ArrowLeft size={20} />
+                </button>
+                <div className="flex-1">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white/70">Relatório de Ranking</p>
+                  <h2 className="text-lg font-black uppercase italic tracking-tighter leading-none">
+                    {currentScreen === 'CLIENT_REPORT' ? 'Vendas por Clientes' : 'Vendas por Produtos'}
+                  </h2>
+                </div>
+             </div>
+             <div className="flex justify-between px-10 pb-4 mt-2">
+                <button onClick={() => setReportTab('DIARIO')} className={`text-sm font-black uppercase tracking-widest pb-2 border-b-4 transition-all ${reportTab === 'DIARIO' ? 'border-yellow-400' : 'border-transparent text-white/60'}`}>Diário</button>
+                <button onClick={() => setReportTab('MENSAL')} className={`text-sm font-black uppercase tracking-widest pb-2 border-b-4 transition-all ${reportTab === 'MENSAL' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-white/60'}`}>Mensal</button>
+                <button onClick={() => setReportTab('ANUAL')} className={`text-sm font-black uppercase tracking-widest pb-2 border-b-4 transition-all ${reportTab === 'ANUAL' ? 'border-yellow-400' : 'border-transparent text-white/60'}`}>Anual</button>
+             </div>
+             <div className="bg-sky-600/50 flex items-center justify-between px-12 py-3">
+                <button onClick={() => changeDate(-1)} className="p-1 active:scale-75 transition-transform"><ChevronLeft size={28}/></button>
+                <span className="text-xl font-medium">
+                  {reportTab === 'DIARIO' ? currentDate.toLocaleDateString('pt-BR') : 
+                   reportTab === 'MENSAL' ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}` : 
+                   currentDate.getFullYear()}
+                </span>
+                <button onClick={() => changeDate(1)} className="p-1 active:scale-75 transition-transform"><ChevronRight size={28}/></button>
+             </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 pb-32">
+            {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).length === 0 ? (
+              <EmptyState message="Sem dados para este período" icon={BarChart3} />
+            ) : (
+              (currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).map((item, index) => (
+                <div key={index} className="bg-white border-b border-slate-100 pb-4 last:border-0">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="text-[10px] font-black text-slate-300 uppercase italic">Pos. {index + 1}</div>
+                    <h3 className="font-black text-slate-800 text-sm uppercase italic leading-none truncate flex-1">{item.name}</h3>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-center">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Nro. Vendas</p>
+                      <p className="text-lg font-black text-yellow-500">{item.salesCount}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Lucro</p>
+                      <p className="text-sm font-black text-green-600">R$ {item.totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Vendido</p>
+                      <p className="text-sm font-black text-blue-600">R$ {item.totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="bg-sky-50 p-4 border-t border-sky-100 flex-shrink-0 fixed bottom-0 left-0 right-0 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-[10px] font-black text-slate-500 uppercase">Nro. Vendas:</span>
+              <span className="text-lg font-black text-slate-800">{(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.salesCount, 0)}</span>
+            </div>
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-[10px] font-black text-slate-500 uppercase">Venda Total:</span>
+              <span className="text-lg font-black text-blue-600">R$ {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.totalSold, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black text-slate-500 uppercase">Lucro Total:</span>
+              <span className="text-lg font-black text-green-600">R$ {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.totalProfit, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            </div>
+          </div>
         </div>
       )}
 

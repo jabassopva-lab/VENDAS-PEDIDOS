@@ -89,4 +89,4 @@ export enum ModalType {
   NONE = 'NONE'
 }
 
-export type Screen = 'HOME' | 'PRODUCTS' | 'MONTHLY_SALES' | 'REPORTS' | 'CLIENTS' | 'SETTINGS';
+export type Screen = 'HOME' | 'PRODUCTS' | 'MONTHLY_SALES' | 'REPORTS' | 'CLIENTS' | 'SETTINGS' | 'CLIENT_REPORT' | 'PRODUCT_REPORT';
