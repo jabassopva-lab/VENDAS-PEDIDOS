@@ -472,7 +472,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen pb-32 bg-[#fffbeb]">
+    <div className={`min-h-screen bg-[#fffbeb] flex flex-col ${currentScreen === 'HOME' ? 'h-screen overflow-hidden' : 'pb-32'}`}>
       {saveNotify.show && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-green-500 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-in slide-in-from-top-10 duration-300 font-black uppercase italic text-[10px] border-2 border-white">
           <CheckCircle2 size={16} /> {saveNotify.msg}
@@ -489,7 +489,7 @@ const App: React.FC = () => {
       {currentScreen === 'HOME' && (
         <>
           <Header title={businessProfile.companyName || 'Minha Empresa'} />
-          <main className="px-6 mt-10 relative z-30 space-y-5">
+          <main className="px-6 mt-10 relative z-30 space-y-5 flex-1">
             <div className="grid grid-cols-2 gap-3">
                <div className="bg-white p-5 rounded-[2.2rem] shadow-lg border-b-4 border-[#0ea5e9]/10 flex flex-col h-32 justify-between active:scale-95 transition-all">
                   <div className="bg-[#0ea5e9] w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md"><Wallet size={20}/></div>
