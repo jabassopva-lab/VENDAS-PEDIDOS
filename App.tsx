@@ -413,44 +413,46 @@ const App: React.FC = () => {
   };
 
   const Header = ({ title, showBack = false, rightAction }: { title: string, showBack?: boolean, rightAction?: React.ReactNode }) => (
-    <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-5 pb-4 px-6 shadow-xl rounded-b-[1.8rem] sticky top-0 z-40 relative overflow-hidden border-b-4 border-yellow-400">
-      <div className="absolute top-2 right-0 p-4 opacity-10 rotate-12 pointer-events-none">
-        <Palmtree size={50} />
-      </div>
-      <div className="flex items-center justify-between relative z-10">
-        <div className="flex items-center gap-4">
-          {showBack ? (
-            <button onClick={() => setCurrentScreen('HOME')} className="bg-white/20 p-1.5 rounded-lg active:scale-90 transition-all">
-              <ArrowLeft size={18} />
-            </button>
-          ) : (
-            <div onClick={() => setCurrentScreen('SETTINGS')} className="w-12 h-12 bg-white rounded-xl shadow-lg cursor-pointer border-2 border-yellow-400 flex items-center justify-center overflow-hidden">
-               {businessProfile.logoUrl ? (
-                 <img src={convertDriveLink(businessProfile.logoUrl)} className="w-full h-full object-cover" />
-               ) : (
-                 <span className="text-[#0ea5e9] font-black text-xl italic leading-none">{businessProfile.companyName?.charAt(0) || 'O'}</span>
-               )}
+    <div className="sticky top-0 z-40 bg-[#fffbeb]">
+      <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-5 pb-4 px-6 shadow-xl rounded-b-[1.8rem] relative overflow-hidden border-b-4 border-yellow-400">
+        <div className="absolute top-2 right-0 p-4 opacity-10 rotate-12 pointer-events-none">
+          <Palmtree size={50} />
+        </div>
+        <div className="flex items-center justify-between relative z-10">
+          <div className="flex items-center gap-4">
+            {showBack ? (
+              <button onClick={() => setCurrentScreen('HOME')} className="bg-white/20 p-1.5 rounded-lg active:scale-90 transition-all">
+                <ArrowLeft size={18} />
+              </button>
+            ) : (
+              <div onClick={() => setCurrentScreen('SETTINGS')} className="w-12 h-12 bg-white rounded-xl shadow-lg cursor-pointer border-2 border-yellow-400 flex items-center justify-center overflow-hidden">
+                 {businessProfile.logoUrl ? (
+                   <img src={convertDriveLink(businessProfile.logoUrl)} className="w-full h-full object-cover" />
+                 ) : (
+                   <span className="text-[#0ea5e9] font-black text-xl italic leading-none">{businessProfile.companyName?.charAt(0) || 'O'}</span>
+                 )}
+              </div>
+            )}
+            <div className="min-w-0">
+              <h1 className="text-3xl font-black tracking-tighter uppercase italic leading-none truncate drop-shadow-sm max-w-[220px]">
+                {title}
+              </h1>
+              <p className="text-yellow-300 text-[9px] font-black uppercase tracking-[0.2em] mt-1">
+                {isTestMode ? 'Modo Teste Offline' : 'Conectado OmniVenda Cloud'}
+              </p>
             </div>
-          )}
-          <div className="min-w-0">
-            <h1 className="text-3xl font-black tracking-tighter uppercase italic leading-none truncate drop-shadow-sm max-w-[220px]">
-              {title}
-            </h1>
-            <p className="text-yellow-300 text-[9px] font-black uppercase tracking-[0.2em] mt-1">
-              {isTestMode ? 'Modo Teste Offline' : 'Conectado OmniVenda Cloud'}
-            </p>
+          </div>
+          <div className="flex gap-2">
+            {rightAction}
+            {!showBack && (
+              <button onClick={handleLogout} className="p-2 bg-red-500/20 rounded-xl border border-white/10 active:scale-90">
+                <LogOut size={18} />
+              </button>
+            )}
           </div>
         </div>
-        <div className="flex gap-2">
-          {rightAction}
-          {!showBack && (
-            <button onClick={handleLogout} className="p-2 bg-red-500/20 rounded-xl border border-white/10 active:scale-90">
-              <LogOut size={18} />
-            </button>
-          )}
-        </div>
-      </div>
-    </header>
+      </header>
+    </div>
   );
 
   if (!session) {
