@@ -487,7 +487,7 @@ const App: React.FC = () => {
       {currentScreen === 'HOME' && (
         <>
           <Header title={businessProfile.companyName || 'Minha Empresa'} />
-          <main className="px-6 -mt-3 relative z-30 space-y-5 pt-1">
+          <main className="px-6 mt-10 relative z-30 space-y-5">
             <div className="grid grid-cols-2 gap-3">
                <div className="bg-white p-5 rounded-[2.2rem] shadow-lg border-b-4 border-[#0ea5e9]/10 flex flex-col h-32 justify-between active:scale-95 transition-all">
                   <div className="bg-[#0ea5e9] w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md"><Wallet size={20}/></div>
@@ -531,9 +531,9 @@ const App: React.FC = () => {
                   <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-500 group-hover:bg-green-500 group-hover:text-white transition-all"><ClipboardList size={28} /></div>
                   <p className="font-black text-slate-800 uppercase text-[10px] tracking-widest">Histórico</p>
                </button>
-               <button onClick={() => setCurrentScreen('REPORTS')} className="bg-[#1e293b] p-6 rounded-[2.5rem] shadow-md border-b-4 border-black flex flex-col items-center gap-2 active:scale-95 transition-all group text-white">
-                  <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-yellow-400 group-hover:bg-yellow-400 group-hover:text-black transition-all"><BarChart3 size={28} /></div>
-                  <p className="font-black uppercase text-[10px] tracking-widest">Relatório</p>
+               <button onClick={() => setCurrentScreen('REPORTS')} className="bg-white p-6 rounded-[2.5rem] shadow-md border-b-4 border-slate-50 flex flex-col items-center gap-2 active:scale-95 transition-all group">
+                  <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-all"><BarChart3 size={28} /></div>
+                  <p className="font-black text-slate-800 uppercase text-[10px] tracking-widest">Relatório</p>
                </button>
             </div>
           </main>
