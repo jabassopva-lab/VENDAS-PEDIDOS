@@ -15,6 +15,8 @@ interface NewSaleModalProps {
 const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, clients, onFinishSale, initialData }) => {
   const [step, setStep] = useState<'SELECTION' | 'CART'>('SELECTION');
   const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [clientSearchQuery, setClientSearchQuery] = useState('');
+  const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -42,6 +44,8 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
         setStep('SELECTION');
         setCart(initialData.items || []);
         setSearchQuery('');
+        const client = clients.find(c => c.id === initialData.clientId);
+        setClientSearchQuery(client?.name.toUpperCase() || '');
         setSelectedClientId(initialData.clientId);
         setPaymentMethod(initialData.paymentMethod || 'Dinheiro');
         setIsBudget(initialData.status === 'ORCAMENTO');
@@ -53,6 +57,7 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
         setStep('SELECTION');
         setCart([]);
         setSearchQuery('');
+        setClientSearchQuery('');
         setSelectedClientId('');
         setPaymentMethod('Dinheiro');
         setPaymentType('A_VISTA');
@@ -71,6 +76,13 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
       p.barcode?.includes(searchQuery)
     );
   }, [products, searchQuery]);
+
+  const filteredClients = useMemo(() => {
+    if (!clientSearchQuery) return [];
+    return clients.filter(c => 
+      c.name.toLowerCase().includes(clientSearchQuery.toLowerCase())
+    );
+  }, [clients, clientSearchQuery]);
 
   const addToCart = (product: Product) => {
     setCart(prev => {
@@ -180,16 +192,59 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
             <div className="p-4 bg-white border-b border-gray-100 space-y-3">
               <div className="relative">
                 <User className="absolute left-3 top-3 text-gray-400" size={18} />
-                <select 
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 text-gray-700 font-bold appearance-none italic"
-                  value={selectedClientId}
-                  onChange={(e) => setSelectedClientId(e.target.value)}
-                >
-                  <option value="">-- Selecione o Cliente --</option>
-                  {clients.map(c => (
-                    <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>
-                  ))}
-                </select>
+                <input 
+                  type="text"
+                  placeholder="-- Buscar ou Selecionar Cliente --"
+                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 text-gray-700 font-bold italic uppercase"
+                  value={clientSearchQuery}
+                  onChange={(e) => {
+                    setClientSearchQuery(e.target.value);
+                    setIsClientDropdownOpen(true);
+                    if (!e.target.value) setSelectedClientId('');
+                  }}
+                  onFocus={() => setIsClientDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setIsClientDropdownOpen(false), 200)}
+                />
+                {isClientDropdownOpen && clientSearchQuery && (
+                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl mt-1 shadow-2xl z-50 max-h-60 overflow-y-auto">
+                    {filteredClients.map(c => (
+                      <div 
+                        key={c.id} 
+                        className="p-4 hover:bg-blue-50 cursor-pointer font-black text-slate-700 uppercase italic text-[10px] border-b last:border-0 border-slate-50 flex justify-between items-center"
+                        onClick={() => {
+                          setSelectedClientId(c.id);
+                          setClientSearchQuery(c.name.toUpperCase());
+                          setIsClientDropdownOpen(false);
+                        }}
+                      >
+                        <span>{c.name.toUpperCase()}</span>
+                        {selectedClientId === c.id && <Check size={14} className="text-blue-600" />}
+                      </div>
+                    ))}
+                    {filteredClients.length === 0 && (
+                      <div className="p-4 text-slate-400 text-[10px] font-black uppercase italic">Nenhum cliente encontrado</div>
+                    )}
+                  </div>
+                )}
+                {isClientDropdownOpen && !clientSearchQuery && clients.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl mt-1 shadow-2xl z-50 max-h-60 overflow-y-auto">
+                    {clients.slice(0, 10).map(c => (
+                      <div 
+                        key={c.id} 
+                        className="p-4 hover:bg-blue-50 cursor-pointer font-black text-slate-700 uppercase italic text-[10px] border-b last:border-0 border-slate-50 flex justify-between items-center"
+                        onClick={() => {
+                          setSelectedClientId(c.id);
+                          setClientSearchQuery(c.name.toUpperCase());
+                          setIsClientDropdownOpen(false);
+                        }}
+                      >
+                        <span>{c.name.toUpperCase()}</span>
+                        {selectedClientId === c.id && <Check size={14} className="text-blue-600" />}
+                      </div>
+                    ))}
+                    <div className="p-2 text-center bg-slate-50 text-[8px] font-black text-slate-300 uppercase italic">Digite para filtrar mais...</div>
+                  </div>
+                )}
               </div>
 
               <div className="relative">
