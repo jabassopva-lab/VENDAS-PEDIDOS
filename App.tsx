@@ -244,20 +244,22 @@ const App: React.FC = () => {
         const newItems = data.items!;
         const allProductIds = Array.from(new Set([...oldItems.map(i => i.id), ...newItems.map(i => i.id)]));
         
-        const productUpdates = products.map(p => {
+        const productUpdates = [...products];
+        for (let i = 0; i < productUpdates.length; i++) {
+          const p = productUpdates[i];
           if (allProductIds.includes(p.id)) {
-            const oldQty = oldItems.find(i => i.id === p.id)?.quantity || 0;
-            const newQty = newItems.find(i => i.id === p.id)?.quantity || 0;
+            const oldQty = oldItems.find(item => item.id === p.id)?.quantity || 0;
+            const newQty = newItems.find(item => item.id === p.id)?.quantity || 0;
             const delta = newQty - oldQty;
             
             if (delta !== 0) {
               const newStock = Math.max(0, p.stock - delta);
-              db.products.upsert({ ...p, stock: newStock });
-              return { ...p, stock: newStock };
+              const updatedProduct = { ...p, stock: newStock };
+              await db.products.upsert(updatedProduct);
+              productUpdates[i] = updatedProduct;
             }
           }
-          return p;
-        });
+        }
         setProducts(productUpdates);
       }
       
@@ -282,15 +284,17 @@ const App: React.FC = () => {
 
       // Se a venda estava finalizada, devolve o estoque
       if (saleToDelete.status === 'FINALIZADA') {
-        const productUpdates = products.map(p => {
-          const item = saleToDelete.items.find(i => i.id === p.id);
+        const productUpdates = [...products];
+        for (let i = 0; i < productUpdates.length; i++) {
+          const p = productUpdates[i];
+          const item = saleToDelete.items.find(it => it.id === p.id);
           if (item) {
             const newStock = p.stock + item.quantity;
-            db.products.upsert({ ...p, stock: newStock });
-            return { ...p, stock: newStock };
+            const updatedProduct = { ...p, stock: newStock };
+            await db.products.upsert(updatedProduct);
+            productUpdates[i] = updatedProduct;
           }
-          return p;
-        });
+        }
         setProducts(productUpdates);
       }
 
@@ -414,7 +418,7 @@ const App: React.FC = () => {
 
   const Header = ({ title, showBack = false, rightAction }: { title: string, showBack?: boolean, rightAction?: React.ReactNode }) => (
     <div className="sticky top-0 z-40 bg-[#fffbeb]">
-      <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-5 pb-4 px-6 shadow-xl rounded-b-[1.8rem] relative overflow-hidden border-b-4 border-yellow-400">
+      <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-4 pb-3 px-6 shadow-xl rounded-b-[1.8rem] relative overflow-hidden border-b-4 border-yellow-400">
         <div className="absolute top-2 right-0 p-4 opacity-10 rotate-12 pointer-events-none">
           <Palmtree size={50} />
         </div>
@@ -489,7 +493,7 @@ const App: React.FC = () => {
       {currentScreen === 'HOME' && (
         <>
           <Header title={businessProfile.companyName || 'Minha Empresa'} />
-          <main className="px-6 mt-10 relative z-30 space-y-5 flex-1">
+          <main className="px-6 mt-6 relative z-30 space-y-4 flex-1">
             <div className="grid grid-cols-2 gap-3">
                <div className="bg-white p-5 rounded-[2.2rem] shadow-lg border-b-4 border-[#0ea5e9]/10 flex flex-col h-32 justify-between active:scale-95 transition-all">
                   <div className="bg-[#0ea5e9] w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md"><Wallet size={20}/></div>
@@ -535,7 +539,7 @@ const App: React.FC = () => {
                </button>
                <button onClick={() => setCurrentScreen('REPORTS')} className="bg-white p-6 rounded-[2.5rem] shadow-md border-b-4 border-slate-50 flex flex-col items-center gap-2 active:scale-95 transition-all group">
                   <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-all"><BarChart3 size={28} /></div>
-                  <p className="font-black text-slate-800 uppercase text-[10px] tracking-widest">Relatório</p>
+                  <p className="font-black text-slate-500 uppercase text-[10px] tracking-widest">Relatório</p>
                </button>
             </div>
           </main>

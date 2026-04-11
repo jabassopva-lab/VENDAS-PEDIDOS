@@ -28,6 +28,12 @@ if (isConfigured) {
 const getLocal = (key: string) => JSON.parse(localStorage.getItem(`omnivenda_${key}`) || '[]');
 const setLocal = (key: string, data: any) => localStorage.setItem(`omnivenda_${key}`, JSON.stringify(data));
 
+const isTestMode = () => localStorage.getItem('omnivenda_test_session') === 'active';
+
+const shouldUseSupabase = () => {
+  return isConfigured && !isTestMode();
+};
+
 const getUserId = async () => {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.user?.id;
@@ -36,7 +42,7 @@ const getUserId = async () => {
 export const db = {
   products: {
     getAll: async () => {
-      if (!isConfigured) return getLocal('products');
+      if (!shouldUseSupabase()) return getLocal('products');
       const { data, error } = await supabase.from('products').select('*').order('name');
       if (error) throw error;
       return (data || []).map((p: any) => ({
@@ -45,7 +51,7 @@ export const db = {
       }));
     },
     upsert: async (product: any) => {
-      if (!isConfigured) {
+      if (!shouldUseSupabase()) {
         const products = getLocal('products');
         const id = product.id || Math.random().toString(36).substr(2, 9);
         const newProduct = { ...product, id };
@@ -75,7 +81,7 @@ export const db = {
       };
     },
     delete: async (id: string) => {
-      if (!isConfigured) {
+      if (!shouldUseSupabase()) {
         const products = getLocal('products').filter((p: any) => p.id !== id);
         setLocal('products', products);
         return;
@@ -86,13 +92,13 @@ export const db = {
   },
   clients: {
     getAll: async () => {
-      if (!isConfigured) return getLocal('clients');
+      if (!shouldUseSupabase()) return getLocal('clients');
       const { data, error } = await supabase.from('clients').select('*').order('name');
       if (error) throw error;
       return data || [];
     },
     upsert: async (client: any) => {
-      if (!isConfigured) {
+      if (!shouldUseSupabase()) {
         const clients = getLocal('clients');
         const id = client.id || Math.random().toString(36).substr(2, 9);
         const newClient = { ...client, id };
@@ -114,13 +120,13 @@ export const db = {
   },
   sales: {
     getAll: async () => {
-      if (!isConfigured) return getLocal('sales');
+      if (!shouldUseSupabase()) return getLocal('sales');
       const { data, error } = await supabase.from('sales').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     },
     create: async (sale: any) => {
-      if (!isConfigured) {
+      if (!shouldUseSupabase()) {
         const sales = getLocal('sales');
         const newSale = { ...sale, id: Math.random().toString(36).substr(2, 9), created_at: new Date().toISOString() };
         sales.unshift(newSale);
@@ -137,7 +143,7 @@ export const db = {
       return data[0];
     },
     update: async (sale: any) => {
-      if (!isConfigured) {
+      if (!shouldUseSupabase()) {
         const sales = getLocal('sales');
         const index = sales.findIndex((s: any) => s.id === sale.id);
         if (index >= 0) {
@@ -155,18 +161,19 @@ export const db = {
       return data[0];
     },
     delete: async (id: string) => {
-      if (!isConfigured) {
+      if (!shouldUseSupabase()) {
         const sales = getLocal('sales').filter((s: any) => s.id !== id);
         setLocal('sales', sales);
         return;
       }
+      // Tenta deletar do Supabase
       const { error } = await supabase.from('sales').delete().eq('id', id);
       if (error) throw error;
     }
   },
   profile: {
     get: async () => {
-      if (!isConfigured) return JSON.parse(localStorage.getItem('omnivenda_profile') || 'null');
+      if (!shouldUseSupabase()) return JSON.parse(localStorage.getItem('omnivenda_profile') || 'null');
       const { data, error } = await supabase.from('profiles').select('*').maybeSingle();
       if (error) {
         console.error("Erro ao buscar perfil:", error);
@@ -185,7 +192,7 @@ export const db = {
       };
     },
     update: async (profile: any) => {
-      if (!isConfigured) {
+      if (!shouldUseSupabase()) {
         localStorage.setItem('omnivenda_profile', JSON.stringify(profile));
         return profile;
       }
@@ -233,3 +240,4 @@ export const db = {
     }
   }
 };
+
