@@ -32,7 +32,8 @@ import {
   ArrowRight,
   LogOut,
   Store,
-  Info
+  Info,
+  Printer
 } from 'lucide-react';
 import ProductModal from './components/ProductModal.tsx';
 import ClientForm from './components/ClientForm.tsx';
@@ -798,6 +799,41 @@ const App: React.FC = () => {
                   </div>
                </div>
             </div>
+
+            <div className="mt-6 space-y-3">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Rankings e Detalhes</h3>
+              <button 
+                onClick={() => setCurrentScreen('CLIENT_REPORT')}
+                className="w-full bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between active:scale-95 transition-all"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                    <Users size={24} />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-black text-slate-800 uppercase italic">Ranking de Clientes</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Quem mais compra no período</p>
+                  </div>
+                </div>
+                <ChevronRight size={20} className="text-slate-300" />
+              </button>
+
+              <button 
+                onClick={() => setCurrentScreen('PRODUCT_REPORT')}
+                className="w-full bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between active:scale-95 transition-all"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center text-red-600">
+                    <Package size={24} />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-black text-slate-800 uppercase italic">Ranking de Produtos</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Produtos mais vendidos</p>
+                  </div>
+                </div>
+                <ChevronRight size={20} className="text-slate-300" />
+              </button>
+            </div>
           </div>
 
           <button onClick={() => setCurrentScreen('HOME')} className="fixed bottom-6 right-6 w-14 h-14 bg-[#0ea5e9] text-white rounded-full shadow-2xl flex items-center justify-center active:scale-90 border-4 border-white">
@@ -810,7 +846,7 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-white flex flex-col animate-in slide-in-from-right duration-300">
           <div className="bg-[#0ea5e9] text-white pt-2 shadow-md flex-shrink-0">
              <div className="flex items-center px-6 py-2">
-                <button onClick={() => setCurrentScreen('MONTHLY_SALES')} className="bg-white/20 p-2 rounded-xl active:scale-90 transition-all mr-4">
+                <button onClick={() => setCurrentScreen('REPORTS')} className="bg-white/20 p-2 rounded-xl active:scale-90 transition-all mr-4">
                   <ArrowLeft size={20} />
                 </button>
                 <div className="flex-1">
@@ -819,6 +855,71 @@ const App: React.FC = () => {
                     {currentScreen === 'CLIENT_REPORT' ? 'Vendas por Clientes' : 'Vendas por Produtos'}
                   </h2>
                 </div>
+                <button 
+                  onClick={() => {
+                    const title = currentScreen === 'CLIENT_REPORT' ? 'Relatório de Clientes' : 'Relatório de Produtos';
+                    const data = currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking;
+                    const period = reportTab === 'DIARIO' ? currentDate.toLocaleDateString('pt-BR') : 
+                                   reportTab === 'MENSAL' ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}` : 
+                                   currentDate.getFullYear();
+                    
+                    const printContent = `
+                      <html>
+                        <head>
+                          <title>${title}</title>
+                          <style>
+                            body { font-family: sans-serif; padding: 20px; color: #333; }
+                            h1 { text-align: center; color: #0ea5e9; margin-bottom: 5px; }
+                            h2 { text-align: center; color: #666; font-size: 16px; margin-top: 0; }
+                            .period { text-align: center; font-weight: bold; margin-bottom: 30px; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                            th { background: #f8fafc; padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0; font-size: 12px; text-transform: uppercase; }
+                            td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+                            .pos { font-weight: bold; color: #94a3b8; width: 40px; }
+                            .name { font-weight: bold; }
+                            .val { text-align: right; }
+                            .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #94a3b8; }
+                          </style>
+                        </head>
+                        <body>
+                          <h1>${businessProfile.companyName || 'OMNIVENDA'}</h1>
+                          <h2>${title}</h2>
+                          <div class="period">Período: ${period}</div>
+                          <table>
+                            <thead>
+                              <tr>
+                                <th class="pos">Pos</th>
+                                <th>Nome</th>
+                                <th class="val">Vendas</th>
+                                <th class="val">Total Vendido</th>
+                                <th class="val">Lucro</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              ${data.map((item, index) => `
+                                <tr>
+                                  <td class="pos">${index + 1}</td>
+                                  <td class="name">${item.name}</td>
+                                  <td class="val">${item.salesCount}</td>
+                                  <td class="val">R$ ${item.totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                  <td class="val">R$ ${item.totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                </tr>
+                              `).join('')}
+                            </tbody>
+                          </table>
+                          <div class="footer">Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+                        </body>
+                      </html>
+                    `;
+                    const win = window.open('', '_blank');
+                    win.document.write(printContent);
+                    win.document.close();
+                    setTimeout(() => win.print(), 500);
+                  }}
+                  className="bg-white/20 p-2 rounded-xl active:scale-90 transition-all ml-2"
+                >
+                  <Printer size={20} />
+                </button>
              </div>
              <div className="flex justify-between px-10 pb-4 mt-2">
                 <button onClick={() => setReportTab('DIARIO')} className={`text-sm font-black uppercase tracking-widest pb-2 border-b-4 transition-all ${reportTab === 'DIARIO' ? 'border-yellow-400' : 'border-transparent text-white/60'}`}>Diário</button>
