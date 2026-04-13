@@ -363,15 +363,22 @@ const App: React.FC = () => {
       return false;
     });
 
-    const clientsMap: Record<string, { name: string, salesCount: number, totalSold: number, totalProfit: number }> = {};
+    const clientsMap: Record<string, { name: string, salesCount: number, totalSold: number, totalProfit: number, cocadaPotes: number }> = {};
 
     filtered.forEach(sale => {
       if (!clientsMap[sale.clientId]) {
-        clientsMap[sale.clientId] = { name: sale.clientName, salesCount: 0, totalSold: 0, totalProfit: 0 };
+        clientsMap[sale.clientId] = { name: sale.clientName, salesCount: 0, totalSold: 0, totalProfit: 0, cocadaPotes: 0 };
       }
       clientsMap[sale.clientId].salesCount += 1;
       clientsMap[sale.clientId].totalSold += Number(sale.total);
       clientsMap[sale.clientId].totalProfit += Number(sale.profit || 0);
+      
+      // Contar potes de cocada
+      sale.items.forEach(item => {
+        if (item.name.toLowerCase().includes('cocada')) {
+          clientsMap[sale.clientId].cocadaPotes += (item.quantity || 0);
+        }
+      });
     });
 
     return Object.values(clientsMap).sort((a, b) => b.totalSold - a.totalSold);
@@ -891,22 +898,44 @@ const App: React.FC = () => {
                                 <th class="pos">Pos</th>
                                 <th>Nome</th>
                                 <th class="val">Vendas</th>
+                                ${currentScreen === 'CLIENT_REPORT' ? '<th class="val">Potes Cocada</th>' : ''}
                                 <th class="val">Total Vendido</th>
                                 <th class="val">Lucro</th>
                               </tr>
                             </thead>
                             <tbody>
-                              ${data.map((item, index) => `
+                              ${data.map((item: any, index: number) => `
                                 <tr>
                                   <td class="pos">${index + 1}</td>
                                   <td class="name">${item.name}</td>
                                   <td class="val">${item.salesCount}</td>
+                                  ${currentScreen === 'CLIENT_REPORT' ? `<td class="val">${item.cocadaPotes || 0}</td>` : ''}
                                   <td class="val">R$ ${item.totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                                   <td class="val">R$ ${item.totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                                 </tr>
                               `).join('')}
                             </tbody>
                           </table>
+                          <div style="margin-top: 20px; border-top: 2px solid #0ea5e9; padding-top: 10px;">
+                            <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px;">
+                              <span>Nro. Vendas:</span>
+                              <span>${data.reduce((acc: number, curr: any) => acc + curr.salesCount, 0)}</span>
+                            </div>
+                            ${currentScreen === 'CLIENT_REPORT' ? `
+                            <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; color: #b45309;">
+                              <span>Total Potes Cocada:</span>
+                              <span>${data.reduce((acc: number, curr: any) => acc + (curr.cocadaPotes || 0), 0)}</span>
+                            </div>
+                            ` : ''}
+                            <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; color: #0ea5e9;">
+                              <span>Venda Total:</span>
+                              <span>R$ ${data.reduce((acc: number, curr: any) => acc + curr.totalSold, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-weight: bold; color: #16a34a;">
+                              <span>Lucro Total:</span>
+                              <span>R$ ${data.reduce((acc: number, curr: any) => acc + curr.totalProfit, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                          </div>
                           <div class="footer">Gerado em ${new Date().toLocaleString('pt-BR')}</div>
                         </body>
                       </html>
@@ -947,11 +976,17 @@ const App: React.FC = () => {
                     <div className="text-[10px] font-black text-slate-300 uppercase italic">Pos. {index + 1}</div>
                     <h3 className="font-black text-slate-800 text-sm uppercase italic leading-none truncate flex-1">{item.name}</h3>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className={`grid ${currentScreen === 'CLIENT_REPORT' ? 'grid-cols-4' : 'grid-cols-3'} gap-2`}>
                     <div className="text-center">
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Nro. Vendas</p>
                       <p className="text-lg font-black text-yellow-500">{item.salesCount}</p>
                     </div>
+                    {currentScreen === 'CLIENT_REPORT' && (
+                      <div className="text-center">
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Potes Cocada</p>
+                        <p className="text-lg font-black text-amber-600">{(item as any).cocadaPotes || 0}</p>
+                      </div>
+                    )}
                     <div className="text-center">
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Lucro</p>
                       <p className="text-sm font-black text-green-600">R$ {item.totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
@@ -971,6 +1006,12 @@ const App: React.FC = () => {
               <span className="text-[10px] font-black text-slate-500 uppercase">Nro. Vendas:</span>
               <span className="text-lg font-black text-slate-800">{(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.salesCount, 0)}</span>
             </div>
+            {currentScreen === 'CLIENT_REPORT' && (
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-[10px] font-black text-amber-700 uppercase">Total Potes Cocada:</span>
+                <span className="text-lg font-black text-amber-600">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotes || 0), 0)}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center mb-1">
               <span className="text-[10px] font-black text-slate-500 uppercase">Venda Total:</span>
               <span className="text-lg font-black text-blue-600">R$ {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.totalSold, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
