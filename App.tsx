@@ -363,20 +363,65 @@ const App: React.FC = () => {
       return false;
     });
 
-    const clientsMap: Record<string, { name: string, salesCount: number, totalSold: number, totalProfit: number, cocadaPotes: number }> = {};
+    const clientsMap: Record<string, { 
+      name: string, 
+      salesCount: number, 
+      totalSold: number, 
+      totalProfit: number, 
+      cocadaPotes: number,
+      cocadaPotesPaid: number,
+      cocadaPotesToReceive: number,
+      cocadaPotesOverdue: number,
+      totalPendingAmount: number,
+      totalOverdueAmount: number
+    }> = {};
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     filtered.forEach(sale => {
       if (!clientsMap[sale.clientId]) {
-        clientsMap[sale.clientId] = { name: sale.clientName, salesCount: 0, totalSold: 0, totalProfit: 0, cocadaPotes: 0 };
+        clientsMap[sale.clientId] = { 
+          name: sale.clientName, 
+          salesCount: 0, 
+          totalSold: 0, 
+          totalProfit: 0, 
+          cocadaPotes: 0,
+          cocadaPotesPaid: 0,
+          cocadaPotesToReceive: 0,
+          cocadaPotesOverdue: 0,
+          totalPendingAmount: 0,
+          totalOverdueAmount: 0
+        };
       }
       clientsMap[sale.clientId].salesCount += 1;
       clientsMap[sale.clientId].totalSold += Number(sale.total);
       clientsMap[sale.clientId].totalProfit += Number(sale.profit || 0);
       
+      const [sd, sm, sy] = sale.date.split('/');
+      const saleDate = new Date(parseInt(sy), parseInt(sm) - 1, parseInt(sd));
+      const isOverdue = !sale.isPaid && saleDate < today;
+
+      if (!sale.isPaid) {
+        if (isOverdue) {
+          clientsMap[sale.clientId].totalOverdueAmount += Number(sale.total);
+        } else {
+          clientsMap[sale.clientId].totalPendingAmount += Number(sale.total);
+        }
+      }
+      
       // Contar potes de cocada
       sale.items.forEach(item => {
         if (item.name.toLowerCase().includes('cocada')) {
-          clientsMap[sale.clientId].cocadaPotes += (item.quantity || 0);
+          const qty = item.quantity || 0;
+          clientsMap[sale.clientId].cocadaPotes += qty;
+          if (sale.isPaid) {
+            clientsMap[sale.clientId].cocadaPotesPaid += qty;
+          } else if (isOverdue) {
+            clientsMap[sale.clientId].cocadaPotesOverdue += qty;
+          } else {
+            clientsMap[sale.clientId].cocadaPotesToReceive += qty;
+          }
         }
       });
     });
@@ -898,7 +943,13 @@ const App: React.FC = () => {
                                 <th class="pos">Pos</th>
                                 <th>Nome</th>
                                 <th class="val">Vendas</th>
-                                ${currentScreen === 'CLIENT_REPORT' ? '<th class="val">Potes Cocada</th>' : ''}
+                                ${currentScreen === 'CLIENT_REPORT' ? `
+                                  <th class="val">Potes Cocada</th>
+                                  <th class="val">Pagas</th>
+                                  <th class="val" style="color: #0ea5e9;">A Receber</th>
+                                  <th class="val" style="color: #dc2626;">Vencidas</th>
+                                  <th class="val">Total a Receber</th>
+                                ` : ''}
                                 <th class="val">Total Vendido</th>
                                 <th class="val">Lucro</th>
                               </tr>
@@ -909,7 +960,13 @@ const App: React.FC = () => {
                                   <td class="pos">${index + 1}</td>
                                   <td class="name">${item.name}</td>
                                   <td class="val">${item.salesCount}</td>
-                                  ${currentScreen === 'CLIENT_REPORT' ? `<td class="val">${item.cocadaPotes || 0}</td>` : ''}
+                                  ${currentScreen === 'CLIENT_REPORT' ? `
+                                    <td class="val">${item.cocadaPotes || 0}</td>
+                                    <td class="val">${item.cocadaPotesPaid || 0}</td>
+                                    <td class="val" style="color: #0ea5e9;">${item.cocadaPotesToReceive || 0}</td>
+                                    <td class="val" style="color: #dc2626;">${item.cocadaPotesOverdue || 0}</td>
+                                    <td class="val">R$ ${( (item.totalPendingAmount || 0) + (item.totalOverdueAmount || 0) ).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                  ` : ''}
                                   <td class="val">R$ ${item.totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                                   <td class="val">R$ ${item.totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                                 </tr>
@@ -925,6 +982,22 @@ const App: React.FC = () => {
                             <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; color: #b45309;">
                               <span>Total Potes Cocada:</span>
                               <span>${data.reduce((acc: number, curr: any) => acc + (curr.cocadaPotes || 0), 0)}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; color: #16a34a; padding-left: 20px;">
+                              <span>Pagas:</span>
+                              <span>${data.reduce((acc: number, curr: any) => acc + (curr.cocadaPotesPaid || 0), 0)}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; color: #0ea5e9; padding-left: 20px;">
+                              <span>A Receber:</span>
+                              <span>${data.reduce((acc: number, curr: any) => acc + (curr.cocadaPotesToReceive || 0), 0)}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; color: #dc2626; padding-left: 20px;">
+                              <span>Vencidas:</span>
+                              <span>${data.reduce((acc: number, curr: any) => acc + (curr.cocadaPotesOverdue || 0), 0)}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; color: #dc2626;">
+                              <span>Total Valor a Receber:</span>
+                              <span>R$ ${data.reduce((acc: number, curr: any) => acc + (curr.totalPendingAmount || 0) + (curr.totalOverdueAmount || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                             </div>
                             ` : ''}
                             <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; color: #0ea5e9;">
@@ -976,21 +1049,35 @@ const App: React.FC = () => {
                     <div className="text-[10px] font-black text-slate-300 uppercase italic">Pos. {index + 1}</div>
                     <h3 className="font-black text-slate-800 text-sm uppercase italic leading-none truncate flex-1">{item.name}</h3>
                   </div>
-                  <div className={`grid ${currentScreen === 'CLIENT_REPORT' ? 'grid-cols-4' : 'grid-cols-3'} gap-2`}>
+                  <div className={`grid ${currentScreen === 'CLIENT_REPORT' ? 'grid-cols-7' : 'grid-cols-3'} gap-2`}>
                     <div className="text-center">
-                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Nro. Vendas</p>
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Vendas</p>
                       <p className="text-lg font-black text-yellow-500">{item.salesCount}</p>
                     </div>
                     {currentScreen === 'CLIENT_REPORT' && (
-                      <div className="text-center">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Potes Cocada</p>
-                        <p className="text-lg font-black text-amber-600">{(item as any).cocadaPotes || 0}</p>
-                      </div>
+                      <>
+                        <div className="text-center">
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>
+                          <p className="text-lg font-black text-amber-600">{(item as any).cocadaPotes || 0}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Pagas</p>
+                          <p className="text-lg font-black text-green-500">{(item as any).cocadaPotesPaid || 0}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">A Rec.</p>
+                          <p className="text-lg font-black text-blue-500">{(item as any).cocadaPotesToReceive || 0}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Vencidas</p>
+                          <p className="text-lg font-black text-red-500">{(item as any).cocadaPotesOverdue || 0}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Valor Rec.</p>
+                          <p className="text-sm font-black text-red-600 leading-tight">R$ {( (item as any).totalPendingAmount + (item as any).totalOverdueAmount ).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                        </div>
+                      </>
                     )}
-                    <div className="text-center">
-                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Lucro</p>
-                      <p className="text-sm font-black text-green-600">R$ {item.totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                    </div>
                     <div className="text-center">
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Vendido</p>
                       <p className="text-sm font-black text-blue-600">R$ {item.totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
@@ -1007,10 +1094,28 @@ const App: React.FC = () => {
               <span className="text-lg font-black text-slate-800">{(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.salesCount, 0)}</span>
             </div>
             {currentScreen === 'CLIENT_REPORT' && (
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] font-black text-amber-700 uppercase">Total Potes Cocada:</span>
-                <span className="text-lg font-black text-amber-600">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotes || 0), 0)}</span>
-              </div>
+              <>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] font-black text-amber-700 uppercase">Total Potes Cocada:</span>
+                  <span className="text-lg font-black text-amber-600">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotes || 0), 0)}</span>
+                </div>
+                <div className="flex justify-between items-center mb-1 pl-4">
+                  <span className="text-[10px] font-black text-green-600 uppercase">Potes Pagos:</span>
+                  <span className="text-base font-black text-green-500">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotesPaid || 0), 0)}</span>
+                </div>
+                <div className="flex justify-between items-center mb-1 pl-4">
+                  <span className="text-[10px] font-black text-blue-600 uppercase">Potes a Receber:</span>
+                  <span className="text-base font-black text-blue-500">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotesToReceive || 0), 0)}</span>
+                </div>
+                <div className="flex justify-between items-center mb-1 pl-4">
+                  <span className="text-[10px] font-black text-red-500 uppercase">Potes Vencidos:</span>
+                  <span className="text-base font-black text-red-400">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotesOverdue || 0), 0)}</span>
+                </div>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] font-black text-red-600 uppercase">Total Valor a Receber:</span>
+                  <span className="text-lg font-black text-red-600">R$ {clientRanking.reduce((acc, curr) => acc + (curr.totalPendingAmount || 0) + (curr.totalOverdueAmount || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                </div>
+              </>
             )}
             <div className="flex justify-between items-center mb-1">
               <span className="text-[10px] font-black text-slate-500 uppercase">Venda Total:</span>
