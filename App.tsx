@@ -763,8 +763,8 @@ const App: React.FC = () => {
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform ${sale.status === 'ORCAMENTO' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600'}`}>
                           {sale.status === 'ORCAMENTO' ? <FileText size={20}/> : <ShoppingBag size={20} />}
                         </div>
-                        <div className="min-w-0">
-                           <h4 className="font-black text-slate-800 text-xs uppercase italic leading-tight truncate max-w-[120px]">{sale.clientName}</h4>
+                        <div className="min-w-0 flex-1">
+                           <h4 className="font-black text-slate-800 text-xs uppercase italic leading-tight">{sale.clientName}</h4>
                            <p className="text-[7px] font-black text-slate-400 uppercase mt-0.5">{sale.date} • {sale.status}</p>
                         </div>
                      </div>
@@ -948,7 +948,7 @@ const App: React.FC = () => {
                                   <th class="val">Pagas</th>
                                   <th class="val" style="color: #0ea5e9;">A Receber</th>
                                   <th class="val" style="color: #dc2626;">Vencidas</th>
-                                  <th class="val">Total a Receber</th>
+                                  <th class="val" style="color: #dc2626;">Total a Receber</th>
                                 ` : ''}
                                 <th class="val">Total Vendido</th>
                                 <th class="val">Lucro</th>
@@ -965,7 +965,7 @@ const App: React.FC = () => {
                                     <td class="val">${item.cocadaPotesPaid || 0}</td>
                                     <td class="val" style="color: #0ea5e9;">${item.cocadaPotesToReceive || 0}</td>
                                     <td class="val" style="color: #dc2626;">${item.cocadaPotesOverdue || 0}</td>
-                                    <td class="val">R$ ${( (item.totalPendingAmount || 0) + (item.totalOverdueAmount || 0) ).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                    <td class="val" style="${((item.totalPendingAmount || 0) + (item.totalOverdueAmount || 0)) > 0 ? 'color: #dc2626; font-weight: bold;' : ''}">R$ ${( (item.totalPendingAmount || 0) + (item.totalOverdueAmount || 0) ).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                                   ` : ''}
                                   <td class="val">R$ ${item.totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                                   <td class="val">R$ ${item.totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
@@ -1047,7 +1047,7 @@ const App: React.FC = () => {
                 <div key={index} className="bg-white border-b border-slate-100 pb-4 last:border-0">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="text-[10px] font-black text-slate-300 uppercase italic">Pos. {index + 1}</div>
-                    <h3 className="font-black text-slate-800 text-sm uppercase italic leading-none truncate flex-1">{item.name}</h3>
+                    <h3 className="font-black text-slate-800 text-sm uppercase italic leading-none flex-1">{item.name}</h3>
                   </div>
                   <div className={`grid ${currentScreen === 'CLIENT_REPORT' ? 'grid-cols-7' : 'grid-cols-3'} gap-2`}>
                     <div className="text-center">
