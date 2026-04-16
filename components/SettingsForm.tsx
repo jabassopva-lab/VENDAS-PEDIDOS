@@ -143,6 +143,106 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }
         </div>
       )}
 
+      {/* Business Data */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
+          <Building2 size={18} className="text-blue-600" />
+          <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Dados da Empresa</h3>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
+              Nome Fantasia / Razão Social <span className="text-red-500">*</span>
+            </label>
+            <input 
+              className={`w-full mt-1 px-4 py-3 bg-gray-50 border rounded-xl focus:border-blue-500 outline-none transition-all font-bold text-gray-800 ${!formData.companyName || formData.companyName === 'MINHA EMPRESA' ? 'border-red-200' : 'border-gray-200'}`}
+              value={formData.companyName}
+              onChange={e => setFormData({...formData, companyName: e.target.value})}
+              placeholder="Ex: Minha Loja de Doces"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">CNPJ / CPF</label>
+            <input 
+              className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all"
+              value={formData.document}
+              onChange={e => setFormData({...formData, document: e.target.value})}
+              placeholder="00.000.000/0001-00"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Segmento do SaaS</label>
+            <select 
+              className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all font-bold text-slate-700 appearance-none"
+              value={formData.businessType || 'GERAL'}
+              onChange={e => setFormData({...formData, businessType: e.target.value as any})}
+            >
+              <option value="GERAL">Geral / Multivendas</option>
+              <option value="COCORA">Cocada (Distribuição)</option>
+              <option value="ACAI">Açaí (Vendas e Adicionais)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Contact & Address */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
+          <Smartphone size={18} className="text-green-600" />
+          <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Contato e Localização</h3>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
+                WhatsApp <span className="text-red-500">*</span>
+              </label>
+              <input 
+                className={`w-full mt-1 px-4 py-3 bg-gray-50 border rounded-xl focus:border-blue-500 outline-none ${!formData.phone ? 'border-red-200' : 'border-gray-200'}`}
+                value={formData.phone}
+                onChange={e => setFormData({...formData, phone: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">E-mail</label>
+              <input 
+                className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none"
+                value={formData.email}
+                onChange={e => setFormData({...formData, email: e.target.value})}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Endereço Completo</label>
+            <textarea 
+              rows={2}
+              className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none resize-none"
+              value={formData.address}
+              onChange={e => setFormData({...formData, address: e.target.value})}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Payment Keys */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
+          <CreditCard size={18} className="text-purple-600" />
+          <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Cobrança e Recebimento</h3>
+        </div>
+        <div className="p-5">
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Chave Pix (Para Comprovantes)</label>
+            <input 
+              className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none font-mono"
+              value={formData.pixKey}
+              onChange={e => setFormData({...formData, pixKey: e.target.value})}
+              placeholder="CNPJ, E-mail ou Celular"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Plan Status Card */}
       <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-3xl p-6 text-white shadow-lg shadow-blue-200 relative overflow-hidden">
         <Zap className="absolute -right-4 -bottom-4 text-white/10 w-32 h-32" />
@@ -255,106 +355,6 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }
                 </p>
               </div>
            </div>
-        </div>
-      </div>
-
-      {/* Business Data */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-          <Building2 size={18} className="text-blue-600" />
-          <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Dados da Empresa</h3>
-        </div>
-        <div className="p-5 space-y-4">
-          <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
-              Nome Fantasia / Razão Social <span className="text-red-500">*</span>
-            </label>
-            <input 
-              className={`w-full mt-1 px-4 py-3 bg-gray-50 border rounded-xl focus:border-blue-500 outline-none transition-all font-bold text-gray-800 ${!formData.companyName || formData.companyName === 'MINHA EMPRESA' ? 'border-red-200' : 'border-gray-200'}`}
-              value={formData.companyName}
-              onChange={e => setFormData({...formData, companyName: e.target.value})}
-              placeholder="Ex: Minha Loja de Doces"
-            />
-          </div>
-          <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">CNPJ / CPF</label>
-            <input 
-              className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all"
-              value={formData.document}
-              onChange={e => setFormData({...formData, document: e.target.value})}
-              placeholder="00.000.000/0001-00"
-            />
-          </div>
-          <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Segmento do SaaS</label>
-            <select 
-              className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all font-bold text-slate-700 appearance-none"
-              value={formData.businessType || 'GERAL'}
-              onChange={e => setFormData({...formData, businessType: e.target.value as any})}
-            >
-              <option value="GERAL">Geral / Multivendas</option>
-              <option value="COCORA">Cocada (Distribuição)</option>
-              <option value="ACAI">Açaí (Vendas e Adicionais)</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Contact & Address */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-          <Smartphone size={18} className="text-green-600" />
-          <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Contato e Localização</h3>
-        </div>
-        <div className="p-5 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
-                WhatsApp <span className="text-red-500">*</span>
-              </label>
-              <input 
-                className={`w-full mt-1 px-4 py-3 bg-gray-50 border rounded-xl focus:border-blue-500 outline-none ${!formData.phone ? 'border-red-200' : 'border-gray-200'}`}
-                value={formData.phone}
-                onChange={e => setFormData({...formData, phone: e.target.value})}
-              />
-            </div>
-            <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">E-mail</label>
-              <input 
-                className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none"
-                value={formData.email}
-                onChange={e => setFormData({...formData, email: e.target.value})}
-              />
-            </div>
-          </div>
-          <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Endereço Completo</label>
-            <textarea 
-              rows={2}
-              className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none resize-none"
-              value={formData.address}
-              onChange={e => setFormData({...formData, address: e.target.value})}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Payment Keys */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-          <CreditCard size={18} className="text-purple-600" />
-          <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Cobrança e Recebimento</h3>
-        </div>
-        <div className="p-5">
-          <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Chave Pix (Para Comprovantes)</label>
-            <input 
-              className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none font-mono"
-              value={formData.pixKey}
-              onChange={e => setFormData({...formData, pixKey: e.target.value})}
-              placeholder="CNPJ, E-mail ou Celular"
-            />
-          </div>
         </div>
       </div>
 
