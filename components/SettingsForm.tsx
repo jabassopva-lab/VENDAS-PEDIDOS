@@ -159,6 +159,18 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
               placeholder="00.000.000/0001-00"
             />
           </div>
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Segmento do SaaS</label>
+            <select 
+              className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all font-bold text-slate-700 appearance-none"
+              value={formData.businessType || 'GERAL'}
+              onChange={e => setFormData({...formData, businessType: e.target.value as any})}
+            >
+              <option value="GERAL">Geral / Multivendas</option>
+              <option value="COCORA">Cocada (Distribuição)</option>
+              <option value="ACAI">Açaí (Vendas e Adicionais)</option>
+            </select>
+          </div>
         </div>
       </div>
 

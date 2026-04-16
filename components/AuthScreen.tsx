@@ -26,10 +26,18 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
     setError(null);
 
     // Converte o identificador em um formato de e-mail para o Supabase Auth
-    // Usamos um domínio mais comum para evitar filtros de validação de domínio do Supabase
+    // Normalizamos para remover acentos e caracteres especiais que invalidam o e-mail
+    const normalizedIdentifier = identifier
+      .toLowerCase()
+      .trim()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+      .replace(/\s+/g, '.')            // Espaços viram pontos
+      .replace(/[^a-z0-9._]/g, '');    // Remove caracteres especiais, mas mantém ponto e underline
+
     const loginEmail = identifier.includes('@') 
       ? identifier 
-      : `${identifier.toLowerCase().trim().replace(/\s+/g, '.')}@omnivenda.com`;
+      : `${normalizedIdentifier}@omnivenda.com`;
 
     try {
       if (isLogin) {

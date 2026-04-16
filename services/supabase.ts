@@ -34,7 +34,14 @@ const shouldUseSupabase = () => {
   return isConfigured && !isTestMode();
 };
 
+let impersonatedUserId: string | null = null;
+
+export const setImpersonatedUserId = (id: string | null) => {
+  impersonatedUserId = id;
+};
+
 const getUserId = async () => {
+  if (impersonatedUserId) return impersonatedUserId;
   const { data: { session } } = await supabase.auth.getSession();
   return session?.user?.id;
 };
@@ -43,7 +50,8 @@ export const db = {
   products: {
     getAll: async () => {
       if (!shouldUseSupabase()) return getLocal('products');
-      const { data, error } = await supabase.from('products').select('*').order('name');
+      const userId = await getUserId();
+      const { data, error } = await supabase.from('products').select('*').eq('user_id', userId).order('name');
       if (error) throw error;
       return (data || []).map((p: any) => ({
         ...p,
@@ -93,7 +101,8 @@ export const db = {
   clients: {
     getAll: async () => {
       if (!shouldUseSupabase()) return getLocal('clients');
-      const { data, error } = await supabase.from('clients').select('*').order('name');
+      const userId = await getUserId();
+      const { data, error } = await supabase.from('clients').select('*').eq('user_id', userId).order('name');
       if (error) throw error;
       return data || [];
     },
@@ -121,7 +130,8 @@ export const db = {
   sales: {
     getAll: async () => {
       if (!shouldUseSupabase()) return getLocal('sales');
-      const { data, error } = await supabase.from('sales').select('*').order('created_at', { ascending: false });
+      const userId = await getUserId();
+      const { data, error } = await supabase.from('sales').select('*').eq('user_id', userId).order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     },
@@ -174,7 +184,9 @@ export const db = {
   profile: {
     get: async () => {
       if (!shouldUseSupabase()) return JSON.parse(localStorage.getItem('omnivenda_profile') || 'null');
-      const { data, error } = await supabase.from('profiles').select('*').maybeSingle();
+      const userId = await getUserId();
+      if (!userId) return null;
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
       if (error) {
         console.error("Erro ao buscar perfil:", error);
         return null;
@@ -188,7 +200,9 @@ export const db = {
         logoUrl: data.logo_url || data.logoUrl,
         planStatus: data.plan_status || data.planStatus,
         nextBilling: data.next_billing || data.nextBilling,
-        pixKey: data.pix_key || data.pixKey
+        pixKey: data.pix_key || data.pixKey,
+        role: data.role || 'USER',
+        businessType: data.business_type || 'GERAL'
       };
     },
     update: async (profile: any) => {
@@ -212,11 +226,14 @@ export const db = {
         logo_url: profile.logoUrl,
         plan_status: profile.planStatus || 'START',
         next_billing: profile.nextBilling,
-        pix_key: profile.pixKey
+        pix_key: profile.pixKey,
+        role: profile.role || 'USER',
+        business_type: profile.businessType || 'GERAL'
       };
       
       console.log("Salvando perfil no Supabase:", payload);
-      const { data, error } = await supabase.from('profiles').upsert(payload).select();
+      // Usamos onConflict para garantir que o banco saiba qual coluna usar para decidir entre Insert ou Update
+      const { data, error } = await supabase.from('profiles').upsert(payload, { onConflict: 'user_id' }).select();
       
       if (error) {
         console.error("Erro detalhado Supabase (profile):", error);
@@ -235,8 +252,51 @@ export const db = {
         logoUrl: saved.logo_url,
         planStatus: saved.plan_status,
         nextBilling: saved.next_billing,
-        pixKey: saved.pix_key
+        pixKey: saved.pix_key,
+        role: saved.role,
+        businessType: saved.business_type
       };
+    }
+  },
+  admin: {
+    getAllBusinesses: async () => {
+      if (!shouldUseSupabase()) return [];
+      const { data, error } = await supabase.from('profiles').select('*').order('company_name');
+      if (error) {
+        console.error("Erro ao buscar empresas:", error);
+        return [];
+      }
+      return (data || []).map((d: any) => ({
+        ...d,
+        companyName: d.company_name,
+        logoUrl: d.logo_url,
+        role: d.role
+      }));
+    },
+    getBusinessStats: async () => {
+      if (!shouldUseSupabase()) return [];
+      
+      // Busca todos os perfis cadastrados no sistema
+      const { data: profiles, error: pError } = await supabase.from('profiles').select('*').order('company_name');
+      if (pError) {
+        console.error("ERRO AO BUSCAR EMPRESAS (RLS?):", pError);
+        return [];
+      }
+
+      if (!profiles || profiles.length === 0) return [];
+
+      const stats = profiles.map((p: any) => {
+        return {
+          id: p.user_id,
+          companyName: p.company_name,
+          email: p.email,
+          planStatus: p.plan_status || 'ATIVO',
+          nextBilling: p.next_billing || '2026-05-15',
+          role: p.role
+        };
+      });
+
+      return stats;
     }
   }
 };

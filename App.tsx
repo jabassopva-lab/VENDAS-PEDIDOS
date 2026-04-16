@@ -33,7 +33,8 @@ import {
   LogOut,
   Store,
   Info,
-  Printer
+  Printer,
+  RefreshCw
 } from 'lucide-react';
 import ProductModal from './components/ProductModal.tsx';
 import ClientForm from './components/ClientForm.tsx';
@@ -41,7 +42,7 @@ import NewSaleModal from './components/NewSaleModal.tsx';
 import SaleDetailModal from './components/SaleDetailModal.tsx';
 import SettingsForm from './components/SettingsForm.tsx';
 import AuthScreen from './components/AuthScreen.tsx';
-import { supabase, db, isConfigured } from './services/supabase.ts';
+import { supabase, db, isConfigured, setImpersonatedUserId } from './services/supabase.ts';
 import { Product, Client, ModalType, Screen, Sale, BusinessProfile, SalesData } from './types.ts';
 
 const DEFAULT_PROFILE: BusinessProfile = {
@@ -102,6 +103,37 @@ const App: React.FC = () => {
   const [filterClientId, setFilterClientId] = useState<string>('ALL');
   const [filterProductId, setFilterProductId] = useState<string>('ALL');
   const [showFilters, setShowFilters] = useState(false);
+  const [allBusinessesStats, setAllBusinessesStats] = useState<any[]>([]);
+  const [isImpersonating, setIsImpersonating] = useState(false);
+  const [subscriptionModal, setSubscriptionModal] = useState<{ isOpen: boolean, business: any | null }>({ isOpen: false, business: null });
+
+  const isDeveloper = useMemo(() => {
+    const email = session?.user?.email?.toLowerCase();
+    const companyName = businessProfile.companyName?.toUpperCase();
+    
+    const isDevEmail = email === 'jabasso.pva@gmail.com' || 
+                       email === 'omnvenda_adm@omnivenda.com';
+                       
+    const isDevCompany = companyName === 'OMNVENDA_ADM';
+    
+    return isDevEmail || isDevCompany || businessProfile.role === 'DEVELOPER';
+  }, [session, businessProfile]);
+
+  const isPureAdmin = useMemo(() => {
+    return session?.user?.email?.toLowerCase() === 'omnvenda_adm@omnivenda.com';
+  }, [session]);
+
+  useEffect(() => {
+    if (isPureAdmin && currentScreen !== 'DEVELOPER_PANEL') {
+      setCurrentScreen('DEVELOPER_PANEL');
+    }
+  }, [isPureAdmin, currentScreen]);
+
+  useEffect(() => {
+    if (currentScreen === 'DEVELOPER_PANEL' && isDeveloper) {
+      db.admin.getBusinessStats().then(setAllBusinessesStats);
+    }
+  }, [currentScreen, isDeveloper]);
 
   useEffect(() => {
     const savedTest = localStorage.getItem('omnivenda_test_session');
@@ -129,6 +161,12 @@ const App: React.FC = () => {
 
   const fetchAllData = async () => {
     setLoading(true);
+    // Limpa estados para garantir que uma nova empresa comece do zero
+    setProducts([]);
+    setClients([]);
+    setSalesHistory([]);
+    setBusinessProfile(DEFAULT_PROFILE);
+    
     try {
       const [p, c, s, prof] = await Promise.all([
         db.products.getAll(),
@@ -142,11 +180,32 @@ const App: React.FC = () => {
       
       if (prof) {
         setBusinessProfile(prof);
-      } else if (session?.user?.user_metadata?.company_name) {
-        setBusinessProfile(prev => ({
-          ...prev,
-          companyName: session.user.user_metadata.company_name
-        }));
+      } else if (session?.user) {
+        // Se não existe perfil, cria um inicial baseado no metadata ou no email
+        const email = session.user.email || '';
+        const emailPrefix = email.split('@')[0].toUpperCase().replace(/[._]/g, ' ');
+        
+        // Prioridade: Metadata > Prefixo do Email > Nome Padrão
+        const detectedName = session.user.user_metadata?.company_name || 
+                             session.user.user_metadata?.username || 
+                             emailPrefix || 
+                             'MINHA EMPRESA';
+
+        const initialProfile = {
+          ...DEFAULT_PROFILE,
+          companyName: detectedName,
+          email: email,
+          role: (email === 'omnvenda_adm@omnivenda.com' || email === 'jabasso.pva@gmail.com') ? 'DEVELOPER' : 'USER'
+        };
+        
+        setBusinessProfile(initialProfile);
+        
+        // Auto-cria o perfil no banco para que ele apareça no Painel Admin imediatamente
+        db.profile.update(initialProfile).then((saved) => {
+          if (saved) setBusinessProfile(saved);
+        }).catch(err => {
+          console.error("Erro ao auto-criar perfil inicial:", err);
+        });
       }
     } catch (e: any) {
       console.error("Erro ao sincronizar dados:", e);
@@ -156,12 +215,20 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAuthSuccess = (isTest?: boolean, testName?: string) => {
+  const handleAuthSuccess = async (isTest?: boolean, testName?: string) => {
     if (isTest) {
       setIsTestMode(true);
       setSession({ user: { email: 'demo@omnivenda.com', user_metadata: { company_name: testName } } });
       localStorage.setItem('omnivenda_test_session', 'active');
       fetchAllData();
+    } else {
+      // Força a busca da sessão imediatamente após o sucesso do AuthScreen
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (currentSession) {
+        setSession(currentSession);
+        // fetchAllData já usa o session do estado, então garantimos que ele rode
+        setTimeout(() => fetchAllData(), 500);
+      }
     }
   };
 
@@ -309,6 +376,13 @@ const App: React.FC = () => {
   };
 
   const handleLogout = async () => {
+    if (isImpersonating) {
+      setImpersonatedUserId(null);
+      setIsImpersonating(false);
+      fetchAllData();
+      setCurrentScreen('DEVELOPER_PANEL');
+      return;
+    }
     if (isTestMode) {
       localStorage.removeItem('omnivenda_test_session');
       setIsTestMode(false);
@@ -316,6 +390,13 @@ const App: React.FC = () => {
       await supabase.auth.signOut();
     }
     setSession(null);
+    setCurrentScreen('HOME');
+  };
+
+  const handleImpersonate = (userId: string) => {
+    setImpersonatedUserId(userId);
+    setIsImpersonating(true);
+    fetchAllData();
     setCurrentScreen('HOME');
   };
 
@@ -469,6 +550,27 @@ const App: React.FC = () => {
     setCurrentDate(next);
   };
 
+  const handleUpdateSubscription = async (bizId: string, status: string, date: string) => {
+    try {
+      const biz = allBusinessesStats.find(b => b.id === bizId);
+      if (!biz) return;
+
+      const updatedProfile = {
+        ...biz,
+        planStatus: status,
+        nextBilling: date
+      };
+
+      await db.profile.update(updatedProfile);
+      setAllBusinessesStats(prev => prev.map(b => b.id === bizId ? { ...b, planStatus: status, nextBilling: date } : b));
+      setSubscriptionModal({ isOpen: false, business: null });
+      triggerNotify('Assinatura Atualizada!');
+    } catch (e: any) {
+      console.error("Erro ao atualizar assinatura:", e);
+      alert("Erro ao atualizar assinatura.");
+    }
+  };
+
   const Header = ({ title, showBack = false, rightAction }: { title: string, showBack?: boolean, rightAction?: React.ReactNode }) => (
     <div className="sticky top-0 z-40 bg-[#fffbeb]">
       <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-4 pb-3 px-6 shadow-xl rounded-b-[1.8rem] relative overflow-hidden border-b-4 border-yellow-400">
@@ -482,7 +584,10 @@ const App: React.FC = () => {
                 <ArrowLeft size={18} />
               </button>
             ) : (
-              <div onClick={() => setCurrentScreen('SETTINGS')} className="w-12 h-12 bg-white rounded-xl shadow-lg cursor-pointer border-2 border-yellow-400 flex items-center justify-center overflow-hidden">
+              <div 
+                onClick={() => !isPureAdmin && setCurrentScreen('SETTINGS')} 
+                className={`w-12 h-12 bg-white rounded-xl shadow-lg border-2 border-yellow-400 flex items-center justify-center overflow-hidden ${!isPureAdmin ? 'cursor-pointer active:scale-95 transition-all' : ''}`}
+              >
                  {businessProfile.logoUrl ? (
                    <img src={convertDriveLink(businessProfile.logoUrl)} className="w-full h-full object-cover" />
                  ) : (
@@ -543,10 +648,41 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {currentScreen === 'HOME' && (
+      {isImpersonating && (
+        <div className="bg-red-600 text-white px-6 py-2 flex items-center justify-between shadow-lg sticky top-0 z-[60]">
+          <div className="flex items-center gap-2">
+            <Eye size={14} className="animate-pulse" />
+            <span className="text-[10px] font-black uppercase italic tracking-widest">Modo Visualização: {businessProfile.companyName}</span>
+          </div>
+          <button 
+            onClick={handleLogout}
+            className="bg-white text-red-600 px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest active:scale-95 transition-all"
+          >
+            Sair da Visualização
+          </button>
+        </div>
+      )}
+
+      {currentScreen === 'HOME' && !isPureAdmin && (
         <>
           <Header title={businessProfile.companyName || 'Minha Empresa'} />
           <main className="px-6 mt-6 relative z-30 space-y-4 flex-1">
+            {isDeveloper && (
+              <button 
+                onClick={() => setCurrentScreen('DEVELOPER_PANEL')}
+                className="w-full bg-slate-800 text-white py-3 px-6 rounded-2xl shadow-lg flex items-center justify-between group active:scale-95 transition-all border-b-4 border-slate-950"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center text-blue-400"><Database size={18} /></div>
+                  <div className="text-left">
+                    <h3 className="text-sm font-black uppercase italic tracking-tighter">Painel do Desenvolvedor</h3>
+                    <p className="text-slate-400 text-[7px] font-black uppercase">Gerenciar Clientes SaaS</p>
+                  </div>
+                </div>
+                <ArrowRight size={18} className="text-slate-600" />
+              </button>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
                <div className="bg-white p-5 rounded-[2.2rem] shadow-lg border-b-4 border-[#0ea5e9]/10 flex flex-col h-32 justify-between active:scale-95 transition-all">
                   <div className="bg-[#0ea5e9] w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md"><Wallet size={20}/></div>
@@ -599,7 +735,7 @@ const App: React.FC = () => {
         </>
       )}
 
-      {currentScreen === 'SETTINGS' && (
+      {currentScreen === 'SETTINGS' && !isPureAdmin && (
         <div className="min-h-screen">
           <Header title="Configurações" showBack />
           <SettingsForm profile={businessProfile} onSave={async (newProfile) => { 
@@ -615,7 +751,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {currentScreen === 'CLIENTS' && (
+      {currentScreen === 'CLIENTS' && !isPureAdmin && (
         <div className="min-h-screen">
           <Header title="Clientes" showBack rightAction={<button onClick={() => setClientModal({ type: ModalType.ADD })} className="bg-white/20 p-2.5 rounded-2xl"><Plus size={22} /></button>} />
           <div className="px-6 py-8 space-y-3">
@@ -637,7 +773,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {currentScreen === 'PRODUCTS' && (
+      {currentScreen === 'PRODUCTS' && !isPureAdmin && (
         <div className="min-h-screen">
           <Header title="Produtos/Estoques" showBack rightAction={<button onClick={() => setProductModal({ type: ModalType.ADD })} className="bg-white/20 p-2.5 rounded-2xl"><Plus size={22} /></button>} />
           
@@ -675,7 +811,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {currentScreen === 'MONTHLY_SALES' && (
+      {currentScreen === 'MONTHLY_SALES' && !isPureAdmin && (
         <div className="min-h-screen">
           <Header 
             title="Histórico" 
@@ -779,7 +915,93 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {currentScreen === 'REPORTS' && (
+      {currentScreen === 'DEVELOPER_PANEL' && isDeveloper && (
+        <div className="min-h-screen">
+          <Header title="Painel Admin" showBack={!isPureAdmin} />
+          <div className="px-6 py-6 space-y-4">
+            <div className="bg-slate-800 p-6 rounded-[2.5rem] text-white shadow-xl border-b-8 border-slate-950">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg"><Sparkles size={24} /></div>
+                  <div>
+                    <h2 className="text-xl font-black uppercase italic tracking-tighter">Visão Geral SaaS</h2>
+                    <p className="text-blue-300 text-[8px] font-black uppercase tracking-widest">Controle de Ecossistema</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    setLoading(true);
+                    db.admin.getBusinessStats().then(stats => {
+                      setAllBusinessesStats(stats);
+                      setLoading(false);
+                      triggerNotify('Lista Atualizada!');
+                    }).catch(() => setLoading(false));
+                  }}
+                  className="p-3 bg-white/10 rounded-xl active:rotate-180 transition-all duration-500"
+                >
+                  <RefreshCw size={20} />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-slate-700/50 p-3 rounded-2xl border border-white/5">
+                  <p className="text-[7px] font-black text-slate-400 uppercase mb-1">Total Empresas</p>
+                  <p className="text-lg font-black">{allBusinessesStats.length}</p>
+                </div>
+                <div className="bg-slate-700/50 p-3 rounded-2xl border border-white/5">
+                  <p className="text-[7px] font-black text-slate-400 uppercase mb-1">Assinaturas Ativas</p>
+                  <p className="text-lg font-black text-green-400">{allBusinessesStats.filter(b => b.planStatus === 'ATIVO').length}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Gestão de Assinaturas</h3>
+              {allBusinessesStats.length === 0 ? (
+                <div className="bg-white p-8 rounded-[2rem] shadow-md border-b-4 border-slate-100 text-center space-y-3">
+                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mx-auto">
+                    <Database size={32} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-slate-800 uppercase italic">Nenhuma empresa encontrada</p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase leading-relaxed mt-2">
+                      1. Certifique-se que a empresa já fez o primeiro login.<br/>
+                      2. Verifique se a regra de RLS no Supabase foi salva corretamente.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                allBusinessesStats.map(biz => (
+                  <div key={biz.id} className="bg-white p-4 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500 font-black text-lg">
+                        {biz.companyName?.charAt(0) || 'E'}
+                      </div>
+                      <div>
+                        <h4 className="font-black text-slate-800 text-xs uppercase italic leading-tight">{biz.companyName}</h4>
+                        <p className="text-[7px] font-black text-slate-400 uppercase mt-0.5">{biz.email}</p>
+                      </div>
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-1">
+                      <span className={`text-[8px] font-black px-2 py-1 rounded-lg uppercase tracking-widest ${biz.planStatus === 'ATIVO' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        {biz.planStatus || 'ATIVO'}
+                      </span>
+                      <p className="text-[7px] font-black text-slate-400 uppercase">Vencimento: {biz.nextBilling || '15/05/2026'}</p>
+                      <button 
+                        onClick={() => setSubscriptionModal({ isOpen: true, business: biz })}
+                        className="mt-1 bg-[#0ea5e9] text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center gap-1 border-b-2 border-blue-700"
+                      >
+                        Gerenciar
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {currentScreen === 'REPORTS' && !isPureAdmin && (
         <div className="min-h-screen bg-[#f3f4f6]">
           <div className="bg-[#0ea5e9] text-white pt-2 shadow-md">
              <div className="flex justify-between px-10 pb-4">
@@ -888,13 +1110,15 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <button onClick={() => setCurrentScreen('HOME')} className="fixed bottom-6 right-6 w-14 h-14 bg-[#0ea5e9] text-white rounded-full shadow-2xl flex items-center justify-center active:scale-90 border-4 border-white">
-            <ArrowLeft size={24}/>
-          </button>
+          {!isPureAdmin && (
+            <button onClick={() => setCurrentScreen('HOME')} className="fixed bottom-6 right-6 w-14 h-14 bg-[#0ea5e9] text-white rounded-full shadow-2xl flex items-center justify-center active:scale-90 border-4 border-white">
+              <ArrowLeft size={24}/>
+            </button>
+          )}
         </div>
       )}
 
-      {(currentScreen === 'CLIENT_REPORT' || currentScreen === 'PRODUCT_REPORT') && (
+      {(currentScreen === 'CLIENT_REPORT' || currentScreen === 'PRODUCT_REPORT') && !isPureAdmin && (
         <div className="min-h-screen bg-white flex flex-col animate-in slide-in-from-right duration-300">
           <div className="bg-[#0ea5e9] text-white pt-2 shadow-md flex-shrink-0">
              <div className="flex items-center px-6 py-2">
@@ -944,7 +1168,7 @@ const App: React.FC = () => {
                                 <th>Nome</th>
                                 <th class="val">Vendas</th>
                                 ${currentScreen === 'CLIENT_REPORT' ? `
-                                  <th class="val">Potes Cocada</th>
+                                  <th class="val">${businessProfile.businessType === 'COCORA' ? 'Potes Cocada' : 'Qtd Itens'}</th>
                                   <th class="val">Pagas</th>
                                   <th class="val" style="color: #0ea5e9;">A Receber</th>
                                   <th class="val" style="color: #dc2626;">Vencidas</th>
@@ -980,7 +1204,7 @@ const App: React.FC = () => {
                             </div>
                             ${currentScreen === 'CLIENT_REPORT' ? `
                             <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; color: #b45309;">
-                              <span>Total Potes Cocada:</span>
+                              <span>Total {businessProfile.businessType === 'COCORA' ? 'Potes Cocada' : 'Itens'}:</span>
                               <span>${data.reduce((acc: number, curr: any) => acc + (curr.cocadaPotes || 0), 0)}</span>
                             </div>
                             <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; color: #16a34a; padding-left: 20px;">
@@ -1057,7 +1281,7 @@ const App: React.FC = () => {
                     {currentScreen === 'CLIENT_REPORT' && (
                       <>
                         <div className="text-center">
-                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">{businessProfile.businessType === 'COCORA' ? 'Potes' : 'Itens'}</p>
                           <p className="text-lg font-black text-amber-600">{(item as any).cocadaPotes || 0}</p>
                         </div>
                         <div className="text-center">
@@ -1096,7 +1320,7 @@ const App: React.FC = () => {
             {currentScreen === 'CLIENT_REPORT' && (
               <>
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-[10px] font-black text-amber-700 uppercase">Total Potes Cocada:</span>
+                  <span className="text-[10px] font-black text-amber-700 uppercase">Total {businessProfile.businessType === 'COCORA' ? 'Potes Cocada' : 'Itens'}:</span>
                   <span className="text-lg font-black text-amber-600">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotes || 0), 0)}</span>
                 </div>
                 <div className="flex justify-between items-center mb-1 pl-4">
@@ -1134,6 +1358,59 @@ const App: React.FC = () => {
       <NewSaleModal isOpen={saleModal} onClose={() => { setSaleModal(false); setEditingSale(null); }} products={products} clients={clients} onFinishSale={handleFinishSale} initialData={editingSale} />
       <SaleDetailModal isOpen={!!selectedSale} onClose={() => setSelectedSale(null)} sale={selectedSale} profile={businessProfile} clients={clients} onEdit={handleOpenEditSale} onDelete={handleDeleteSale} />
       
+      {subscriptionModal.isOpen && subscriptionModal.business && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-sm bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-slate-800 p-6 text-white">
+              <h3 className="text-lg font-black uppercase italic tracking-tighter">Gerenciar Assinatura</h3>
+              <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest">{subscriptionModal.business.companyName}</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Status do Plano</label>
+                <select 
+                  defaultValue={subscriptionModal.business.planStatus}
+                  id="sub-status"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-500 transition-all appearance-none"
+                >
+                  <option value="ATIVO">ATIVO</option>
+                  <option value="INATIVO">INATIVO</option>
+                  <option value="PENDENTE">PENDENTE</option>
+                  <option value="BLOQUEADO">BLOQUEADO</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Próximo Vencimento</label>
+                <input 
+                  type="date"
+                  id="sub-date"
+                  defaultValue={subscriptionModal.business.nextBilling}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-500 transition-all"
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button 
+                  onClick={() => setSubscriptionModal({ isOpen: false, business: null })}
+                  className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={() => {
+                    const status = (document.getElementById('sub-status') as HTMLSelectElement).value;
+                    const date = (document.getElementById('sub-date') as HTMLInputElement).value;
+                    handleUpdateSubscription(subscriptionModal.business.id, status, date);
+                  }}
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-100 active:scale-95 transition-all border-b-4 border-blue-800"
+                >
+                  Salvar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <footer className="py-6 text-center border-t border-slate-100 bg-white/50">
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
           © {new Date().getFullYear()} Todos os direitos reservados JABASSO

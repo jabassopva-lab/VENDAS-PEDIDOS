@@ -43,6 +43,17 @@ export interface BusinessProfile {
   planStatus: string;
   nextBilling: string;
   pixKey?: string;
+  role?: 'USER' | 'ADMIN' | 'DEVELOPER';
+  businessType?: 'COCORA' | 'ACAI' | 'GERAL';
+}
+
+export interface BusinessStats {
+  id: string;
+  companyName: string;
+  email: string;
+  planStatus: string;
+  nextBilling: string;
+  role?: string;
 }
 
 export interface Sale {
@@ -89,4 +100,4 @@ export enum ModalType {
   NONE = 'NONE'
 }
 
-export type Screen = 'HOME' | 'PRODUCTS' | 'MONTHLY_SALES' | 'REPORTS' | 'CLIENTS' | 'SETTINGS' | 'CLIENT_REPORT' | 'PRODUCT_REPORT';
+export type Screen = 'HOME' | 'PRODUCTS' | 'MONTHLY_SALES' | 'REPORTS' | 'CLIENTS' | 'SETTINGS' | 'CLIENT_REPORT' | 'PRODUCT_REPORT' | 'DEVELOPER_PANEL';
