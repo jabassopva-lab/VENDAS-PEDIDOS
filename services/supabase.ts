@@ -251,6 +251,7 @@ export const db = {
         companyName: saved.company_name,
         logoUrl: saved.logo_url,
         planStatus: saved.plan_status,
+        planType: saved.plan_type,
         nextBilling: saved.next_billing,
         pixKey: saved.pix_key,
         role: saved.role,
@@ -270,6 +271,8 @@ export const db = {
         ...d,
         companyName: d.company_name,
         logoUrl: d.logo_url,
+        planStatus: d.plan_status,
+        planType: d.plan_type,
         role: d.role
       }));
     },
@@ -291,12 +294,19 @@ export const db = {
           companyName: p.company_name,
           email: p.email,
           planStatus: p.plan_status || 'ATIVO',
+          planType: p.plan_type || 'START',
           nextBilling: p.next_billing || '2026-05-15',
           role: p.role
         };
       });
 
       return stats;
+    },
+    deleteBusiness: async (userId: string) => {
+      // Deleta o perfil (o usuário do Auth precisa ser deletado manualmente no console do Supabase por segurança ou via Edge Function)
+      const { error } = await supabase.from('profiles').delete().eq('user_id', userId);
+      if (error) throw error;
+      return true;
     }
   }
 };

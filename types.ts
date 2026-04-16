@@ -41,6 +41,7 @@ export interface BusinessProfile {
   address: string;
   logoUrl: string;
   planStatus: string;
+  planType?: string;
   nextBilling: string;
   pixKey?: string;
   role?: 'USER' | 'ADMIN' | 'DEVELOPER';
@@ -52,6 +53,7 @@ export interface BusinessStats {
   companyName: string;
   email: string;
   planStatus: string;
+  planType?: string;
   nextBilling: string;
   role?: string;
 }

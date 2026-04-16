@@ -34,7 +34,23 @@ import {
   Store,
   Info,
   Printer,
-  RefreshCw
+  RefreshCw,
+  Trash2,
+  Bell,
+  ExternalLink,
+  Ban,
+  CheckCircle,
+  Smartphone,
+  Mail,
+  MoreVertical,
+  ShieldAlert,
+  DatabaseZap,
+  Cloud,
+  Lock,
+  EyeOff,
+  UserPlus,
+  LogIn,
+  X
 } from 'lucide-react';
 import ProductModal from './components/ProductModal.tsx';
 import ClientForm from './components/ClientForm.tsx';
@@ -106,6 +122,14 @@ const App: React.FC = () => {
   const [allBusinessesStats, setAllBusinessesStats] = useState<any[]>([]);
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [subscriptionModal, setSubscriptionModal] = useState<{ isOpen: boolean, business: any | null }>({ isOpen: false, business: null });
+
+  const handleExitImpersonation = () => {
+    setImpersonatedUserId(null);
+    setIsImpersonating(false);
+    setCurrentScreen('DEVELOPER_PANEL');
+    fetchAllData();
+    triggerNotify('Voltando ao Painel Admin');
+  };
 
   const isDeveloper = useMemo(() => {
     const email = session?.user?.email?.toLowerCase();
@@ -571,6 +595,30 @@ const App: React.FC = () => {
     }
   };
 
+  const handleDeleteBusiness = async (bizId: string) => {
+    if (!window.confirm("Tem certeza que deseja excluir esta empresa? Esta ação não pode ser desfeita na tabela de perfis.")) return;
+    
+    try {
+      setLoading(true);
+      await db.admin.deleteBusiness(bizId);
+      setAllBusinessesStats(prev => prev.filter(b => b.id !== bizId));
+      setSubscriptionModal({ isOpen: false, business: null });
+      triggerNotify('Empresa Excluída!');
+    } catch (e: any) {
+      console.error("Erro ao excluir empresa:", e);
+      alert("Erro ao excluir empresa.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendNotification = (biz: any) => {
+    const message = `Olá ${biz.companyName}! Identificamos que sua assinatura no OmniVenda Cloud vence em ${biz.nextBilling}. Para continuar utilizando nossos serviços, realize o pagamento via Pix.`;
+    const phone = biz.phone?.replace(/\D/g, '') || '';
+    const url = `https://wa.me/55${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
   const Header = ({ title, showBack = false, rightAction }: { title: string, showBack?: boolean, rightAction?: React.ReactNode }) => (
     <div className="sticky top-0 z-40 bg-[#fffbeb]">
       <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-4 pb-3 px-6 shadow-xl rounded-b-[1.8rem] relative overflow-hidden border-b-4 border-yellow-400">
@@ -580,7 +628,10 @@ const App: React.FC = () => {
         <div className="flex items-center justify-between relative z-10">
           <div className="flex items-center gap-4">
             {showBack ? (
-              <button onClick={() => setCurrentScreen('HOME')} className="bg-white/20 p-1.5 rounded-lg active:scale-90 transition-all">
+              <button 
+                onClick={() => isImpersonating ? handleExitImpersonation() : setCurrentScreen('HOME')} 
+                className="bg-white/20 p-1.5 rounded-lg active:scale-90 transition-all"
+              >
                 <ArrowLeft size={18} />
               </button>
             ) : (
@@ -604,10 +655,19 @@ const App: React.FC = () => {
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            {isImpersonating && (
+              <button 
+                onClick={handleExitImpersonation}
+                className="bg-red-500 text-white px-3 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest animate-pulse shadow-lg flex items-center gap-1"
+              >
+                <ShieldAlert size={12} />
+                Sair do Acesso
+              </button>
+            )}
             {rightAction}
             {!showBack && (
-              <button onClick={handleLogout} className="p-2 bg-red-500/20 rounded-xl border border-white/10 active:scale-90">
+              <button onClick={isImpersonating ? handleExitImpersonation : handleLogout} className="p-2 bg-red-500/20 rounded-xl border border-white/10 active:scale-90">
                 <LogOut size={18} />
               </button>
             )}
@@ -982,16 +1042,40 @@ const App: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-right flex flex-col items-end gap-1">
-                      <span className={`text-[8px] font-black px-2 py-1 rounded-lg uppercase tracking-widest ${biz.planStatus === 'ATIVO' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {biz.planStatus || 'ATIVO'}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className={`text-[7px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase`}>
+                          {biz.planType || 'START'}
+                        </span>
+                        <button 
+                          onClick={() => {
+                            const newStatus = biz.planStatus === 'ATIVO' ? 'BLOQUEADO' : 'ATIVO';
+                            handleUpdateSubscription(biz.id, newStatus, biz.nextBilling);
+                          }}
+                          className={`p-1.5 rounded-lg transition-all active:scale-90 ${biz.planStatus === 'ATIVO' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}
+                          title={biz.planStatus === 'ATIVO' ? 'Bloquear' : 'Ativar'}
+                        >
+                          {biz.planStatus === 'ATIVO' ? <CheckCircle size={14} /> : <Ban size={14} />}
+                        </button>
+                        <span className={`text-[8px] font-black px-2 py-1 rounded-lg uppercase tracking-widest ${biz.planStatus === 'ATIVO' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {biz.planStatus || 'ATIVO'}
+                        </span>
+                      </div>
                       <p className="text-[7px] font-black text-slate-400 uppercase">Vencimento: {biz.nextBilling || '15/05/2026'}</p>
-                      <button 
-                        onClick={() => setSubscriptionModal({ isOpen: true, business: biz })}
-                        className="mt-1 bg-[#0ea5e9] text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center gap-1 border-b-2 border-blue-700"
-                      >
-                        Gerenciar
-                      </button>
+                      <div className="flex gap-1 mt-1">
+                        <button 
+                          onClick={() => handleSendNotification(biz)}
+                          className="bg-green-500 text-white p-1.5 rounded-lg active:scale-95 transition-all shadow-sm"
+                          title="Notificar WhatsApp"
+                        >
+                          <Smartphone size={12} />
+                        </button>
+                        <button 
+                          onClick={() => setSubscriptionModal({ isOpen: true, business: biz })}
+                          className="bg-[#0ea5e9] text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center gap-1 border-b-2 border-blue-700"
+                        >
+                          Gerenciar
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -1361,24 +1445,101 @@ const App: React.FC = () => {
       {subscriptionModal.isOpen && subscriptionModal.business && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-sm bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="bg-slate-800 p-6 text-white">
-              <h3 className="text-lg font-black uppercase italic tracking-tighter">Gerenciar Assinatura</h3>
-              <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest">{subscriptionModal.business.companyName}</p>
+            <div className="bg-slate-800 p-6 text-white flex justify-between items-start">
+              <div>
+                <h3 className="text-lg font-black uppercase italic tracking-tighter">Gerenciar Assinatura</h3>
+                <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest">{subscriptionModal.business.companyName}</p>
+              </div>
+              <button 
+                onClick={() => setSubscriptionModal({ isOpen: false, business: null })}
+                className="p-2 bg-white/10 rounded-xl hover:bg-white/20 transition-all"
+              >
+                <X size={18} />
+              </button>
             </div>
             <div className="p-6 space-y-4">
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Status do Plano</label>
-                <select 
-                  defaultValue={subscriptionModal.business.planStatus}
-                  id="sub-status"
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-500 transition-all appearance-none"
+              <div className="grid grid-cols-2 gap-2">
+                <button 
+                  onClick={() => {
+                    // Simula entrar na conta da empresa (Impersonation)
+                    setImpersonatedUserId(subscriptionModal.business.id);
+                    setIsImpersonating(true);
+                    setSubscriptionModal({ isOpen: false, business: null });
+                    setCurrentScreen('HOME');
+                    triggerNotify(`Acessando ${subscriptionModal.business.companyName}`);
+                    fetchAllData();
+                  }}
+                  className="bg-blue-50 text-blue-600 p-3 rounded-2xl flex flex-col items-center gap-1 border border-blue-100 active:scale-95 transition-all"
                 >
-                  <option value="ATIVO">ATIVO</option>
-                  <option value="INATIVO">INATIVO</option>
-                  <option value="PENDENTE">PENDENTE</option>
-                  <option value="BLOQUEADO">BLOQUEADO</option>
-                </select>
+                  <ExternalLink size={20} />
+                  <span className="text-[7px] font-black uppercase">Acessar Conta</span>
+                </button>
+                <button 
+                  onClick={() => handleSendNotification(subscriptionModal.business)}
+                  className="bg-green-50 text-green-600 p-3 rounded-2xl flex flex-col items-center gap-1 border border-green-100 active:scale-95 transition-all"
+                >
+                  <Smartphone size={20} />
+                  <span className="text-[7px] font-black uppercase">WhatsApp</span>
+                </button>
               </div>
+              <div className="grid grid-cols-1 gap-2">
+                <button 
+                  onClick={() => handleDeleteBusiness(subscriptionModal.business.id)}
+                  className="bg-red-50 text-red-600 p-3 rounded-2xl flex items-center justify-center gap-2 border border-red-100 active:scale-95 transition-all"
+                >
+                  <Trash2 size={16} />
+                  <span className="text-[7px] font-black uppercase">Excluir Empresa Permanentemente</span>
+                </button>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Tipo de Plano</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['START', 'PREMIUM', 'ULTRA', 'MASTER'].map(type => (
+                    <button
+                      key={type}
+                      onClick={() => {
+                        const updated = { ...subscriptionModal.business, planType: type };
+                        db.profile.update(updated).then(() => {
+                          setAllBusinessesStats(prev => prev.map(b => b.id === updated.id ? { ...b, planType: type } : b));
+                          setSubscriptionModal({ isOpen: true, business: updated });
+                          triggerNotify('Plano Alterado!');
+                        });
+                      }}
+                      className={`py-2.5 rounded-xl text-[8px] font-black uppercase tracking-widest border-2 transition-all ${
+                        subscriptionModal.business.planType === type 
+                        ? 'bg-purple-600 text-white border-purple-600 shadow-lg shadow-purple-100' 
+                        : 'bg-white text-slate-400 border-slate-100 hover:border-purple-200'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Status do Plano</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['ATIVO', 'BLOQUEADO', 'PENDENTE', 'INATIVO'].map(status => (
+                    <button
+                      key={status}
+                      onClick={() => {
+                        const date = (document.getElementById('sub-date') as HTMLInputElement).value;
+                        handleUpdateSubscription(subscriptionModal.business.id, status, date);
+                      }}
+                      className={`py-2.5 rounded-xl text-[8px] font-black uppercase tracking-widest border-2 transition-all ${
+                        subscriptionModal.business.planStatus === status 
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100' 
+                        : 'bg-white text-slate-400 border-slate-100 hover:border-blue-200'
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Próximo Vencimento</label>
                 <input 
@@ -1388,22 +1549,17 @@ const App: React.FC = () => {
                   className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-500 transition-all"
                 />
               </div>
-              <div className="flex gap-2 pt-2">
-                <button 
-                  onClick={() => setSubscriptionModal({ isOpen: false, business: null })}
-                  className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all"
-                >
-                  Cancelar
-                </button>
+
+              <div className="pt-2">
                 <button 
                   onClick={() => {
-                    const status = (document.getElementById('sub-status') as HTMLSelectElement).value;
+                    const status = subscriptionModal.business.planStatus;
                     const date = (document.getElementById('sub-date') as HTMLInputElement).value;
                     handleUpdateSubscription(subscriptionModal.business.id, status, date);
                   }}
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-100 active:scale-95 transition-all border-b-4 border-blue-800"
+                  className="w-full bg-slate-800 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all border-b-4 border-slate-950"
                 >
-                  Salvar
+                  Salvar Data de Vencimento
                 </button>
               </div>
             </div>
