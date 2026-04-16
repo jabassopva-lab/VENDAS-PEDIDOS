@@ -25,9 +25,10 @@ import { db } from '../services/supabase';
 interface SettingsFormProps {
   profile: BusinessProfile;
   onSave: (profile: BusinessProfile) => Promise<void>;
+  onLogout?: () => void;
 }
 
-const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
+const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }) => {
   const [formData, setFormData] = useState<BusinessProfile>(profile);
   const [logoPreviewError, setLogoPreviewError] = useState(false);
   const [isLoadingLogo, setIsLoadingLogo] = useState(false);
@@ -127,6 +128,17 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
             <p className="text-amber-700 text-[9px] font-bold mt-1 leading-tight uppercase">
               Para liberar o acesso ao sistema, você precisa preencher o **Nome Fantasia** e o **WhatsApp** da sua empresa.
             </p>
+            <button 
+              type="button"
+              onClick={() => {
+                if (window.confirm("Deseja realmente sair do sistema?")) {
+                  onLogout?.();
+                }
+              }}
+              className="mt-3 bg-amber-200 text-amber-900 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest active:scale-95 transition-all"
+            >
+              Sair da Conta
+            </button>
           </div>
         </div>
       )}

@@ -681,7 +681,7 @@ const App: React.FC = () => {
               </button>
             )}
             {rightAction}
-            {!showBack && (
+            {(!showBack || isProfileIncomplete) && (
               <button onClick={isImpersonating ? handleExitImpersonation : handleLogout} className="p-2 bg-red-500/20 rounded-xl border border-white/10 active:scale-90">
                 <LogOut size={18} />
               </button>
@@ -813,7 +813,10 @@ const App: React.FC = () => {
       {currentScreen === 'SETTINGS' && !isPureAdmin && (
         <div className="min-h-screen">
           <Header title="Configurações" showBack />
-          <SettingsForm profile={businessProfile} onSave={async (newProfile) => { 
+          <SettingsForm 
+            profile={businessProfile} 
+            onLogout={handleLogout}
+            onSave={async (newProfile) => { 
             try {
               const saved = await db.profile.update(newProfile);
               setBusinessProfile(saved);
