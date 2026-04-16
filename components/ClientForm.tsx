@@ -134,11 +134,18 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, onSave, initia
             </div>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-2 flex gap-3">
+            <button 
+              type="button"
+              onClick={onClose}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-4 rounded-xl transition-all"
+            >
+              Cancelar
+            </button>
             <button 
               type="submit" 
               disabled={isSaving}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isSaving ? (
                 <>

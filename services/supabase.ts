@@ -55,7 +55,9 @@ export const db = {
       if (error) throw error;
       return (data || []).map((p: any) => ({
         ...p,
-        wholesalePrice: p.wholesale_price
+        wholesalePrice: p.wholesale_price ?? p.wholesalePrice,
+        costPrice: p.cost_price ?? p.costPrice,
+        imageUrl: p.image_url ?? p.imageUrl
       }));
     },
     upsert: async (product: any) => {
@@ -71,21 +73,34 @@ export const db = {
       }
       
       const userId = await getUserId();
+      
+      // Criamos um payload que tenta agradar tanto tabelas snake_case quanto camelCase
       const payload = { 
         ...product, 
         user_id: userId,
-        wholesale_price: product.wholesalePrice 
+        // Snake case
+        wholesale_price: product.wholesalePrice ?? product.wholesale_price,
+        cost_price: product.costPrice ?? product.cost_price,
+        image_url: product.imageUrl ?? product.image_url,
+        // Camel case (mantemos os originais se existirem no objeto product)
+        wholesalePrice: product.wholesalePrice ?? product.wholesale_price,
+        costPrice: product.costPrice ?? product.cost_price,
+        imageUrl: product.imageUrl ?? product.image_url
       };
-      delete payload.wholesalePrice;
       
       const { data, error } = await supabase.from('products').upsert(payload).select();
-      if (error) throw error;
+      if (error) {
+        console.error("Erro no upsert de produto:", error);
+        throw error;
+      }
       if (!data || data.length === 0) throw new Error("Erro ao salvar produto. Verifique as permissões do RLS.");
       
       const saved = data[0];
       return {
         ...saved,
-        wholesalePrice: saved.wholesale_price
+        wholesalePrice: saved.wholesale_price ?? saved.wholesalePrice,
+        costPrice: saved.cost_price ?? saved.costPrice,
+        imageUrl: saved.image_url ?? saved.imageUrl
       };
     },
     delete: async (id: string) => {
@@ -133,7 +148,15 @@ export const db = {
       const userId = await getUserId();
       const { data, error } = await supabase.from('sales').select('*').eq('user_id', userId).order('created_at', { ascending: false });
       if (error) throw error;
-      return data || [];
+      return (data || []).map((s: any) => ({
+        ...s,
+        clientId: s.client_id ?? s.clientId,
+        clientName: s.client_name ?? s.clientName,
+        paymentMethod: s.payment_method ?? s.paymentMethod,
+        paymentTerms: s.payment_terms ?? s.paymentTerms,
+        deliveryStatus: s.delivery_status ?? s.deliveryStatus,
+        isPaid: s.is_paid ?? s.isPaid
+      }));
     },
     create: async (sale: any) => {
       if (!shouldUseSupabase()) {
@@ -145,12 +168,39 @@ export const db = {
       }
       
       const userId = await getUserId();
-      const payload = { ...sale, user_id: userId };
+      // Mapeamento para garantir compatibilidade com snake_case no Supabase
+      const payload = { 
+        ...sale, 
+        user_id: userId,
+        client_id: sale.clientId,
+        client_name: sale.clientName,
+        payment_method: sale.paymentMethod,
+        payment_terms: sale.paymentTerms,
+        delivery_status: sale.deliveryStatus,
+        is_paid: sale.isPaid,
+        // Também mantemos os camelCase para tabelas que usam esses nomes
+        clientId: sale.clientId,
+        clientName: sale.clientName,
+        paymentMethod: sale.paymentMethod,
+        paymentTerms: sale.paymentTerms,
+        deliveryStatus: sale.deliveryStatus,
+        isPaid: sale.isPaid
+      };
       
       const { data, error } = await supabase.from('sales').insert(payload).select();
       if (error) throw error;
       if (!data || data.length === 0) throw new Error("Erro ao registrar venda. Verifique as permissões do RLS.");
-      return data[0];
+      
+      const saved = data[0];
+      return {
+        ...saved,
+        clientId: saved.client_id ?? saved.clientId,
+        clientName: saved.client_name ?? saved.clientName,
+        paymentMethod: saved.payment_method ?? saved.paymentMethod,
+        paymentTerms: saved.payment_terms ?? saved.paymentTerms,
+        deliveryStatus: saved.delivery_status ?? saved.deliveryStatus,
+        isPaid: saved.is_paid ?? saved.isPaid
+      };
     },
     update: async (sale: any) => {
       if (!shouldUseSupabase()) {
@@ -164,11 +214,31 @@ export const db = {
       }
       
       const userId = await getUserId();
-      const payload = { ...sale, user_id: userId };
+      const payload = { 
+        ...sale, 
+        user_id: userId,
+        client_id: sale.clientId,
+        client_name: sale.clientName,
+        payment_method: sale.paymentMethod,
+        payment_terms: sale.paymentTerms,
+        delivery_status: sale.deliveryStatus,
+        is_paid: sale.isPaid
+      };
       
       const { data, error } = await supabase.from('sales').update(payload).eq('id', sale.id).select();
       if (error) throw error;
-      return data[0];
+      if (!data || data.length === 0) return sale;
+
+      const saved = data[0];
+      return {
+        ...saved,
+        clientId: saved.client_id ?? saved.clientId,
+        clientName: saved.client_name ?? saved.clientName,
+        paymentMethod: saved.payment_method ?? saved.paymentMethod,
+        paymentTerms: saved.payment_terms ?? saved.paymentTerms,
+        deliveryStatus: saved.delivery_status ?? saved.deliveryStatus,
+        isPaid: saved.is_paid ?? saved.isPaid
+      };
     },
     delete: async (id: string) => {
       if (!shouldUseSupabase()) {

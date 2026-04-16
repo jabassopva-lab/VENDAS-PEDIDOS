@@ -57,6 +57,7 @@ import ClientForm from './components/ClientForm.tsx';
 import NewSaleModal from './components/NewSaleModal.tsx';
 import SaleDetailModal from './components/SaleDetailModal.tsx';
 import SettingsForm from './components/SettingsForm.tsx';
+import CostCorrectionTool from './components/CostCorrectionTool.tsx';
 import AuthScreen from './components/AuthScreen.tsx';
 import { supabase, db, isConfigured, setImpersonatedUserId } from './services/supabase.ts';
 import { Product, Client, ModalType, Screen, Sale, BusinessProfile, SalesData } from './types.ts';
@@ -312,6 +313,54 @@ const App: React.FC = () => {
     } catch (e: any) {
       console.error("Erro ao salvar cliente:", e);
       alert(`Erro ao salvar cliente: ${e.message || 'Verifique sua conexão.'}`);
+    }
+  };
+
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const recalculateRetroactiveProfits = async () => {
+    if (!confirm("Isso irá recalcular o lucro de TODAS as vendas baseando-se nos custos ATUAIS dos produtos. Deseja continuar?")) return;
+    
+    setIsSyncing(true);
+    try {
+      const allSales = await db.sales.getAll();
+      const allProducts = await db.products.getAll();
+      
+      let updatedCount = 0;
+      
+      for (const sale of allSales) {
+        let newProfit = 0;
+        let changed = false;
+        
+        const newItems = sale.items.map((item: any) => {
+          const product = allProducts.find((p: any) => p.id === item.id);
+          if (product) {
+            const currentCost = product.costPrice || 0;
+            const itemProfit = (item.price - currentCost) * item.quantity;
+            newProfit += itemProfit;
+            if (item.costPrice !== currentCost) changed = true;
+            return { ...item, costPrice: currentCost };
+          }
+          newProfit += (item.profit || 0);
+          return item;
+        });
+        
+        if (changed || Math.abs(sale.profit - newProfit) > 0.01) {
+          await db.sales.update({ ...sale, items: newItems, profit: newProfit });
+          updatedCount++;
+        }
+      }
+      
+      // Refresh local state
+      const refreshedSales = await db.sales.getAll();
+      setSalesHistory(refreshedSales);
+      
+      triggerNotify(`${updatedCount} vendas atualizadas com sucesso!`);
+    } catch (e) {
+      console.error("Erro ao recalcular lucros:", e);
+      alert("Erro ao recalcular lucros. Verifique o console.");
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -634,6 +683,56 @@ const App: React.FC = () => {
     window.open(url, '_blank');
   };
 
+  const handleRetroactiveCostUpdate = async (productId: string, newCost: number) => {
+    setLoading(true);
+    try {
+      const updatedSales = salesHistory.map(sale => {
+        let hasProduct = false;
+        const updatedItems = sale.items.map(item => {
+          if (item.id === productId) {
+            hasProduct = true;
+            return { ...item, costPrice: newCost };
+          }
+          return item;
+        });
+
+        if (!hasProduct) return sale;
+
+        // Recalcular lucro da venda
+        const totalItemsCost = updatedItems.reduce((acc, item) => 
+          acc + (Number(item.costPrice || 0) * item.quantity), 0
+        );
+        const newProfit = Number(sale.total) - totalItemsCost;
+
+        return { ...sale, items: updatedItems, profit: newProfit };
+      });
+
+      // Filtrar apenas o que mudou
+      const salesToUpdate = updatedSales.filter((s, i) => s !== salesHistory[i]);
+
+      for (const sale of salesToUpdate) {
+        await db.sales.update(sale);
+      }
+
+      setSalesHistory(updatedSales);
+      
+      // Também atualiza o produto no banco de dados para que futuras vendas usem o novo custo
+      const product = products.find(p => p.id === productId);
+      if (product) {
+        const updatedProduct = { ...product, costPrice: newCost };
+        await db.products.upsert(updatedProduct);
+        setProducts(prev => prev.map(p => p.id === productId ? updatedProduct : p));
+      }
+
+      triggerNotify(`${salesToUpdate.length} vendas atualizadas com sucesso!`);
+    } catch (e) {
+      console.error("Erro ao atualizar custos retroativos:", e);
+      alert("Erro ao processar atualização retroativa.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const Header = ({ title, showBack = false, rightAction }: { title: string, showBack?: boolean, rightAction?: React.ReactNode }) => (
     <div className="sticky top-0 z-40 bg-[#fffbeb]">
       <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-4 pb-3 px-6 shadow-xl rounded-b-[1.8rem] relative overflow-hidden border-b-4 border-yellow-400">
@@ -662,7 +761,7 @@ const App: React.FC = () => {
               </div>
             )}
             <div className="min-w-0">
-              <h1 className="text-3xl font-black tracking-tighter uppercase italic leading-none truncate drop-shadow-sm max-w-[220px]">
+              <h1 className="text-3xl font-black tracking-tighter uppercase italic leading-none drop-shadow-sm">
                 {title}
               </h1>
               <p className="text-yellow-300 text-[9px] font-black uppercase tracking-[0.2em] mt-1">
@@ -811,21 +910,32 @@ const App: React.FC = () => {
       )}
 
       {currentScreen === 'SETTINGS' && !isPureAdmin && (
-        <div className="min-h-screen">
-          <Header title="Configurações" showBack />
-          <SettingsForm 
-            profile={businessProfile} 
-            onLogout={handleLogout}
-            onSave={async (newProfile) => { 
-            try {
-              const saved = await db.profile.update(newProfile);
-              setBusinessProfile(saved);
-              triggerNotify('Perfil Atualizado!'); 
-            } catch (e: any) {
-              console.error("Erro ao salvar perfil:", e);
-              alert(`Erro ao salvar configurações: ${e.message || 'Verifique sua conexão.'}`);
-            }
-          }} />
+        <div className="min-h-screen bg-slate-50 pb-20">
+          <Header title="Configurações" showBack={!isProfileIncomplete} />
+          <div className="max-w-xl mx-auto space-y-6 px-4 py-6">
+            <SettingsForm 
+              profile={businessProfile} 
+              onLogout={handleLogout}
+              onSave={async (newProfile) => { 
+                try {
+                  const saved = await db.profile.update(newProfile);
+                  setBusinessProfile(saved);
+                  triggerNotify('Perfil Atualizado!'); 
+                } catch (e: any) {
+                  console.error("Erro ao salvar perfil:", e);
+                  alert(`Erro ao salvar configurações: ${e.message || 'Verifique sua conexão.'}`);
+                }
+              }} 
+            />
+            
+            <div className="pb-12">
+              <CostCorrectionTool 
+                products={products}
+                salesHistory={salesHistory}
+                onUpdateSales={handleRetroactiveCostUpdate}
+              />
+            </div>
+          </div>
         </div>
       )}
 
@@ -879,7 +989,7 @@ const App: React.FC = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                        <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-lg text-[8px] font-black uppercase mb-1 inline-block">QTD: {p.stock}</span>
-                       <h3 className="font-black text-slate-800 text-sm truncate mb-0.5 uppercase italic leading-none">{p.name}</h3>
+                       <h3 className="font-black text-slate-800 text-sm mb-0.5 uppercase italic leading-none">{p.name}</h3>
                        <p className="text-lg font-black text-[#0ea5e9]">R$ {Number(p.price).toFixed(2)}</p>
                     </div>
                  </div>
@@ -1055,13 +1165,13 @@ const App: React.FC = () => {
                         {biz.companyName?.charAt(0) || 'E'}
                       </div>
                       <div>
-                        <h4 className="font-black text-slate-800 text-xs uppercase italic leading-tight">{biz.companyName}</h4>
-                        <p className="text-[7px] font-black text-slate-400 uppercase mt-0.5">{biz.email}</p>
+                        <h4 className="font-black text-slate-800 text-sm uppercase italic leading-tight">{biz.companyName}</h4>
+                        <p className="text-[10px] font-black text-slate-400 uppercase mt-0.5">{biz.email}</p>
                       </div>
                     </div>
                     <div className="text-right flex flex-col items-end gap-1">
                       <div className="flex items-center gap-1">
-                        <span className={`text-[7px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase`}>
+                        <span className={`text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase`}>
                           {biz.planType || 'START'}
                         </span>
                         <button 
@@ -1074,11 +1184,11 @@ const App: React.FC = () => {
                         >
                           {biz.planStatus === 'ATIVO' ? <CheckCircle size={14} /> : <Ban size={14} />}
                         </button>
-                        <span className={`text-[8px] font-black px-2 py-1 rounded-lg uppercase tracking-widest ${biz.planStatus === 'ATIVO' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        <span className={`text-[11px] font-black px-2 py-1 rounded-lg uppercase tracking-widest ${biz.planStatus === 'ATIVO' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                           {biz.planStatus || 'ATIVO'}
                         </span>
                       </div>
-                      <p className="text-[7px] font-black text-slate-400 uppercase">Vencimento: {biz.nextBilling || '15/05/2026'}</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase">Vencimento: {biz.nextBilling || '15/05/2026'}</p>
                       <div className="flex gap-1 mt-1">
                         <button 
                           onClick={() => handleSendNotification(biz)}
@@ -1089,7 +1199,7 @@ const App: React.FC = () => {
                         </button>
                         <button 
                           onClick={() => setSubscriptionModal({ isOpen: true, business: biz })}
-                          className="bg-[#0ea5e9] text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center gap-1 border-b-2 border-blue-700"
+                          className="bg-[#0ea5e9] text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center gap-1 border-b-2 border-blue-700"
                         >
                           Gerenciar
                         </button>
@@ -1188,7 +1298,7 @@ const App: React.FC = () => {
                   </div>
                   <div className="text-left">
                     <p className="text-sm font-black text-slate-800 uppercase italic">Ranking de Clientes</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Quem mais compra no período</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase">Quem mais compra no período</p>
                   </div>
                 </div>
                 <ChevronRight size={20} className="text-slate-300" />
@@ -1204,11 +1314,25 @@ const App: React.FC = () => {
                   </div>
                   <div className="text-left">
                     <p className="text-sm font-black text-slate-800 uppercase italic">Ranking de Produtos</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Produtos mais vendidos</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase">Produtos mais vendidos</p>
                   </div>
                 </div>
                 <ChevronRight size={20} className="text-slate-300" />
               </button>
+
+              <div className="pt-4 border-t border-slate-100">
+                <button 
+                  disabled={isSyncing}
+                  onClick={recalculateRetroactiveProfits}
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 p-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-all disabled:opacity-50"
+                >
+                  {isSyncing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                  CORRIGIR LUCROS RETROATIVOS (BASEADO EM CUSTOS ATUAIS)
+                </button>
+                <p className="text-xs text-slate-400 text-center mt-2 px-4 italic">
+                  * Use esta opção se você corrigiu o custo de um produto e deseja atualizar o lucro das vendas passadas.
+                </p>
+              </div>
             </div>
           </div>
 

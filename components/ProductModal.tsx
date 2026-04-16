@@ -140,19 +140,27 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Gestão de Inventário</p>
           </div>
         </div>
-        <button 
-          onClick={handleSubmit}
-          className="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-2"
-        >
-          <Save size={18} />
-          SALVAR
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={onClose}
+            className="text-gray-500 bg-gray-100 px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-gray-200 transition-all"
+          >
+            CANCELAR
+          </button>
+          <button 
+            onClick={handleSubmit}
+            className="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-2"
+          >
+            <Save size={18} />
+            SALVAR
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto bg-gray-50/50">
         <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-6 space-y-6 pb-24">
           
-          {/* Section: Visual & Name */}
+          {/* Section: Basic Data & Pricing (Mandatory First) */}
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-6">
             <div className="relative group self-center md:self-start">
               <div className="w-32 h-32 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden relative transition-all group-hover:border-blue-300">
@@ -173,7 +181,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
 
             <div className="flex-1 space-y-4">
               <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Nome do Produto</label>
+                <label className="text-xs font-bold text-gray-500 uppercase ml-1">Nome do Produto *</label>
                 <div className="flex gap-2">
                   <input 
                     required
@@ -193,10 +201,51 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
                   </button>
                 </div>
               </div>
-              
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase ml-1">Preço de Venda *</label>
+                  <div className="relative mt-1">
+                    <span className="absolute left-4 top-3.5 text-blue-400 font-bold text-sm">R$</span>
+                    <input 
+                      required
+                      type="number"
+                      step="0.01"
+                      value={sellPrice}
+                      onChange={e => setSellPrice(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none font-black text-blue-700 text-lg"
+                      placeholder="0,00"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase ml-1">Preço de Custo</label>
+                  <div className="relative mt-1">
+                    <span className="absolute left-4 top-3.5 text-gray-400 font-bold text-sm">R$</span>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      value={costPrice}
+                      onChange={e => setCostPrice(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none"
+                      placeholder="0,00"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section: Categories & Metadata */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-4">
+              <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-2">
+                <Tag size={18} className="text-indigo-600" />
+                Classificação
+              </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Categoria</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase ml-1">Categoria</label>
                   <select 
                     value={category}
                     onChange={e => setCategory(e.target.value)}
@@ -206,7 +255,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Unidade</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase ml-1">Unidade</label>
                   <select 
                     value={unit}
                     onChange={e => setUnit(e.target.value)}
@@ -216,46 +265,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
                   </select>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Section: Pricing & Inventory */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-4">
-              <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-2">
-                <TrendingUp size={18} className="text-green-600" />
-                Financeiro
-              </h3>
               <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Preço de Custo</label>
-                <div className="relative mt-1">
-                  <span className="absolute left-4 top-3.5 text-gray-400 font-bold text-sm">R$</span>
-                  <input 
-                    type="number"
-                    step="0.01"
-                    value={costPrice}
-                    onChange={e => setCostPrice(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none"
-                    placeholder="0,00"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Preço de Venda</label>
-                <div className="relative mt-1">
-                  <span className="absolute left-4 top-3.5 text-blue-400 font-bold text-sm">R$</span>
-                  <input 
-                    type="number"
-                    step="0.01"
-                    value={sellPrice}
-                    onChange={e => setSellPrice(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none font-black text-blue-700 text-lg"
-                    placeholder="0,00"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Preço de Atacado (Desconto)</label>
+                <label className="text-xs font-bold text-gray-500 uppercase ml-1">Preço de Atacado</label>
                 <div className="relative mt-1">
                   <span className="absolute left-4 top-3.5 text-purple-400 font-bold text-sm">R$</span>
                   <input 
@@ -268,22 +279,6 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
                   />
                 </div>
               </div>
-              
-              {/* Profit Indicator */}
-              <div className={`p-4 rounded-2xl flex justify-between items-center ${profitValue > 0 ? 'bg-green-50' : 'bg-red-50'}`}>
-                <div>
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Lucro por {unit}</p>
-                  <p className={`text-lg font-black ${profitValue > 0 ? 'text-green-700' : 'text-red-700'}`}>
-                    R$ {profitValue.toFixed(2)}
-                  </p>
-                </div>
-                <div className="text-right">
-                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Margem</p>
-                   <p className={`text-lg font-black ${marginPercent > 20 ? 'text-green-700' : 'text-orange-600'}`}>
-                    {marginPercent.toFixed(1)}%
-                   </p>
-                </div>
-              </div>
             </div>
 
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-4">
@@ -292,7 +287,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
                 Estoque & IDs
               </h3>
               <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Quantidade em Estoque</label>
+                <label className="text-xs font-bold text-gray-500 uppercase ml-1">Quantidade em Estoque</label>
                 <input 
                   type="number"
                   value={stock}
@@ -302,7 +297,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
                 />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Código de Barras (EAN)</label>
+                <label className="text-xs font-bold text-gray-500 uppercase ml-1">Código de Barras (EAN)</label>
                 <div className="relative mt-1">
                   <input 
                     value={barcode}
@@ -316,10 +311,26 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
             </div>
           </div>
 
+          {/* Profit Indicator */}
+          <div className={`p-6 rounded-3xl flex justify-between items-center shadow-sm border ${profitValue > 0 ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
+            <div>
+              <p className="text-xs font-black text-gray-500 uppercase tracking-widest">Lucro Estimado</p>
+              <p className={`text-2xl font-black ${profitValue > 0 ? 'text-green-700' : 'text-red-700'}`}>
+                R$ {profitValue.toFixed(2)}
+              </p>
+            </div>
+            <div className="text-right">
+                <p className="text-xs font-black text-gray-500 uppercase tracking-widest">Margem liq.</p>
+                <p className={`text-2xl font-black ${marginPercent > 20 ? 'text-green-700' : 'text-orange-600'}`}>
+                {marginPercent.toFixed(1)}%
+                </p>
+            </div>
+          </div>
+
           {/* Section: Extra Info */}
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-4">
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Descrição Comercial (IA)</label>
+              <label className="text-xs font-bold text-gray-500 uppercase ml-1">Descrição Comercial (IA)</label>
               <textarea 
                 rows={3}
                 value={description}
@@ -329,7 +340,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Fornecedor Preferencial</label>
+              <label className="text-xs font-bold text-gray-500 uppercase ml-1">Fornecedor Preferencial</label>
               <input 
                 value={supplier}
                 onChange={e => setSupplier(e.target.value)}

@@ -222,7 +222,7 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
                       </div>
                     ))}
                     {filteredClients.length === 0 && (
-                      <div className="p-4 text-slate-400 text-[10px] font-black uppercase italic">Nenhum cliente encontrado</div>
+                      <div className="p-4 text-slate-400 text-xs font-black uppercase italic">Nenhum cliente encontrado</div>
                     )}
                   </div>
                 )}
@@ -269,9 +269,9 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
                             {product.imageUrl ? <img src={product.imageUrl} alt="" className="w-full h-full object-cover" /> : <Package size={18} className="text-gray-300" />}
                          </div>
                          <div>
-                            <h4 className="font-black text-slate-800 uppercase text-[10px] italic leading-tight max-w-[140px] truncate">{product.name}</h4>
-                            <p className="text-[9px] font-bold text-gray-400 uppercase mt-0.5">Estoque: {product.stock}</p>
-                            <p className="font-black text-blue-600 text-xs mt-0.5">R$ {product.price.toFixed(2)}</p>
+                            <h4 className="font-black text-slate-800 uppercase text-xs italic leading-tight">{product.name}</h4>
+                          <p className="text-xs font-bold text-gray-400 uppercase mt-0.5">Estoque: {product.stock}</p>
+                          <p className="font-black text-blue-600 text-xs mt-0.5">R$ {product.price.toFixed(2)}</p>
                         </div>
                     </div>
                     {inCart ? (
@@ -357,7 +357,7 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-3">
                          <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center font-black text-blue-600 text-[10px] border border-blue-100">{item.quantity}x</div>
-                         <h4 className="font-black text-slate-800 uppercase italic text-[10px] truncate max-w-[180px] leading-tight">{item.name}</h4>
+                         <h4 className="font-black text-slate-800 uppercase italic text-[10px] leading-tight">{item.name}</h4>
                       </div>
                       <span className="font-black text-slate-900 text-[11px] tabular-nums">R$ {((item.price - (item.discount || 0)) * item.quantity).toFixed(2)}</span>
                     </div>
