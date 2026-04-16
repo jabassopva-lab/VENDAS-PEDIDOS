@@ -15,10 +15,12 @@ import {
   AlertCircle,
   ImageOff,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  Upload
 } from 'lucide-react';
 import { BusinessProfile } from '../types';
 import { convertDriveLink } from '../App';
+import { db } from '../services/supabase';
 
 interface SettingsFormProps {
   profile: BusinessProfile;
@@ -30,6 +32,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
   const [logoPreviewError, setLogoPreviewError] = useState(false);
   const [isLoadingLogo, setIsLoadingLogo] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     setFormData(profile);
@@ -44,6 +47,18 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validação de campos obrigatórios
+    if (!formData.companyName || formData.companyName.trim() === '' || formData.companyName === 'MINHA EMPRESA') {
+      alert("Por favor, preencha o Nome Fantasia / Razão Social da sua empresa.");
+      return;
+    }
+
+    if (!formData.phone || formData.phone.trim() === '') {
+      alert("Por favor, preencha o WhatsApp de contato da empresa.");
+      return;
+    }
+
     setIsSaving(true);
     try {
       await onSave(formData);
@@ -52,11 +67,70 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tamanho (1MB é seguro para base64 no banco)
+    if (file.size > 1024 * 1024) {
+      alert("Arquivo muito grande! Máximo 1MB.");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64String = reader.result as string;
+        const updatedProfile = { ...formData, logoUrl: base64String };
+        setFormData(updatedProfile);
+        setIsUploading(false);
+        
+        // Salva automaticamente para facilitar
+        try {
+          await onSave(updatedProfile);
+        } catch (err) {
+          console.error("Erro ao salvar logo:", err);
+        }
+      };
+      reader.onerror = () => {
+        alert("Erro ao ler arquivo.");
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error: any) {
+      console.error("Erro no processamento:", error);
+      alert("Erro ao processar imagem.");
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    if (window.confirm("Deseja remover a logo atual?")) {
+      const updatedProfile = { ...formData, logoUrl: '' };
+      setFormData(updatedProfile);
+      await onSave(updatedProfile);
+    }
+  };
+
   const currentLogo = convertDriveLink(formData.logoUrl || '');
 
   return (
     <form onSubmit={handleSubmit} className="p-6 space-y-6 pb-24">
       
+      {/* Alerta de Cadastro Incompleto */}
+      {(!formData.companyName || formData.companyName === 'MINHA EMPRESA' || !formData.phone) && (
+        <div className="bg-amber-50 border-2 border-amber-200 p-4 rounded-2xl flex items-start gap-3 animate-pulse">
+          <AlertCircle className="text-amber-600 shrink-0" size={20} />
+          <div>
+            <h4 className="text-amber-900 font-black text-[10px] uppercase tracking-widest">Cadastro Obrigatório</h4>
+            <p className="text-amber-700 text-[9px] font-bold mt-1 leading-tight uppercase">
+              Para liberar o acesso ao sistema, você precisa preencher o **Nome Fantasia** e o **WhatsApp** da sua empresa.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Plan Status Card */}
       <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-3xl p-6 text-white shadow-lg shadow-blue-200 relative overflow-hidden">
         <Zap className="absolute -right-4 -bottom-4 text-white/10 w-32 h-32" />
@@ -78,7 +152,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
         </div>
         <div className="p-5 space-y-4">
            <div className="flex flex-col items-center gap-6">
-              <div className="w-48 h-48 bg-gray-50 rounded-[2.5rem] border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden relative shadow-inner">
+              <div className="w-48 h-48 bg-gray-50 rounded-[2.5rem] border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden relative shadow-inner group">
                   {isLoadingLogo && !logoPreviewError && (
                     <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
                       <Loader2 className="animate-spin text-blue-500" size={32} />
@@ -86,16 +160,25 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
                   )}
                   
                   {(formData.logoUrl && !logoPreviewError) ? (
-                    <img 
-                      src={currentLogo} 
-                      alt="Logo Preview" 
-                      className="w-full h-full object-cover"
-                      onLoad={() => setIsLoadingLogo(false)}
-                      onError={() => {
-                        setLogoPreviewError(true);
-                        setIsLoadingLogo(false);
-                      }}
-                    />
+                    <>
+                      <img 
+                        src={currentLogo} 
+                        alt="Logo Preview" 
+                        className="w-full h-full object-cover"
+                        onLoad={() => setIsLoadingLogo(false)}
+                        onError={() => {
+                          setLogoPreviewError(true);
+                          setIsLoadingLogo(false);
+                        }}
+                      />
+                      <button 
+                        type="button"
+                        onClick={handleRemoveLogo}
+                        className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <span className="bg-white text-red-600 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest">Remover Logo</span>
+                      </button>
+                    </>
                   ) : (
                     <div className="flex flex-col items-center justify-center text-gray-300">
                       <ImageOff size={48} />
@@ -103,16 +186,45 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
                     </div>
                   )}
               </div>
-              <div className="flex-1 w-full space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">URL da Logo (Google Drive)</label>
-                <div className="relative">
-                  <LinkIcon className="absolute left-3 top-3.5 text-gray-400" size={16} />
-                  <input 
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all text-xs font-mono"
-                    value={formData.logoUrl}
-                    onChange={e => setFormData({...formData, logoUrl: e.target.value})}
-                    placeholder="Cole aqui o link de compartilhamento"
-                  />
+              <div className="flex-1 w-full space-y-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Subir Logo do Dispositivo</label>
+                  <label className="relative cursor-pointer group">
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      disabled={isUploading}
+                    />
+                    <div className="flex items-center justify-center gap-2 w-full py-4 bg-blue-50 border-2 border-dashed border-blue-200 rounded-2xl text-blue-600 font-black text-[10px] uppercase tracking-widest group-hover:bg-blue-100 group-hover:border-blue-300 transition-all">
+                      {isUploading ? (
+                        <Loader2 className="animate-spin" size={16} />
+                      ) : (
+                        <Upload size={16} />
+                      )}
+                      {isUploading ? 'SUBINDO...' : 'ESCOLHER ARQUIVO'}
+                    </div>
+                  </label>
+                </div>
+
+                <div className="relative flex items-center gap-2 py-2">
+                  <div className="h-[1px] bg-gray-100 flex-1"></div>
+                  <span className="text-[8px] font-black text-gray-300 uppercase">Ou use um link</span>
+                  <div className="h-[1px] bg-gray-100 flex-1"></div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">URL da Logo (Google Drive ou Direto)</label>
+                  <div className="relative">
+                    <LinkIcon className="absolute left-3 top-3.5 text-gray-400" size={16} />
+                    <input 
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all text-xs font-mono"
+                      value={formData.logoUrl}
+                      onChange={e => setFormData({...formData, logoUrl: e.target.value})}
+                      placeholder="Cole aqui o link de compartilhamento"
+                    />
+                  </div>
                 </div>
                 {formData.logoUrl?.includes('drive.google.com') && !logoPreviewError && (
                   <div className="flex items-center gap-1.5 px-2">
@@ -142,9 +254,11 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Nome Fantasia / Razão Social</label>
+            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
+              Nome Fantasia / Razão Social <span className="text-red-500">*</span>
+            </label>
             <input 
-              className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all font-bold text-gray-800"
+              className={`w-full mt-1 px-4 py-3 bg-gray-50 border rounded-xl focus:border-blue-500 outline-none transition-all font-bold text-gray-800 ${!formData.companyName || formData.companyName === 'MINHA EMPRESA' ? 'border-red-200' : 'border-gray-200'}`}
               value={formData.companyName}
               onChange={e => setFormData({...formData, companyName: e.target.value})}
               placeholder="Ex: Minha Loja de Doces"
@@ -183,9 +297,11 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave }) => {
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">WhatsApp</label>
+              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
+                WhatsApp <span className="text-red-500">*</span>
+              </label>
               <input 
-                className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none"
+                className={`w-full mt-1 px-4 py-3 bg-gray-50 border rounded-xl focus:border-blue-500 outline-none ${!formData.phone ? 'border-red-200' : 'border-gray-200'}`}
                 value={formData.phone}
                 onChange={e => setFormData({...formData, phone: e.target.value})}
               />

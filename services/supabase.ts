@@ -257,6 +257,27 @@ export const db = {
         role: saved.role,
         businessType: saved.business_type
       };
+    },
+    uploadLogo: async (file: File) => {
+      if (!shouldUseSupabase()) return null;
+      const userId = await getUserId();
+      if (!userId) throw new Error("Usuário não autenticado.");
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}-${Math.random()}.${fileExt}`;
+      const filePath = `logos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('omnivenda-assets')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('omnivenda-assets')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
     }
   },
   admin: {

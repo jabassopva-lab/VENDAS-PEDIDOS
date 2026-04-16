@@ -147,6 +147,21 @@ const App: React.FC = () => {
     return session?.user?.email?.toLowerCase() === 'omnvenda_adm@omnivenda.com';
   }, [session]);
 
+  const isProfileIncomplete = useMemo(() => {
+    if (isPureAdmin || isImpersonating) return false;
+    return !businessProfile.companyName || 
+           businessProfile.companyName === 'MINHA EMPRESA' || 
+           !businessProfile.phone || 
+           businessProfile.phone.trim() === '';
+  }, [businessProfile, isPureAdmin, isImpersonating]);
+
+  useEffect(() => {
+    if (isProfileIncomplete && session && !loading && currentScreen !== 'SETTINGS') {
+      setCurrentScreen('SETTINGS');
+      triggerNotify('Complete seu cadastro para continuar');
+    }
+  }, [isProfileIncomplete, session, loading, currentScreen]);
+
   useEffect(() => {
     if (isPureAdmin && currentScreen !== 'DEVELOPER_PANEL') {
       setCurrentScreen('DEVELOPER_PANEL');
@@ -627,7 +642,7 @@ const App: React.FC = () => {
         </div>
         <div className="flex items-center justify-between relative z-10">
           <div className="flex items-center gap-4">
-            {showBack ? (
+            {showBack && !isProfileIncomplete ? (
               <button 
                 onClick={() => isImpersonating ? handleExitImpersonation() : setCurrentScreen('HOME')} 
                 className="bg-white/20 p-1.5 rounded-lg active:scale-90 transition-all"
