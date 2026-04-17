@@ -22,6 +22,7 @@ import {
   Sun,
   Palmtree,
   CheckCircle2,
+  CheckCircle,
   AlertCircle,
   Download,
   Upload,
@@ -39,7 +40,6 @@ import {
   Bell,
   ExternalLink,
   Ban,
-  CheckCircle,
   Smartphone,
   Mail,
   MoreVertical,
@@ -1286,46 +1286,46 @@ const App: React.FC = () => {
                <div className="p-2 divide-y divide-slate-100">
                   <div className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
                      <div className="flex items-center gap-3">
-                        <div className="w-1 h-10 bg-blue-500 rounded-full"/>
-                        <span className="text-xl font-medium text-slate-900">Vendas</span>
+                        <div className="w-1.5 h-12 bg-blue-500 rounded-full"/>
+                        <span className="text-xl font-bold text-slate-900">Vendas</span>
                      </div>
-                     <div className="flex items-center gap-4">
-                        <span className="text-xl font-bold text-yellow-500">{currentSummary.vendasCount}</span>
-                        <span className="text-xl font-bold text-[#0ea5e9]">R$ {currentSummary.vendasTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                        <ChevronRight className="text-slate-300" size={20}/>
+                     <div className="flex items-center gap-6">
+                        <span className="text-2xl font-black text-yellow-500">{currentSummary.vendasCount}</span>
+                        <span className="text-2xl font-black text-[#0ea5e9]">R$ {currentSummary.vendasTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <ChevronRight className="text-slate-300" size={24}/>
                      </div>
                   </div>
 
                   <div className="flex items-center justify-between p-4 bg-slate-50/20">
                      <div className="flex items-center gap-3 pl-4">
-                        <span className="text-xl font-medium text-slate-800">Lucro Estimado</span>
+                        <span className="text-xl font-bold text-slate-800 italic uppercase">Lucro Estimado</span>
                      </div>
-                     <div className="flex items-center gap-4 pr-10">
-                        <span className="text-xl font-bold text-green-600">R$ {currentSummary.lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                     </div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
-                     <div className="flex items-center gap-3">
-                        <div className="w-1 h-10 bg-green-600 rounded-full"/>
-                        <span className="text-xl font-medium text-slate-900">Recebido</span>
-                     </div>
-                     <div className="flex items-center gap-4">
-                        <span className="text-xl font-bold text-yellow-500">{currentSummary.recebidoCount}</span>
-                        <span className="text-xl font-bold text-green-600">R$ {currentSummary.recebidoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                        <ChevronRight className="text-slate-300" size={20}/>
+                     <div className="flex items-center gap-6 pr-8">
+                        <span className="text-3xl font-black text-green-600">R$ {currentSummary.lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                      </div>
                   </div>
 
                   <div className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
                      <div className="flex items-center gap-3">
-                        <div className="w-1 h-10 bg-amber-600 rounded-full"/>
-                        <span className="text-xl font-medium text-slate-900">A Receber</span>
+                        <div className="w-1.5 h-12 bg-green-600 rounded-full"/>
+                        <span className="text-xl font-bold text-slate-900">Recebido</span>
                      </div>
-                     <div className="flex items-center gap-4">
-                        <span className="text-xl font-bold text-yellow-500">{currentSummary.aReceberCount}</span>
-                        <span className="text-xl font-bold text-amber-700">R$ {currentSummary.aReceberTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                        <ChevronRight className="text-slate-300" size={20}/>
+                     <div className="flex items-center gap-6">
+                        <span className="text-2xl font-black text-yellow-500">{currentSummary.recebidoCount}</span>
+                        <span className="text-2xl font-black text-green-600">R$ {currentSummary.recebidoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <ChevronRight className="text-slate-300" size={24}/>
+                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
+                     <div className="flex items-center gap-3">
+                        <div className="w-1.5 h-12 bg-amber-600 rounded-full"/>
+                        <span className="text-xl font-bold text-slate-900">A Receber</span>
+                     </div>
+                     <div className="flex items-center gap-6">
+                        <span className="text-2xl font-black text-yellow-500">{currentSummary.aReceberCount}</span>
+                        <span className="text-2xl font-black text-amber-700">R$ {currentSummary.aReceberTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <ChevronRight className="text-slate-300" size={24}/>
                      </div>
                   </div>
                </div>
@@ -1342,7 +1342,7 @@ const App: React.FC = () => {
                     <Users size={24} />
                   </div>
                   <div className="text-left">
-                    <p className="text-sm font-black text-slate-800 uppercase italic">Ranking de Clientes</p>
+                    <p className="text-lg font-black text-slate-800 uppercase italic">Ranking de Clientes</p>
                     <p className="text-xs font-bold text-slate-400 uppercase">Quem mais compra no período</p>
                   </div>
                 </div>
@@ -1358,7 +1358,7 @@ const App: React.FC = () => {
                     <Package size={24} />
                   </div>
                   <div className="text-left">
-                    <p className="text-sm font-black text-slate-800 uppercase italic">Ranking de Produtos</p>
+                    <p className="text-lg font-black text-slate-800 uppercase italic">Ranking de Produtos</p>
                     <p className="text-xs font-bold text-slate-400 uppercase">Produtos mais vendidos</p>
                   </div>
                 </div>
@@ -1397,8 +1397,8 @@ const App: React.FC = () => {
                   <ArrowLeft size={20} />
                 </button>
                 <div className="flex-1">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-white/70">Relatório de Ranking</p>
-                  <h2 className="text-lg font-black uppercase italic tracking-tighter leading-none">
+                  <p className="text-[11px] font-black uppercase tracking-widest text-white/70">Relatório de Ranking</p>
+                  <h2 className="text-xl font-black uppercase italic tracking-tighter leading-tight mt-1">
                     {currentScreen === 'CLIENT_REPORT' ? 'Vendas por Clientes' : 'Vendas por Produtos'}
                   </h2>
                 </div>
@@ -1534,48 +1534,63 @@ const App: React.FC = () => {
              </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-4 pb-32">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 pb-[450px]">
             {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).length === 0 ? (
               <EmptyState message="Sem dados para este período" icon={BarChart3} />
             ) : (
               (currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).map((item, index) => (
                 <div key={index} className="bg-white border-b border-slate-100 pb-4 last:border-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="text-[10px] font-black text-slate-300 uppercase italic">Pos. {index + 1}</div>
-                    <h3 className="font-black text-slate-800 text-sm uppercase italic leading-none flex-1">{item.name}</h3>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="flex items-center justify-center w-12 h-12 bg-slate-900 text-white rounded-xl text-base font-black italic shadow-lg shadow-slate-200">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-extrabold text-slate-900 text-xl uppercase tracking-tight flex-1 leading-tight">{item.name}</h3>
+                      <div className="h-1 w-20 bg-blue-500 rounded-full mt-2 opacity-20"></div>
+                    </div>
                   </div>
-                  <div className={`grid ${currentScreen === 'CLIENT_REPORT' ? 'grid-cols-7' : 'grid-cols-3'} gap-2`}>
-                    <div className="text-center">
-                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Vendas</p>
-                      <p className="text-lg font-black text-yellow-500">{item.salesCount}</p>
+                  <div className={`grid ${currentScreen === 'CLIENT_REPORT' ? 'grid-cols-7' : 'grid-cols-3'} gap-4`}>
+                    <div className="bg-slate-50/50 p-3 rounded-2xl text-center border border-slate-100/50 flex flex-col justify-center">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
+                        <ShoppingBag size={12} className="text-slate-300" /> Vendas
+                      </p>
+                      <p className="font-black text-slate-800 text-xl">{item.salesCount}</p>
                     </div>
                     {currentScreen === 'CLIENT_REPORT' && (
                       <>
-                        <div className="text-center">
-                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">{businessProfile.businessType === 'COCORA' ? 'Potes' : 'Itens'}</p>
-                          <p className="text-lg font-black text-amber-600">{(item as any).cocadaPotes || 0}</p>
+                        <div className="bg-amber-50/30 p-3 rounded-2xl text-center border border-amber-100/30">
+                          <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
+                            <Package size={12} className="text-amber-400" /> {businessProfile.businessType === 'COCORA' ? 'Potes' : 'Itens'}
+                          </p>
+                          <p className="font-black text-amber-700 text-xl">{(item as any).cocadaPotes || 0}</p>
                         </div>
-                        <div className="text-center">
-                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Pagas</p>
-                          <p className="text-lg font-black text-green-500">{(item as any).cocadaPotesPaid || 0}</p>
+                        <div className="bg-green-50/30 p-3 rounded-2xl text-center border border-green-100/30">
+                          <p className="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
+                            <CheckCircle size={12} className="text-green-400" /> Pagas
+                          </p>
+                          <p className="font-black text-green-600 text-xl">{(item as any).cocadaPotesPaid || 0}</p>
                         </div>
-                        <div className="text-center">
-                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">A Rec.</p>
-                          <p className="text-lg font-black text-blue-500">{(item as any).cocadaPotesToReceive || 0}</p>
+                        <div className="bg-blue-50/30 p-3 rounded-2xl text-center border border-blue-100/30">
+                          <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
+                            <Clock size={12} className="text-blue-400" /> A Rec.
+                          </p>
+                          <p className="font-black text-blue-700 text-xl">{(item as any).cocadaPotesToReceive || 0}</p>
                         </div>
-                        <div className="text-center">
-                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Vencidas</p>
-                          <p className="text-lg font-black text-red-500">{(item as any).cocadaPotesOverdue || 0}</p>
+                        <div className="bg-red-50/30 p-3 rounded-2xl text-center border border-red-100/30">
+                          <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
+                            <AlertCircle size={12} className="text-red-400" /> Vencidas
+                          </p>
+                          <p className="font-black text-red-600 text-xl">{(item as any).cocadaPotesOverdue || 0}</p>
                         </div>
-                        <div className="text-center">
-                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Valor Rec.</p>
-                          <p className="text-sm font-black text-red-600 leading-tight">R$ {( (item as any).totalPendingAmount + (item as any).totalOverdueAmount ).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                        <div className="bg-slate-50/80 p-3 rounded-2xl text-center border border-slate-200/50 flex flex-col justify-center">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pendente</p>
+                          <p className="text-sm font-black text-red-700">R$ {( (item as any).totalPendingAmount + (item as any).totalOverdueAmount ).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                         </div>
                       </>
                     )}
-                    <div className="text-center">
-                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Vendido</p>
-                      <p className="text-sm font-black text-blue-600">R$ {item.totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    <div className="bg-blue-600 p-4 rounded-2xl text-center shadow-md shadow-blue-100 flex flex-col justify-center">
+                      <p className="text-[12px] font-bold text-white/70 uppercase tracking-widest mb-2">Vendido</p>
+                      <p className="text-base font-black text-white leading-tight">R$ {item.totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     </div>
                   </div>
                 </div>
@@ -1583,42 +1598,63 @@ const App: React.FC = () => {
             )}
           </div>
 
-          <div className="bg-sky-50 p-4 border-t border-sky-100 flex-shrink-0 fixed bottom-0 left-0 right-0 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-[10px] font-black text-slate-500 uppercase">Nro. Vendas:</span>
-              <span className="text-lg font-black text-slate-800">{(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.salesCount, 0)}</span>
-            </div>
-            {currentScreen === 'CLIENT_REPORT' && (
-              <>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-[10px] font-black text-amber-700 uppercase">Total {businessProfile.businessType === 'COCORA' ? 'Potes Cocada' : 'Itens'}:</span>
-                  <span className="text-lg font-black text-amber-600">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotes || 0), 0)}</span>
+          <div className="bg-white p-4 border-t border-slate-200 fixed bottom-0 left-0 right-0 shadow-[0_-15px_60px_rgba(0,0,0,0.15)] z-50 rounded-t-[2rem]">
+            <div className="max-w-4xl mx-auto">
+              <div className="grid grid-cols-2 gap-4 mb-3">
+                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex flex-col items-center">
+                   <div className="bg-white p-2 rounded-full mb-1 shadow-sm">
+                      <ShoppingBag size={18} className="text-slate-500" />
+                   </div>
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nro. Vendas</p>
+                   <p className="text-2xl font-black text-slate-800">{(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.salesCount, 0)}</p>
                 </div>
-                <div className="flex justify-between items-center mb-1 pl-4">
-                  <span className="text-[10px] font-black text-green-600 uppercase">Potes Pagos:</span>
-                  <span className="text-base font-black text-green-500">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotesPaid || 0), 0)}</span>
+                <div className="bg-blue-50 p-3 rounded-2xl border border-blue-100 flex flex-col items-center">
+                   <div className="bg-white p-2 rounded-full mb-1 shadow-sm">
+                      <TrendingUp size={18} className="text-blue-500" />
+                   </div>
+                   <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Venda Total</p>
+                   <p className="text-2xl font-black text-blue-600">R$ {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.totalSold, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                 </div>
-                <div className="flex justify-between items-center mb-1 pl-4">
-                  <span className="text-[10px] font-black text-blue-600 uppercase">Potes a Receber:</span>
-                  <span className="text-base font-black text-blue-500">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotesToReceive || 0), 0)}</span>
+              </div>
+
+              {currentScreen === 'CLIENT_REPORT' && (
+                <div className="grid grid-cols-4 gap-4 mb-2">
+                  <div className="text-center">
+                    <p className="text-[10px] font-black text-amber-500 uppercase tracking-tighter mb-0.5">Total {businessProfile.businessType === 'COCORA' ? 'Potes' : 'Itens'}</p>
+                    <p className="text-base font-black text-amber-600">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotes || 0), 0)}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[10px] font-black text-green-500 uppercase tracking-tighter mb-0.5">Pagos</p>
+                    <p className="text-base font-black text-green-500">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotesPaid || 0), 0)}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-tighter mb-0.5">A Rec.</p>
+                    <p className="text-base font-black text-blue-500">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotesToReceive || 0), 0)}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[10px] font-black text-red-500 uppercase tracking-tighter mb-0.5">Vencidos</p>
+                    <p className="text-base font-black text-red-600">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotesOverdue || 0), 0)}</p>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center mb-1 pl-4">
-                  <span className="text-[10px] font-black text-red-500 uppercase">Potes Vencidos:</span>
-                  <span className="text-base font-black text-red-400">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotesOverdue || 0), 0)}</span>
+              )}
+
+              <div className="bg-slate-900 p-3 rounded-2xl flex justify-between items-center shadow-2xl shadow-slate-400 group">
+                <div className="flex items-center gap-3">
+                  <div className="bg-green-500 p-2 rounded-full text-white shadow-xl shadow-green-900/40">
+                    <TrendingUp size={20} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-green-400 uppercase tracking-widest">Lucro Total</p>
+                    <p className="text-xl font-black text-white italic leading-none">R$ {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.totalProfit, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-[10px] font-black text-red-600 uppercase">Total Valor a Receber:</span>
-                  <span className="text-lg font-black text-red-600">R$ {clientRanking.reduce((acc, curr) => acc + (curr.totalPendingAmount || 0) + (curr.totalOverdueAmount || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                </div>
-              </>
-            )}
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-[10px] font-black text-slate-500 uppercase">Venda Total:</span>
-              <span className="text-lg font-black text-blue-600">R$ {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.totalSold, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-black text-slate-500 uppercase">Lucro Total:</span>
-              <span className="text-lg font-black text-green-600">R$ {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.totalProfit, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                {currentScreen === 'CLIENT_REPORT' && (
+                  <div className="text-right border-l border-white/20 pl-4">
+                    <p className="text-[10px] font-black text-red-400 uppercase tracking-widest text-right leading-none mb-1">A Receber</p>
+                    <p className="text-xl font-black text-white leading-none">R$ {clientRanking.reduce((acc, curr) => acc + (curr.totalPendingAmount || 0) + (curr.totalOverdueAmount || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
