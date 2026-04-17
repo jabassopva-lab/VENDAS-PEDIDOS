@@ -365,41 +365,69 @@ const App: React.FC = () => {
   };
 
   const handleFinishSale = async (data: Partial<Sale>) => {
+    console.log("handleFinishSale - DATA RECEIVED:", data);
     try {
       const isUpdate = !!data.id;
       const client = clients.find(c => c.id === data.clientId);
       
+      // Limpar items para salvar apenas o essencial
+      const cleanItems = (data.items || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        price: Number(item.price) || 0,
+        costPrice: Number(item.costPrice) || 0,
+        quantity: Number(item.quantity) || 0,
+        discount: Number(item.discount) || 0
+      }));
+
+      // Usar data no formato ISO para o banco de dados se for novo, mas manter pt-BR para exibição se já existir
+      const todayISO = new Date().toISOString().split('T')[0];
+      const todayBR = new Date().toLocaleDateString('pt-BR');
+
       const salePayload = {
         id: data.id,
         clientId: data.clientId!,
         clientName: client?.name || 'Venda Avulsa',
-        items: data.items!,
-        total: data.total!,
-        profit: data.profit || 0,
+        items: cleanItems as any,
+        total: Number(data.total) || 0,
+        profit: Number(data.profit) || 0,
         paymentMethod: data.paymentMethod || 'Dinheiro',
         paymentTerms: data.paymentTerms || 'À vista',
-        installments: data.installments || 1,
-        date: isUpdate ? salesHistory.find(s => s.id === data.id)?.date : new Date().toLocaleDateString('pt-BR'),
-        time: isUpdate ? salesHistory.find(s => s.id === data.id)?.time : new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        installments: Number(data.installments) || 1,
+        // Se for novo, salvamos a data atual. Se for update, mantemos a original.
+        date: isUpdate ? (salesHistory.find(s => s.id === data.id)?.date || todayBR) : todayBR,
+        time: isUpdate ? (salesHistory.find(s => s.id === data.id)?.time || "00:00") : new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
         status: data.status || 'FINALIZADA',
         isPaid: data.isPaid ?? true,
         deliveryStatus: data.deliveryStatus || 'ENTREGUE'
       };
 
+      console.log("PRE-SAVE: Payload preparado:", salePayload);
+      
       let savedSale;
       if (isUpdate) {
+        console.log("EXECUTING: db.sales.update");
         savedSale = await db.sales.update(salePayload);
+        console.log("SUCCESS: db.sales.update", savedSale);
         setSalesHistory(prev => prev.map(s => s.id === savedSale.id ? savedSale : s));
       } else {
+        console.log("EXECUTING: db.sales.create");
         savedSale = await db.sales.create(salePayload);
+        console.log("SUCCESS: db.sales.create", savedSale);
         setSalesHistory(prev => [savedSale, ...prev]);
       }
       
+      if (!savedSale) {
+        console.error("ERRO: savedSale é nulo após operação");
+        throw new Error("O banco de dados não retornou os dados da venda.");
+      }
+
       if (savedSale.status === 'FINALIZADA') {
         const oldItems = isUpdate ? (salesHistory.find(s => s.id === data.id)?.items || []) : [];
         const newItems = data.items!;
         const allProductIds = Array.from(new Set([...oldItems.map(i => i.id), ...newItems.map(i => i.id)]));
         
+        console.log("START: Atualização de estoque para IDs:", allProductIds);
         const productUpdates = [...products];
         for (let i = 0; i < productUpdates.length; i++) {
           const p = productUpdates[i];
@@ -411,6 +439,7 @@ const App: React.FC = () => {
             if (delta !== 0) {
               const newStock = Math.max(0, p.stock - delta);
               const updatedProduct = { ...p, stock: newStock };
+              console.log(`UPDATING STOCK: ${p.name} (${p.stock} -> ${newStock})`);
               await db.products.upsert(updatedProduct);
               productUpdates[i] = updatedProduct;
             }
@@ -419,11 +448,15 @@ const App: React.FC = () => {
         setProducts(productUpdates);
       }
       
+      console.log("FINALIZING: Fechando modal e limpando estado");
       setSaleModal(false);
       setEditingSale(null);
       triggerNotify(isUpdate ? 'Pedido Atualizado!' : (savedSale.status === 'ORCAMENTO' ? 'Orçamento Salvo!' : 'Venda Realizada!'));
-    } catch (e) {
-      alert("Erro ao processar venda.");
+      alert("PEDIDO SALVO COM SUCESSO!");
+    } catch (e: any) {
+      console.error("ERRO COMPLETO AO SALVAR VENDA:", e);
+      const detail = e.message || JSON.stringify(e);
+      alert(`ERRO AO SALVAR PEDIDO:\n\n${detail}\n\nPor favor, tente novamente ou verifique sua internet.`);
     }
   };
 

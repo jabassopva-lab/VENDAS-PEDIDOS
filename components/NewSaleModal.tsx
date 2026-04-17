@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, Search, Plus, Minus, ShoppingCart, Check, User, Trash2, CreditCard, Calendar, Package, Layers, FileText, Truck, Banknote, Edit3, QrCode } from 'lucide-react';
+import { X, Search, Plus, Minus, ShoppingCart, Check, User, Trash2, CreditCard, Calendar, Package, Layers, FileText, Truck, Banknote, Edit3, QrCode, Loader2 } from 'lucide-react';
 import { Product, Client, CartItem, Sale } from '../types';
 
 interface NewSaleModalProps {
@@ -19,6 +19,7 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
   const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isFinishing, setIsFinishing] = useState(false);
   
   // Payment State
   const [paymentMethod, setPaymentMethod] = useState<string>('Dinheiro');
@@ -124,11 +125,12 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
     }));
   };
 
-  const cartTotal = cart.reduce((acc, item) => acc + ((item.price - (item.discount || 0)) * item.quantity), 0);
-  const cartCost = cart.reduce((acc, item) => acc + ((item.costPrice || 0) * item.quantity), 0);
-  const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+  const cartTotal = cart.reduce((acc, item) => acc + (( (Number(item.price) || 0) - (Number(item.discount) || 0)) * (Number(item.quantity) || 0)), 0);
+  const cartCost = cart.reduce((acc, item) => acc + ((Number(item.costPrice) || 0) * (Number(item.quantity) || 0)), 0);
+  const cartCount = cart.reduce((acc, item) => acc + (Number(item.quantity) || 0), 0);
 
-  const handleFinish = (statusOverride?: 'ORCAMENTO' | 'FINALIZADA') => {
+  const handleFinish = async (statusOverride?: 'ORCAMENTO' | 'FINALIZADA') => {
+    if (isFinishing) return;
     if (!selectedClientId) {
       alert("Por favor, selecione um cliente.");
       return;
@@ -138,32 +140,40 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
       return;
     }
 
-    let formattedTerms = '';
-    const [year, month, day] = dueDate.split('-');
-    const dateStr = `${day}/${month}/${year}`;
+    setIsFinishing(true);
+    try {
+      let formattedTerms = '';
+      const [year, month, day] = dueDate.split('-');
+      const dateStr = `${day}/${month}/${year}`;
 
-    if (paymentType === 'A_VISTA') {
-      formattedTerms = `À vista (${dateStr})`;
-    } else {
-      formattedTerms = `${installments}x (1ª em ${dateStr})`;
+      if (paymentType === 'A_VISTA') {
+        formattedTerms = `À vista (${dateStr})`;
+      } else {
+        formattedTerms = `${installments}x (1ª em ${dateStr})`;
+      }
+
+      const finalStatus = statusOverride || (isBudget ? 'ORCAMENTO' : 'FINALIZADA');
+
+      await onFinishSale({
+        id: initialData?.id,
+        clientId: selectedClientId,
+        items: cart,
+        total: cartTotal,
+        profit: cartTotal - cartCost,
+        paymentMethod,
+        paymentTerms: formattedTerms,
+        installments: paymentType === 'PARCELADO' ? installments : 1,
+        status: finalStatus,
+        isPaid: finalStatus === 'ORCAMENTO' ? false : isPaid,
+        deliveryStatus: isPendingDelivery ? 'PENDENTE' : 'ENTREGUE'
+      });
+      // O fechamento do modal agora é controlado pela função handleFinishSale no App.tsx
+    } catch (e: any) {
+      console.error(e);
+      alert("Houve um problema ao finalizar a venda no modal. Verifique os dados e tente novamente.");
+    } finally {
+      setIsFinishing(false);
     }
-
-    const finalStatus = statusOverride || (isBudget ? 'ORCAMENTO' : 'FINALIZADA');
-
-    onFinishSale({
-      id: initialData?.id,
-      clientId: selectedClientId,
-      items: cart,
-      total: cartTotal,
-      profit: cartTotal - cartCost,
-      paymentMethod,
-      paymentTerms: formattedTerms,
-      installments: paymentType === 'PARCELADO' ? installments : 1,
-      status: finalStatus,
-      isPaid: finalStatus === 'ORCAMENTO' ? false : isPaid,
-      deliveryStatus: isPendingDelivery ? 'PENDENTE' : 'ENTREGUE'
-    });
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -410,9 +420,13 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
              <button onClick={() => setStep('CART')} className="flex-1 bg-slate-100 text-slate-600 font-black py-4 rounded-2xl uppercase text-xs italic" disabled={cart.length === 0}>Revisar Alterações</button>
           ) : (
             <>
-              <button onClick={() => setStep('SELECTION')} className="flex-1 bg-slate-100 text-slate-600 font-black py-4 rounded-2xl uppercase text-xs italic">Voltar</button>
-              <button onClick={() => handleFinish('ORCAMENTO')} className="flex-1 bg-amber-100 text-amber-700 font-black py-4 rounded-2xl uppercase text-xs italic flex items-center justify-center gap-1 border-2 border-amber-200"><FileText size={16}/> Orçamento</button>
-              <button onClick={() => handleFinish('FINALIZADA')} className="flex-[1.5] bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 uppercase text-xs italic"><Check size={20} strokeWidth={4} /> {initialData ? 'Salvar Edição' : 'Finalizar'}</button>
+              <button disabled={isFinishing} onClick={() => setStep('SELECTION')} className="flex-1 bg-slate-100 text-slate-600 font-black py-4 rounded-2xl uppercase text-xs italic">Voltar</button>
+              <button disabled={isFinishing} onClick={() => handleFinish('ORCAMENTO')} className="flex-1 bg-amber-100 text-amber-700 font-black py-4 rounded-2xl uppercase text-xs italic flex items-center justify-center gap-1 border-2 border-amber-200">
+                {isFinishing ? <Loader2 className="animate-spin" size={16}/> : <FileText size={16}/>} Orçamento
+              </button>
+              <button disabled={isFinishing} onClick={() => handleFinish('FINALIZADA')} className="flex-[1.5] bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 uppercase text-xs italic">
+                {isFinishing ? <Loader2 className="animate-spin" size={20}/> : <Check size={20} strokeWidth={4} />} {initialData ? 'Salvar Edição' : 'Finalizar'}
+              </button>
             </>
           )}
         </div>

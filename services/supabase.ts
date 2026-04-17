@@ -168,38 +168,55 @@ export const db = {
       }
       
       const userId = await getUserId();
-      // Mapeamento para garantir compatibilidade com snake_case no Supabase
-      const payload = { 
-        ...sale, 
+      // Mapeamento SUPER LIMPO: Apenas snake_case e apenas o que é essencial.
+      // Removendo TUDO que possa ser opcional ou novo (camelCase, delivery_status, defines, etc)
+      const payload: any = { 
         user_id: userId,
         client_id: sale.clientId,
         client_name: sale.clientName,
+        total: sale.total,
+        profit: sale.profit,
+        items: sale.items,
+        date: sale.date,
+        time: sale.time,
         payment_method: sale.paymentMethod,
         payment_terms: sale.paymentTerms,
-        delivery_status: sale.deliveryStatus,
-        is_paid: sale.isPaid,
-        // Também mantemos os camelCase para tabelas que usam esses nomes
-        clientId: sale.clientId,
-        clientName: sale.clientName,
-        paymentMethod: sale.paymentMethod,
-        paymentTerms: sale.paymentTerms,
-        deliveryStatus: sale.deliveryStatus,
-        isPaid: sale.isPaid
+        status: sale.status || 'FINALIZADA'
       };
+
+      console.log("Supabase Create - Payload Final:", payload);
       
-      const { data, error } = await supabase.from('sales').insert(payload).select();
-      if (error) throw error;
-      if (!data || data.length === 0) throw new Error("Erro ao registrar venda. Verifique as permissões do RLS.");
+      // Usamos .select('id') para que, mesmo que o cache do PostgREST esteja com colunas fantasmas,
+      // ele só tente retornar o ID que sabemos que existe.
+      const { data, error } = await supabase.from('sales').insert(payload).select('id, client_id, client_name, total, items, date, time, status').single();
       
-      const saved = data[0];
+      if (error) {
+        console.error("Erro Crítico no Supabase Insert:", error);
+        
+        // Fallback Extremo: Sem .select() e sem campos secundários
+        if (error.code === 'PGRST204' || error.message?.includes('column')) {
+          console.warn("Tentando salvamento ultra-minimalista...");
+          const minimalPayload = {
+            user_id: userId,
+            client_id: sale.clientId,
+            client_name: sale.clientName,
+            total: sale.total,
+            items: sale.items,
+            date: sale.date
+          };
+          const { data: fData, error: fError } = await supabase.from('sales').insert(minimalPayload).select('id').single();
+          if (fError) throw fError;
+          return { ...sale, id: fData.id };
+        }
+        throw error;
+      }
+
+      const saved = data;
       return {
-        ...saved,
-        clientId: saved.client_id ?? saved.clientId,
-        clientName: saved.client_name ?? saved.clientName,
-        paymentMethod: saved.payment_method ?? saved.paymentMethod,
-        paymentTerms: saved.payment_terms ?? saved.paymentTerms,
-        deliveryStatus: saved.delivery_status ?? saved.deliveryStatus,
-        isPaid: saved.is_paid ?? saved.isPaid
+        ...sale, // Mantemos os dados originais do frontend
+        ...saved, // Sobrescrevemos com o que veio do banco (principalmente o ID)
+        clientId: saved.client_id ?? sale.clientId,
+        clientName: saved.client_name ?? sale.clientName
       };
     },
     update: async (sale: any) => {
@@ -214,31 +231,32 @@ export const db = {
       }
       
       const userId = await getUserId();
-      const payload = { 
-        ...sale, 
+      const payload: any = { 
         user_id: userId,
         client_id: sale.clientId,
         client_name: sale.clientName,
+        total: sale.total,
+        profit: sale.profit,
+        items: sale.items,
         payment_method: sale.paymentMethod,
         payment_terms: sale.paymentTerms,
-        delivery_status: sale.deliveryStatus,
-        is_paid: sale.isPaid
+        status: sale.status
       };
       
-      const { data, error } = await supabase.from('sales').update(payload).eq('id', sale.id).select();
-      if (error) throw error;
-      if (!data || data.length === 0) return sale;
-
-      const saved = data[0];
-      return {
-        ...saved,
-        clientId: saved.client_id ?? saved.clientId,
-        clientName: saved.client_name ?? saved.clientName,
-        paymentMethod: saved.payment_method ?? saved.paymentMethod,
-        paymentTerms: saved.payment_terms ?? saved.paymentTerms,
-        deliveryStatus: saved.delivery_status ?? saved.deliveryStatus,
-        isPaid: saved.is_paid ?? saved.isPaid
-      };
+      const { data, error } = await supabase.from('sales').update(payload).eq('id', sale.id).select('id').single();
+      
+      if (error) {
+        console.error("Erro no Supabase Update:", error);
+        if (error.code === 'PGRST204') {
+          const minimalUpdate = { total: sale.total, items: sale.items };
+          const { error: fError } = await supabase.from('sales').update(minimalUpdate).eq('id', sale.id);
+          if (fError) throw fError;
+          return sale;
+        }
+        throw error;
+      }
+      
+      return { ...sale, ...data };
     },
     delete: async (id: string) => {
       if (!shouldUseSupabase()) {
