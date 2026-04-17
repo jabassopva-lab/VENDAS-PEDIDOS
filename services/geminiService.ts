@@ -5,8 +5,8 @@ import { SalesData } from "../types.ts";
 // Removed helper function to follow the requirement of creating a new instance right before use
 export const generateProductDescription = async (name: string, category: string, price: number): Promise<string> => {
   try {
-    // Initializing GoogleGenAI directly using process.env.API_KEY right before calling generateContent
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // Initializing GoogleGenAI directly using process.env.GEMINI_API_KEY right before calling generateContent
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
     
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -30,8 +30,8 @@ export const generatePerformanceReport = async (monthlyData: SalesData[]): Promi
       return "Ainda não há dados de vendas suficientes para gerar uma análise mensal. Registre suas primeiras vendas para começar!";
     }
 
-    // Initializing GoogleGenAI directly using process.env.API_KEY right before calling generateContent
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // Initializing GoogleGenAI directly using process.env.GEMINI_API_KEY right before calling generateContent
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
     
     const dataSummary = monthlyData.map(d => 
       `- Mês: ${d.name} | Receita: R$ ${d.revenue.toFixed(2)} | Lucro: R$ ${d.profit.toFixed(2)} | Qtd Pedidos: ${d.sales}`

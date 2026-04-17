@@ -25,15 +25,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
     setLoading(true);
     setError(null);
 
-    // Converte o identificador em um formato de e-mail para o Supabase Auth
-    // Normalizamos para remover acentos e caracteres especiais que invalidam o e-mail
     const normalizedIdentifier = identifier
       .toLowerCase()
       .trim()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // Remove acentos
-      .replace(/\s+/g, '.')            // Espaços viram pontos
-      .replace(/[^a-z0-9._]/g, '');    // Remove caracteres especiais, mas mantém ponto e underline
+      .replace(/[\u0300-\u036f]/g, "") 
+      .replace(/\s+/g, '.')            
+      .replace(/[^a-z0-9._]/g, '');    
 
     const loginEmail = identifier.includes('@') 
       ? identifier 

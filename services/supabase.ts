@@ -46,6 +46,8 @@ const getUserId = async () => {
   return session?.user?.id;
 };
 
+const toBool = (val: any) => val === true || val === 'true';
+
 export const db = {
   products: {
     getAll: async () => {
@@ -166,7 +168,7 @@ export const db = {
         paymentMethod: s.payment_method ?? s.paymentMethod,
         paymentTerms: s.payment_terms ?? s.paymentTerms,
         deliveryStatus: s.delivery_status ?? s.deliveryStatus,
-        isPaid: s.is_paid === true || s.is_paid === 'true' || s.isPaid === true || s.isPaid === 'true' || s.ispaid === true || s.ispaid === 'true'
+        isPaid: toBool(s.is_paid) || toBool(s.isPaid) || toBool(s.ispaid)
       }));
     },
     create: async (sale: any) => {
@@ -228,7 +230,7 @@ export const db = {
         id: saved.id,
         clientId: saved.client_id ?? sale.clientId,
         clientName: saved.client_name ?? sale.clientName,
-        isPaid: saved.is_paid === true || saved.is_paid === 'true' || (saved as any).isPaid === true || (saved as any).isPaid === 'true' || (saved as any).ispaid === true || (saved as any).ispaid === 'true',
+        isPaid: toBool(saved.is_paid) || toBool((saved as any).isPaid) || toBool((saved as any).ispaid),
         deliveryStatus: saved.delivery_status ?? sale.deliveryStatus
       };
     },
@@ -275,7 +277,7 @@ export const db = {
       return { 
         ...sale, 
         ...saved,
-        isPaid: saved.is_paid === true || saved.is_paid === 'true' || (saved as any).isPaid === true || (saved as any).isPaid === 'true' || (saved as any).ispaid === true || (saved as any).ispaid === 'true'
+        isPaid: toBool(saved.is_paid) || toBool((saved as any).isPaid) || toBool((saved as any).ispaid)
       };
     },
     delete: async (id: string) => {
