@@ -467,19 +467,25 @@ const App: React.FC = () => {
   };
 
   const handleDeleteSale = async (saleId: string) => {
+    console.log("handleDeleteSale - Iniciado para ID:", saleId);
     try {
       const saleToDelete = salesHistory.find(s => s.id === saleId);
-      if (!saleToDelete) return;
+      if (!saleToDelete) {
+        console.warn("Venda não encontrada no histórico local:", saleId);
+        return;
+      }
 
       // Se a venda estava finalizada, devolve o estoque
       if (saleToDelete.status === 'FINALIZADA') {
+        console.log("Devolvendo estoque para os itens da venda...");
         const productUpdates = [...products];
         for (let i = 0; i < productUpdates.length; i++) {
           const p = productUpdates[i];
-          const item = saleToDelete.items.find(it => it.id === p.id);
+          const item = (saleToDelete.items || []).find(it => it.id === p.id);
           if (item) {
-            const newStock = p.stock + item.quantity;
+            const newStock = Number(p.stock || 0) + Number(item.quantity || 0);
             const updatedProduct = { ...p, stock: newStock };
+            console.log(`Atualizando estoque: ${p.name} -> ${newStock}`);
             await db.products.upsert(updatedProduct);
             productUpdates[i] = updatedProduct;
           }
@@ -487,12 +493,18 @@ const App: React.FC = () => {
         setProducts(productUpdates);
       }
 
+      console.log("Chamando exclusão no banco de dados...");
       await db.sales.delete(saleId);
+      
+      console.log("Removendo do estado local...");
       setSalesHistory(prev => prev.filter(s => s.id !== saleId));
+      setSelectedSale(null); // Garante o fechamento do modal
       triggerNotify('Pedido Excluído!');
-    } catch (e) {
-      console.error("Erro ao excluir venda:", e);
-      alert("Erro ao excluir pedido.");
+      alert("PEDIDO EXCLUÍDO COM SUCESSO!");
+    } catch (e: any) {
+      console.error("Erro completo ao excluir venda:", e);
+      const detail = e.message || JSON.stringify(e);
+      alert(`Erro ao excluir pedido: ${detail}`);
     }
   };
 

@@ -19,11 +19,17 @@ const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sale
 
   const clientData = clients.find(c => c.id === sale.clientId);
 
+  const [showConfirmDelete, setShowConfirmDelete] = React.useState(false);
+
   const handleDelete = () => {
-    if (window.confirm('Tem certeza que deseja excluir este pedido?')) {
-      onDelete(sale.id);
-      onClose();
-    }
+    console.log("SaleDetailModal - Clique no botão excluir - solicitando confirmação");
+    setShowConfirmDelete(true);
+  };
+
+  const confirmDelete = () => {
+    console.log("SaleDetailModal - Confirmado! Excluindo venda:", sale.id);
+    onDelete(sale.id);
+    onClose();
   };
 
   const handleShareWhatsApp = () => {
@@ -222,7 +228,31 @@ Obrigado pela preferência!`;
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 animate-in zoom-in-95">
+      <div className="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 animate-in zoom-in-95 relative">
+        {/* Confirmação de Exclusão Overlay */}
+        {showConfirmDelete && (
+          <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-200">
+            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-4">
+              <Trash2 size={32} />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">EXCLUIR PEDIDO?</h3>
+            <p className="text-sm text-slate-500 mb-8">Esta ação não pode ser desfeita e o estoque será devolvido.</p>
+            <div className="grid grid-cols-2 gap-4 w-full">
+              <button 
+                onClick={() => setShowConfirmDelete(false)}
+                className="py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-200 transition-all font-sans"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="py-4 bg-red-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-red-200 hover:bg-red-700 transition-all active:scale-95 font-sans"
+              >
+                Sim, Excluir
+              </button>
+            </div>
+          </div>
+        )}
         
         {/* Header Minimalist */}
         <div className="bg-white px-6 py-5 flex justify-between items-center border-b border-slate-100">
