@@ -1539,58 +1539,58 @@ const App: React.FC = () => {
               <EmptyState message="Sem dados para este período" icon={BarChart3} />
             ) : (
               (currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).map((item, index) => (
-                <div key={index} className="bg-white border-b border-slate-100 pb-4 last:border-0">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="flex items-center justify-center w-12 h-12 bg-slate-900 text-white rounded-xl text-base font-black italic shadow-lg shadow-slate-200">
+                <div key={index} className="bg-white border-b border-slate-100 pb-3 last:border-0">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center justify-center w-10 h-10 bg-slate-900 text-white rounded-xl text-sm font-black italic shadow-lg shadow-slate-200">
                       {index + 1}
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-extrabold text-slate-900 text-xl uppercase tracking-tight flex-1 leading-tight">{item.name}</h3>
-                      <div className="h-1 w-20 bg-blue-500 rounded-full mt-2 opacity-20"></div>
+                      <h3 className="font-extrabold text-slate-900 text-lg uppercase tracking-tight flex-1 leading-tight">{item.name}</h3>
+                      <div className="h-1 w-16 bg-blue-500 rounded-full mt-1 opacity-20"></div>
                     </div>
                   </div>
-                  <div className={`grid ${currentScreen === 'CLIENT_REPORT' ? 'grid-cols-7' : 'grid-cols-3'} gap-4`}>
-                    <div className="bg-slate-50/50 p-3 rounded-2xl text-center border border-slate-100/50 flex flex-col justify-center">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
-                        <ShoppingBag size={12} className="text-slate-300" /> Vendas
+                  <div className={`grid ${currentScreen === 'CLIENT_REPORT' ? 'grid-cols-2 md:grid-cols-7' : 'grid-cols-3'} gap-1.5 md:gap-3`}>
+                    <div className="bg-slate-50/50 p-1 md:p-1.5 rounded-lg text-center border border-slate-100/50 flex flex-col justify-center">
+                      <p className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0 flex items-center justify-center gap-1">
+                        <ShoppingBag size={8} className="text-slate-300" /> Vendas
                       </p>
-                      <p className="font-black text-slate-800 text-xl">{item.salesCount}</p>
+                      <p className="font-black text-slate-800 text-sm md:text-base">{item.salesCount}</p>
                     </div>
                     {currentScreen === 'CLIENT_REPORT' && (
                       <>
-                        <div className="bg-amber-50/30 p-3 rounded-2xl text-center border border-amber-100/30">
-                          <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
-                            <Package size={12} className="text-amber-400" /> {businessProfile.businessType === 'COCORA' ? 'Potes' : 'Itens'}
+                        <div className="bg-amber-50/30 p-1 md:p-1.5 rounded-lg text-center border border-amber-100/30">
+                          <p className="text-[7px] md:text-[8px] font-black text-amber-500 uppercase tracking-widest mb-0 flex items-center justify-center gap-1">
+                            <Package size={8} className="text-amber-400" /> {businessProfile.businessType === 'COCORA' ? 'Potes' : 'Itens'}
                           </p>
-                          <p className="font-black text-amber-700 text-xl">{(item as any).cocadaPotes || 0}</p>
+                          <p className="font-black text-amber-700 text-sm md:text-base">{(item as any).cocadaPotes || 0}</p>
                         </div>
-                        <div className="bg-green-50/30 p-3 rounded-2xl text-center border border-green-100/30">
-                          <p className="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
-                            <CheckCircle size={12} className="text-green-400" /> Pagas
+                        <div className="bg-green-50/30 p-1 md:p-1.5 rounded-lg text-center border border-green-100/30">
+                          <p className="text-[7px] md:text-[8px] font-black text-green-500 uppercase tracking-widest mb-0 flex items-center justify-center gap-1">
+                            <CheckCircle size={8} className="text-green-400" /> Pagas
                           </p>
-                          <p className="font-black text-green-600 text-xl">{(item as any).cocadaPotesPaid || 0}</p>
+                          <p className="font-black text-green-600 text-sm md:text-base">{(item as any).cocadaPotesPaid || 0}</p>
                         </div>
-                        <div className="bg-blue-50/30 p-3 rounded-2xl text-center border border-blue-100/30">
-                          <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
-                            <Clock size={12} className="text-blue-400" /> A Rec.
+                        <div className="bg-blue-50/30 p-1 md:p-1.5 rounded-lg text-center border border-blue-100/30">
+                          <p className="text-[7px] md:text-[8px] font-black text-blue-500 uppercase tracking-widest mb-0 flex items-center justify-center gap-1">
+                            <Clock size={8} className="text-blue-400" /> A Rec.
                           </p>
-                          <p className="font-black text-blue-700 text-xl">{(item as any).cocadaPotesToReceive || 0}</p>
+                          <p className="font-black text-blue-700 text-sm md:text-base">{(item as any).cocadaPotesToReceive || 0}</p>
                         </div>
-                        <div className="bg-red-50/30 p-3 rounded-2xl text-center border border-red-100/30">
-                          <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
-                            <AlertCircle size={12} className="text-red-400" /> Vencidas
+                        <div className="bg-red-50/30 p-1 md:p-1.5 rounded-lg text-center border border-red-100/30">
+                          <p className="text-[7px] md:text-[8px] font-black text-red-500 uppercase tracking-widest mb-0 flex items-center justify-center gap-1">
+                            <AlertCircle size={8} className="text-red-400" /> Vencidas
                           </p>
-                          <p className="font-black text-red-600 text-xl">{(item as any).cocadaPotesOverdue || 0}</p>
+                          <p className="font-black text-red-600 text-sm md:text-base">{(item as any).cocadaPotesOverdue || 0}</p>
                         </div>
-                        <div className="bg-slate-50/80 p-3 rounded-2xl text-center border border-slate-200/50 flex flex-col justify-center">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pendente</p>
-                          <p className="text-sm font-black text-red-700">R$ {( (item as any).totalPendingAmount + (item as any).totalOverdueAmount ).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                        <div className="bg-slate-50/80 p-1 md:p-1.5 rounded-lg text-center border border-slate-200/50 flex flex-col justify-center">
+                          <p className="text-[7px] md:text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0">Pendente</p>
+                          <p className="text-[9px] md:text-xs font-black text-red-700 leading-tight">R$ {( (item as any).totalPendingAmount + (item as any).totalOverdueAmount ).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                         </div>
                       </>
                     )}
-                    <div className="bg-blue-600 p-4 rounded-2xl text-center shadow-md shadow-blue-100 flex flex-col justify-center">
-                      <p className="text-[12px] font-bold text-white/70 uppercase tracking-widest mb-2">Vendido</p>
-                      <p className="text-base font-black text-white leading-tight">R$ {item.totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    <div className="bg-blue-600 p-1 md:p-2 rounded-lg text-center shadow-md shadow-blue-100 flex flex-col justify-center col-span-2 md:col-span-1">
+                      <p className="text-[8px] md:text-[9px] font-bold text-white/70 uppercase tracking-widest mb-0">Vendido</p>
+                      <p className="text-xs md:text-sm font-black text-white leading-tight">R$ {item.totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     </div>
                   </div>
                 </div>
@@ -1598,60 +1598,60 @@ const App: React.FC = () => {
             )}
           </div>
 
-          <div className="bg-white p-4 border-t border-slate-200 fixed bottom-0 left-0 right-0 shadow-[0_-15px_60px_rgba(0,0,0,0.15)] z-50 rounded-t-[2rem]">
+          <div className="bg-white p-1.5 border-t border-slate-200 fixed bottom-0 left-0 right-0 shadow-[0_-15px_60px_rgba(0,0,0,0.15)] z-50 rounded-t-[1rem]">
             <div className="max-w-4xl mx-auto">
-              <div className="grid grid-cols-2 gap-4 mb-3">
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex flex-col items-center">
-                   <div className="bg-white p-2 rounded-full mb-1 shadow-sm">
-                      <ShoppingBag size={18} className="text-slate-500" />
+              <div className="grid grid-cols-2 gap-1.5 mb-1.5">
+                <div className="bg-slate-50 p-1 rounded-lg border border-slate-100 flex flex-col items-center">
+                   <div className="bg-white p-0.5 rounded-full mb-0 shadow-sm">
+                      <ShoppingBag size={12} className="text-slate-500" />
                    </div>
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nro. Vendas</p>
-                   <p className="text-2xl font-black text-slate-800">{(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.salesCount, 0)}</p>
+                   <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">Vendas</p>
+                   <p className="text-base font-black text-slate-800 leading-none">{(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.salesCount, 0)}</p>
                 </div>
-                <div className="bg-blue-50 p-3 rounded-2xl border border-blue-100 flex flex-col items-center">
-                   <div className="bg-white p-2 rounded-full mb-1 shadow-sm">
-                      <TrendingUp size={18} className="text-blue-500" />
+                <div className="bg-blue-50 p-1 rounded-lg border border-blue-100 flex flex-col items-center">
+                   <div className="bg-white p-0.5 rounded-full mb-0 shadow-sm">
+                      <TrendingUp size={12} className="text-blue-500" />
                    </div>
-                   <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Venda Total</p>
-                   <p className="text-2xl font-black text-blue-600">R$ {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.totalSold, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                   <p className="text-[7px] font-black text-blue-400 uppercase tracking-widest leading-none">Total</p>
+                   <p className="text-base font-black text-blue-600 leading-none">R$ {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.totalSold, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                 </div>
               </div>
 
               {currentScreen === 'CLIENT_REPORT' && (
-                <div className="grid grid-cols-4 gap-4 mb-2">
-                  <div className="text-center">
-                    <p className="text-[10px] font-black text-amber-500 uppercase tracking-tighter mb-0.5">Total {businessProfile.businessType === 'COCORA' ? 'Potes' : 'Itens'}</p>
-                    <p className="text-base font-black text-amber-600">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotes || 0), 0)}</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 md:gap-3 mb-1.5">
+                  <div className="text-center p-0.5 bg-amber-50/50 rounded-lg md:bg-transparent">
+                    <p className="text-[6px] md:text-[7px] font-black text-amber-500 uppercase tracking-tighter mb-0 leading-tight">{businessProfile.businessType === 'COCORA' ? 'Potes' : 'Itens'}</p>
+                    <p className="text-[9px] md:text-xs font-black text-amber-600 leading-tight">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotes || 0), 0)}</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-[10px] font-black text-green-500 uppercase tracking-tighter mb-0.5">Pagos</p>
-                    <p className="text-base font-black text-green-500">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotesPaid || 0), 0)}</p>
+                  <div className="text-center p-0.5 bg-green-50/50 rounded-lg md:bg-transparent">
+                    <p className="text-[6px] md:text-[7px] font-black text-green-500 uppercase tracking-tighter mb-0 leading-tight">Pagos</p>
+                    <p className="text-[9px] md:text-xs font-black text-green-500 leading-tight">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotesPaid || 0), 0)}</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-tighter mb-0.5">A Rec.</p>
-                    <p className="text-base font-black text-blue-500">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotesToReceive || 0), 0)}</p>
+                  <div className="text-center p-0.5 bg-blue-50/50 rounded-lg md:bg-transparent">
+                    <p className="text-[6px] md:text-[7px] font-black text-blue-500 uppercase tracking-tighter mb-0 leading-tight">Rec.</p>
+                    <p className="text-[9px] md:text-xs font-black text-blue-500 leading-tight">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotesToReceive || 0), 0)}</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-[10px] font-black text-red-500 uppercase tracking-tighter mb-0.5">Vencidos</p>
-                    <p className="text-base font-black text-red-600">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotesOverdue || 0), 0)}</p>
+                  <div className="text-center p-0.5 bg-red-50/50 rounded-lg md:bg-transparent">
+                    <p className="text-[6px] md:text-[7px] font-black text-red-500 uppercase tracking-tighter mb-0 leading-tight">Venc.</p>
+                    <p className="text-[9px] md:text-xs font-black text-red-600 leading-tight">{clientRanking.reduce((acc, curr) => acc + (curr.cocadaPotesOverdue || 0), 0)}</p>
                   </div>
                 </div>
               )}
 
-              <div className="bg-slate-900 p-3 rounded-2xl flex justify-between items-center shadow-2xl shadow-slate-400 group">
-                <div className="flex items-center gap-3">
-                  <div className="bg-green-500 p-2 rounded-full text-white shadow-xl shadow-green-900/40">
-                    <TrendingUp size={20} />
+              <div className="bg-slate-900 p-1.5 rounded-lg flex justify-between items-center shadow-2xl shadow-slate-400 group">
+                <div className="flex items-center gap-2">
+                  <div className="bg-green-500 p-1 rounded-full text-white shadow-xl shadow-green-900/40">
+                    <TrendingUp size={12} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-green-400 uppercase tracking-widest">Lucro Total</p>
-                    <p className="text-xl font-black text-white italic leading-none">R$ {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.totalProfit, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    <p className="text-[7px] font-black text-green-400 uppercase tracking-widest leading-none mb-0.5">Lucro</p>
+                    <p className="text-sm font-black text-white italic leading-none">R$ {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).reduce((acc, curr) => acc + curr.totalProfit, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                   </div>
                 </div>
                 {currentScreen === 'CLIENT_REPORT' && (
-                  <div className="text-right border-l border-white/20 pl-4">
-                    <p className="text-[10px] font-black text-red-400 uppercase tracking-widest text-right leading-none mb-1">A Receber</p>
-                    <p className="text-xl font-black text-white leading-none">R$ {clientRanking.reduce((acc, curr) => acc + (curr.totalPendingAmount || 0) + (curr.totalOverdueAmount || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  <div className="text-right border-l border-white/20 pl-2">
+                    <p className="text-[7px] font-black text-red-400 uppercase tracking-widest text-right leading-none mb-0.5">Pend.</p>
+                    <p className="text-sm font-black text-white leading-none">R$ {clientRanking.reduce((acc, curr) => acc + (curr.totalPendingAmount || 0) + (curr.totalOverdueAmount || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                   </div>
                 )}
               </div>
