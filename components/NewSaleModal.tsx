@@ -28,7 +28,7 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
   const [dueDate, setDueDate] = useState<string>(new Date().toISOString().split('T')[0]);
   
   // Status State
-  const [isPaid, setIsPaid] = useState(true);
+  const [isPaid, setIsPaid] = useState(false);
   const [isPendingDelivery, setIsPendingDelivery] = useState(false);
   const [isBudget, setIsBudget] = useState(false);
 
@@ -50,7 +50,7 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
         setSelectedClientId(initialData.clientId);
         setPaymentMethod(initialData.paymentMethod || 'Dinheiro');
         setIsBudget(initialData.status === 'ORCAMENTO');
-        setIsPaid(initialData.isPaid);
+        setIsPaid(initialData.isPaid ?? true);
         setIsPendingDelivery(initialData.deliveryStatus === 'PENDENTE');
         setInstallments(initialData.installments || 1);
         setPaymentType(initialData.installments > 1 ? 'PARCELADO' : 'A_VISTA');
@@ -64,7 +64,7 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
         setPaymentType('A_VISTA');
         setInstallments(1);
         setDueDate(new Date().toISOString().split('T')[0]);
-        setIsPaid(true);
+        setIsPaid(false);
         setIsPendingDelivery(false);
         setIsBudget(false);
       }
@@ -314,7 +314,14 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
                      return (
                        <button
                          key={method.id}
-                         onClick={() => setPaymentMethod(method.id)}
+                         onClick={() => {
+                           setPaymentMethod(method.id);
+                           if (method.id === 'Boleto') {
+                             setIsPaid(false);
+                           } else if (method.id === 'Dinheiro' || method.id === 'Pix') {
+                             setIsPaid(true);
+                           }
+                         }}
                          className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border-2 transition-all active:scale-95 ${isActive ? `border-blue-500 ${method.bg}` : 'border-slate-50 bg-slate-50 opacity-60'}`}
                        >
                          <Icon size={20} className={isActive ? method.color : 'text-slate-400'} />
@@ -343,7 +350,7 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
                <div className="space-y-4">
                  <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-2xl">
                     <button onClick={() => setPaymentType('A_VISTA')} className={`py-2 rounded-xl font-black text-xs uppercase transition-all ${paymentType === 'A_VISTA' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}>À Vista</button>
-                    <button onClick={() => setPaymentType('PARCELADO')} className={`py-2 rounded-xl font-black text-xs uppercase transition-all ${paymentType === 'PARCELADO' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}>Parcelado</button>
+                    <button onClick={() => { setPaymentType('PARCELADO'); setIsPaid(false); }} className={`py-2 rounded-xl font-black text-xs uppercase transition-all ${paymentType === 'PARCELADO' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}>Parcelado</button>
                  </div>
 
                  <div className="grid grid-cols-2 gap-4">

@@ -398,7 +398,7 @@ const App: React.FC = () => {
         date: isUpdate ? (salesHistory.find(s => s.id === data.id)?.date || todayBR) : todayBR,
         time: isUpdate ? (salesHistory.find(s => s.id === data.id)?.time || "00:00") : new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
         status: data.status || 'FINALIZADA',
-        isPaid: data.isPaid ?? true,
+        isPaid: data.isPaid !== undefined ? data.isPaid : (isUpdate ? (salesHistory.find(s => s.id === data.id)?.isPaid ?? false) : false),
         deliveryStatus: data.deliveryStatus || 'ENTREGUE'
       };
 

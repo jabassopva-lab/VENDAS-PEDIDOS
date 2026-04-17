@@ -166,7 +166,7 @@ export const db = {
         paymentMethod: s.payment_method ?? s.paymentMethod,
         paymentTerms: s.payment_terms ?? s.paymentTerms,
         deliveryStatus: s.delivery_status ?? s.deliveryStatus,
-        isPaid: s.is_paid ?? s.isPaid
+        isPaid: s.is_paid === true || s.is_paid === 'true' || s.isPaid === true || s.isPaid === 'true' || s.ispaid === true || s.ispaid === 'true'
       }));
     },
     create: async (sale: any) => {
@@ -192,28 +192,28 @@ export const db = {
         time: sale.time,
         payment_method: sale.paymentMethod,
         payment_terms: sale.paymentTerms,
-        status: sale.status || 'FINALIZADA'
+        status: sale.status || 'FINALIZADA',
+        is_paid: sale.isPaid,
+        delivery_status: sale.deliveryStatus
       };
 
       console.log("Supabase Create - Payload Final:", payload);
       
-      // Usamos .select('id') para que, mesmo que o cache do PostgREST esteja com colunas fantasmas,
-      // ele só tente retornar o ID que sabemos que existe.
-      const { data, error } = await supabase.from('sales').insert(payload).select('id, client_id, client_name, total, items, date, time, status').single();
+      // Incluímos is_paid e delivery_status no select para garantir que retornem mapeados
+      const { data, error } = await supabase.from('sales').insert(payload).select().single();
       
       if (error) {
         console.error("Erro Crítico no Supabase Insert:", error);
         
-        // Fallback Extremo: Sem .select() e sem campos secundários
+        // Fallback Ultra-Estável: Apenas o que GARANTIDAMENTE existe
         if (error.code === 'PGRST204' || error.message?.includes('column')) {
-          console.warn("Tentando salvamento ultra-minimalista...");
+          console.warn("Tentando salvamento de emergência...");
           const minimalPayload = {
             user_id: userId,
             client_id: sale.clientId,
             client_name: sale.clientName,
             total: sale.total,
-            items: sale.items,
-            date: sale.date
+            items: sale.items
           };
           const { data: fData, error: fError } = await supabase.from('sales').insert(minimalPayload).select('id').single();
           if (fError) throw fError;
@@ -224,10 +224,12 @@ export const db = {
 
       const saved = data;
       return {
-        ...sale, // Mantemos os dados originais do frontend
-        ...saved, // Sobrescrevemos com o que veio do banco (principalmente o ID)
+        ...sale,
+        id: saved.id,
         clientId: saved.client_id ?? sale.clientId,
-        clientName: saved.client_name ?? sale.clientName
+        clientName: saved.client_name ?? sale.clientName,
+        isPaid: saved.is_paid === true || saved.is_paid === 'true' || (saved as any).isPaid === true || (saved as any).isPaid === 'true' || (saved as any).ispaid === true || (saved as any).ispaid === 'true',
+        deliveryStatus: saved.delivery_status ?? sale.deliveryStatus
       };
     },
     update: async (sale: any) => {
@@ -251,14 +253,16 @@ export const db = {
         items: sale.items,
         payment_method: sale.paymentMethod,
         payment_terms: sale.paymentTerms,
-        status: sale.status
+        status: sale.status,
+        is_paid: sale.isPaid,
+        delivery_status: sale.deliveryStatus
       };
       
-      const { data, error } = await supabase.from('sales').update(payload).eq('id', sale.id).select('id').single();
+      const { data, error } = await supabase.from('sales').update(payload).eq('id', sale.id).select().single();
       
       if (error) {
         console.error("Erro no Supabase Update:", error);
-        if (error.code === 'PGRST204') {
+        if (error.code === 'PGRST204' || error.message?.includes('column')) {
           const minimalUpdate = { total: sale.total, items: sale.items };
           const { error: fError } = await supabase.from('sales').update(minimalUpdate).eq('id', sale.id);
           if (fError) throw fError;
@@ -267,7 +271,12 @@ export const db = {
         throw error;
       }
       
-      return { ...sale, ...data };
+      const saved = data;
+      return { 
+        ...sale, 
+        ...saved,
+        isPaid: saved.is_paid === true || saved.is_paid === 'true' || (saved as any).isPaid === true || (saved as any).isPaid === 'true' || (saved as any).ispaid === true || (saved as any).ispaid === 'true'
+      };
     },
     delete: async (id: string) => {
       if (!shouldUseSupabase()) {
