@@ -122,7 +122,8 @@ export const db = {
         setLocal('products', products);
         return;
       }
-      const { error } = await supabase.from('products').delete().eq('id', id);
+      const userId = await getUserId();
+      const { error } = await supabase.from('products').delete().eq('id', id).eq('user_id', userId);
       if (error) throw error;
     }
   },
@@ -287,7 +288,8 @@ export const db = {
         return;
       }
       // Tenta deletar do Supabase
-      const { error } = await supabase.from('sales').delete().eq('id', id);
+      const userId = await getUserId();
+      const { error } = await supabase.from('sales').delete().eq('id', id).eq('user_id', userId);
       if (error) throw error;
     }
   },

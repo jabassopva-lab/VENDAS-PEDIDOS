@@ -383,29 +383,40 @@ const App: React.FC = () => {
   };
 
   const handleDeleteSale = async (saleId: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta venda? Esta ação não pode ser desfeita.')) return;
+    
     try {
       const saleToDelete = salesHistory.find(s => s.id === saleId);
       if (!saleToDelete) return;
-      if (saleToDelete.status === 'FINALIZADA') {
-        const productUpdates = [...products];
-        for (let i = 0; i < productUpdates.length; i++) {
-          const p = productUpdates[i];
-          const item = (saleToDelete.items || []).find(it => it.id === p.id);
-          if (item) {
-            const newStock = Number(p.stock || 0) + Number(item.quantity || 0);
-            const updatedProduct = { ...p, stock: newStock };
-            await db.products.upsert(updatedProduct);
-            productUpdates[i] = updatedProduct;
+      
+      // Tenta restaurar o estoque se a venda estiver finalizada
+      try {
+        if (saleToDelete.status === 'FINALIZADA') {
+          const productUpdates = [...products];
+          for (let i = 0; i < productUpdates.length; i++) {
+            const p = productUpdates[i];
+            const item = (saleToDelete.items || []).find(it => it.id === p.id);
+            if (item) {
+              const newStock = Number(p.stock || 0) + Number(item.quantity || 0);
+              const updatedProduct = { ...p, stock: newStock };
+              await db.products.upsert(updatedProduct);
+              productUpdates[i] = updatedProduct;
+            }
           }
+          setProducts(productUpdates);
         }
-        setProducts(productUpdates);
+      } catch (stockError) {
+        console.warn("Erro ao restaurar estoque durante exclusão:", stockError);
+        // Prosseguimos com a exclusão da venda mesmo se a restauração de estoque falhar
       }
+
       await db.sales.delete(saleId);
       setSalesHistory(prev => prev.filter(s => s.id !== saleId));
       setSelectedSale(null);
       triggerNotify('Venda Excluída!');
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error("Erro ao excluir venda:", e);
+      alert(`Erro ao excluir venda: ${e.message || 'Verifique sua conexão.'}`);
     }
   };
 
