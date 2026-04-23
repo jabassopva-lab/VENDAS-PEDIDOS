@@ -2,7 +2,7 @@
 import React from 'react';
 import { X, Printer, Package, Building2, Calendar, Clock, CreditCard, User, Palmtree, Sun, ShoppingBag, MessageSquare, Share2, Edit3, Trash2 } from 'lucide-react';
 import { Sale, BusinessProfile, Client } from '../types';
-import { convertDriveLink } from '../App';
+import { convertDriveLink } from '../App.tsx';
 
 interface SaleDetailModalProps {
   isOpen: boolean;

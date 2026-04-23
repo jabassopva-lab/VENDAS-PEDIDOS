@@ -50,7 +50,7 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({ isOpen, onClose, products, 
         setSelectedClientId(initialData.clientId);
         setPaymentMethod(initialData.paymentMethod || 'Dinheiro');
         setIsBudget(initialData.status === 'ORCAMENTO');
-        setIsPaid(initialData.isPaid ?? true);
+        setIsPaid(initialData.isPaid ?? false);
         setIsPendingDelivery(initialData.deliveryStatus === 'PENDENTE');
         setInstallments(initialData.installments || 1);
         setPaymentType(initialData.installments > 1 ? 'PARCELADO' : 'A_VISTA');
