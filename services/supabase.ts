@@ -215,27 +215,25 @@ export const db = {
       }
       
       const userId = await getUserId();
-      // Mapeamento SUPER LIMPO: Apenas snake_case e apenas o que é essencial.
-      // Removendo TUDO que possa ser opcional ou novo (camelCase, delivery_status, defines, etc)
+      // Mapeamento DEFENSIVO: Garante que nada chegue NULL no banco se tivermos um valor padrão possível.
       const payload: any = { 
         user_id: userId,
-        client_id: sale.clientId,
-        client_name: sale.clientName,
-        total: sale.total,
-        profit: sale.profit,
-        items: sale.items,
-        date: sale.date,
-        time: sale.time,
-        payment_method: sale.paymentMethod,
-        payment_terms: sale.paymentTerms,
+        client_id: sale.clientId || null,
+        client_name: sale.clientName || 'Venda Avulsa',
+        total: Number(sale.total) || 0,
+        profit: Number(sale.profit) || 0,
+        items: Array.isArray(sale.items) ? sale.items : [],
+        date: sale.date || new Date().toLocaleDateString('pt-BR'),
+        time: sale.time || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        payment_method: sale.paymentMethod || 'Dinheiro',
+        payment_terms: sale.paymentTerms || 'À vista',
         status: sale.status || 'FINALIZADA',
-        is_paid: sale.isPaid,
-        delivery_status: sale.deliveryStatus
+        is_paid: !!sale.isPaid,
+        delivery_status: sale.deliveryStatus || 'ENTREGUE'
       };
 
-      console.log("Supabase Create - Payload Final:", payload);
+      console.log("Supabase Create - Payload Sanitizado:", payload);
       
-      // Incluímos is_paid e delivery_status no select para garantir que retornem mapeados
       const { data, error } = await supabase.from('sales').insert(payload).select().single();
       
       if (error) {
@@ -246,10 +244,10 @@ export const db = {
           console.warn("Tentando salvamento de emergência...");
           const minimalPayload = {
             user_id: userId,
-            client_id: sale.clientId,
-            client_name: sale.clientName,
-            total: sale.total,
-            items: sale.items
+            client_id: payload.client_id,
+            client_name: payload.client_name,
+            total: payload.total,
+            items: payload.items
           };
           const { data: fData, error: fError } = await supabase.from('sales').insert(minimalPayload).select('id').single();
           if (fError) throw fError;
@@ -264,14 +262,14 @@ export const db = {
         id: saved.id,
         clientId: saved.client_id ?? sale.clientId,
         clientName: saved.client_name ?? sale.clientName,
-        isPaid: toBool(saved.is_paid) || toBool((saved as any).isPaid) || toBool((saved as any).ispaid),
+        isPaid: toBool(saved.is_paid) || toBool(saved.isPaid),
         deliveryStatus: saved.delivery_status ?? sale.deliveryStatus
       };
     },
     update: async (sale: any) => {
       if (!shouldUseSupabase()) {
         const sales = getLocal('sales');
-        const index = sales.findIndex((s: any) => s.id === sale.id);
+        const index = sales.findIndex((s: any) => String(s.id) === String(sale.id));
         if (index >= 0) {
           sales[index] = { ...sales[index], ...sale };
           setLocal('sales', sales);
@@ -282,67 +280,101 @@ export const db = {
       const userId = await getUserId();
       const payload: any = { 
         user_id: userId,
-        client_id: sale.clientId,
-        client_name: sale.clientName,
-        total: sale.total,
-        profit: sale.profit,
-        items: sale.items,
-        payment_method: sale.paymentMethod,
-        payment_terms: sale.paymentTerms,
-        status: sale.status,
-        is_paid: sale.isPaid,
-        delivery_status: sale.deliveryStatus
+        client_id: sale.clientId || null,
+        client_name: sale.clientName || 'Venda Avulsa',
+        total: Number(sale.total) || 0,
+        profit: Number(sale.profit) || 0,
+        items: Array.isArray(sale.items) ? sale.items : [],
+        payment_method: sale.paymentMethod || 'Dinheiro',
+        payment_terms: sale.paymentTerms || 'À vista',
+        status: sale.status || 'FINALIZADA',
+        is_paid: !!sale.isPaid,
+        delivery_status: sale.deliveryStatus || 'ENTREGUE'
       };
       
       const { data, error } = await supabase.from('sales').update(payload).eq('id', sale.id).select().single();
       
       if (error) {
         console.error("Erro no Supabase Update:", error);
-        if (error.code === 'PGRST204' || error.message?.includes('column')) {
-          const minimalUpdate = { total: sale.total, items: sale.items };
-          const { error: fError } = await supabase.from('sales').update(minimalUpdate).eq('id', sale.id);
-          if (fError) throw fError;
-          return sale;
-        }
-        throw error;
+        const minimalUpdate = { 
+          total: Number(sale.total) || 0, 
+          items: Array.isArray(sale.items) ? sale.items : [] 
+        };
+        const { error: fError } = await supabase.from('sales').update(minimalUpdate).eq('id', sale.id);
+        if (fError) throw fError;
+        return sale;
       }
       
       const saved = data;
       return { 
         ...sale, 
         ...saved,
-        isPaid: toBool(saved.is_paid) || toBool((saved as any).isPaid) || toBool((saved as any).ispaid)
+        isPaid: toBool(saved.is_paid) || toBool(saved.isPaid)
       };
     },
-    delete: async (id: string) => {
+    delete: async (id: string | number) => {
       if (!shouldUseSupabase()) {
-        const sales = getLocal('sales').filter((s: any) => s.id !== id);
+        const sales = getLocal('sales').filter((s: any) => String(s.id) !== String(id));
         setLocal('sales', sales);
         return;
       }
-      // Tenta deletar do Supabase
+      
       const userId = await getUserId();
-      console.log("Supabase Delete - Iniciando exclusão de venda:", { id, userId });
+      if (!userId) {
+        throw new Error("Sessão não identificada. Por favor, faça login novamente.");
+      }
 
-      // Usamos count: 'exact' e select() para confirmar se algo foi realmente deletado
-      const { data, error, count } = await supabase
+      console.log("Supabase Delete - Executando para ID:", id, "Usuário:", userId);
+
+      // Tentativa 1: Exclusão segura vinculada ao usuário logado
+      const { error, count } = await supabase
         .from('sales')
         .delete({ count: 'exact' })
         .eq('id', id)
-        .eq('user_id', userId)
-        .select();
+        .eq('user_id', userId);
 
       if (error) {
-        console.error("Erro Crítico ao excluir venda no Supabase:", error);
+        console.error("Erro Supabase (Fase 1):", error);
         throw error;
       }
 
-      console.log("Supabase Delete - Resultado:", { id, count, data });
-      
+      console.log("Supabase Delete - Fase 1 concluída. Count:", count);
+
+      // Tentativa 2: Se não deletou nada (count 0), pode ser que o ID não esteja com user_id ou seja outro tipo
       if (count === 0) {
-        console.warn("Nenhuma venda foi excluída do banco. Verifique se o ID está correto ou se pertence ao seu usuário.");
-        // Não jogamos erro aqui para evitar travar a interface, 
-        // mas logamos para depuração.
+        console.warn("Exclusão não afetou nenhuma linha com user_id. Tentando exclusão direta por ID...");
+        
+        // Se o ID parece numérico, tentamos como número também (caso a coluna seja int e o JS passe string)
+        const numericId = !isNaN(Number(id)) ? Number(id) : null;
+        
+        let query = supabase.from('sales').delete({ count: 'exact' }).eq('id', id);
+        
+        const { error: error2, count: count2 } = await query;
+        
+        if (error2) {
+           console.error("Erro Supabase (Fase 2):", error2);
+           throw error2;
+        }
+        
+        if (count2 === 0 && numericId !== null) {
+           console.warn("Segunda tentativa falhou. Tentando com ID numérico...");
+           const { error: error3, count: count3 } = await supabase.from('sales').delete({ count: 'exact' }).eq('id', numericId);
+           if (error3) throw error3;
+           if (count3 && count3 > 0) {
+             console.log("Venda excluída com sucesso usando ID numérico!");
+             return;
+           }
+        }
+
+        if (count2 && count2 > 0) {
+          console.log("Venda excluída com sucesso na Fase 2 (apenas por ID)!");
+        } else {
+          console.error("Falha total na exclusão: O registro não existe ou você não tem permissão RLS para removê-lo.");
+          // Lançamos um erro para que a UI saiba que não funcionou
+          throw new Error("Não foi possível remover o registro no banco de dados. Ele pode já ter sido excluído ou você não tem permissão.");
+        }
+      } else {
+        console.log("Venda excluída com sucesso!");
       }
     }
   },

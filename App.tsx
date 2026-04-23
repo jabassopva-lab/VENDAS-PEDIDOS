@@ -513,34 +513,73 @@ const App: React.FC = () => {
 
   const clientRanking = useMemo(() => {
     const d = currentDate;
+    const dayStr = d.toLocaleDateString('pt-BR');
     const monthStr = (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getFullYear();
-    const filtered = salesHistory.filter(s => s.status === 'FINALIZADA' && s.date && s.date.endsWith(monthStr));
+    const yearStr = d.getFullYear().toString();
+    
+    const filtered = salesHistory.filter(s => {
+      // Incluímos FINALIZADA e PENDENTE no ranking (ignora apenas CANCELADA)
+      if (!['FINALIZADA', 'PENDENTE'].includes(s.status) || !s.date) return false;
+      if (reportTab === 'DIARIO') return s.date === dayStr;
+      if (reportTab === 'MENSAL') return s.date.endsWith(monthStr);
+      if (reportTab === 'ANUAL') return s.date.endsWith(yearStr);
+      return false;
+    });
+
     const clientsMap: Record<string, any> = {};
     filtered.forEach(sale => {
-      if (!clientsMap[sale.clientId]) clientsMap[sale.clientId] = { name: sale.clientName, salesCount: 0, totalSold: 0, totalProfit: 0, cocadaPotes: 0, cocadaPotesPaid: 0, cocadaPotesToReceive: 0, cocadaPotesOverdue: 0, totalPendingAmount: 0, totalOverdueAmount: 0 };
-      clientsMap[sale.clientId].salesCount++;
-      clientsMap[sale.clientId].totalSold += Number(sale.total);
-      clientsMap[sale.clientId].totalProfit += Number(sale.profit || 0);
-      if (!sale.isPaid) clientsMap[sale.clientId].totalPendingAmount += Number(sale.total);
+      // Normalização: Se temos ID usamos ID, se não temos usamos Nome limpo.
+      // Se tivermos ID mas houver vendas sem ID com o mesmo nome, o ranking pode ficar separado,
+      // mas é mais seguro do que misturar nomes idênticos de pessoas diferentes.
+      const rawName = (sale.clientName || 'Venda Avulsa').trim();
+      const groupKey = sale.clientId && sale.clientId !== 'undefined' ? sale.clientId : `name_${rawName.toUpperCase()}`;
+      
+      if (!clientsMap[groupKey]) {
+        clientsMap[groupKey] = { 
+          name: rawName, 
+          salesCount: 0, 
+          totalSold: 0, 
+          totalProfit: 0, 
+          totalPendingAmount: 0 
+        };
+      }
+      
+      clientsMap[groupKey].salesCount++;
+      clientsMap[groupKey].totalSold += Number(sale.total) || 0;
+      clientsMap[groupKey].totalProfit += Number(sale.profit || 0);
+      if (!sale.isPaid) clientsMap[groupKey].totalPendingAmount += Number(sale.total) || 0;
     });
+    
     return Object.values(clientsMap).sort((a, b) => b.totalSold - a.totalSold);
   }, [salesHistory, currentDate, reportTab]);
 
   const productRanking = useMemo(() => {
     const d = currentDate;
+    const dayStr = d.toLocaleDateString('pt-BR');
     const monthStr = (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getFullYear();
-    const filtered = salesHistory.filter(s => s.status === 'FINALIZADA' && s.date && s.date.endsWith(monthStr));
+    const yearStr = d.getFullYear().toString();
+
+    const filtered = salesHistory.filter(s => {
+      if (!['FINALIZADA', 'PENDENTE'].includes(s.status) || !s.date) return false;
+      if (reportTab === 'DIARIO') return s.date === dayStr;
+      if (reportTab === 'MENSAL') return s.date.endsWith(monthStr);
+      if (reportTab === 'ANUAL') return s.date.endsWith(yearStr);
+      return false;
+    });
+
     const productsMap: Record<string, any> = {};
     filtered.forEach(sale => {
-      sale.items.forEach(item => {
-        if (!productsMap[item.id]) productsMap[item.id] = { name: item.name, salesCount: 0, totalSold: 0, totalProfit: 0 };
+      (sale.items || []).forEach(item => {
+        if (!productsMap[item.id]) {
+          productsMap[item.id] = { name: item.name, salesCount: 0, totalSold: 0, totalProfit: 0 };
+        }
         const qty = Number(item.quantity) || 0;
         productsMap[item.id].salesCount += qty;
-        productsMap[item.id].totalSold += Number(item.price) * qty;
-        productsMap[item.id].totalProfit += (Number(item.price) - Number(item.costPrice || 0)) * qty;
+        productsMap[item.id].totalSold += (Number(item.price) || 0) * qty;
+        productsMap[item.id].totalProfit += ((Number(item.price) || 0) - (Number(item.costPrice) || 0)) * qty;
       });
     });
-    return Object.values(productsMap).sort((a, b) => b.totalSold - a.totalSold);
+    return Object.values(productsMap).sort((a, b) => b.salesCount - a.salesCount);
   }, [salesHistory, currentDate, reportTab]);
 
   const changeDate = (delta: number) => {
