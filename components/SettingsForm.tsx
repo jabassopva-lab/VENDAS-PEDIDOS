@@ -156,7 +156,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }
             </label>
             <input 
               className={`w-full mt-1 px-4 py-3 bg-gray-50 border rounded-xl focus:border-blue-500 outline-none transition-all font-bold text-gray-800 ${!formData.companyName || formData.companyName === 'MINHA EMPRESA' ? 'border-red-200' : 'border-gray-200'}`}
-              value={formData.companyName}
+              value={formData.companyName || ''}
               onChange={e => setFormData({...formData, companyName: e.target.value})}
               placeholder="Ex: Minha Loja de Doces"
             />
@@ -165,7 +165,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }
             <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">CNPJ / CPF</label>
             <input 
               className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all"
-              value={formData.document}
+              value={formData.document || ''}
               onChange={e => setFormData({...formData, document: e.target.value})}
               placeholder="00.000.000/0001-00"
             />
@@ -199,7 +199,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }
               </label>
               <input 
                 className={`w-full mt-1 px-4 py-3 bg-gray-50 border rounded-xl focus:border-blue-500 outline-none ${!formData.phone ? 'border-red-200' : 'border-gray-200'}`}
-                value={formData.phone}
+                value={formData.phone || ''}
                 onChange={e => setFormData({...formData, phone: e.target.value})}
               />
             </div>
@@ -207,7 +207,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }
               <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">E-mail</label>
               <input 
                 className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none"
-                value={formData.email}
+                value={formData.email || ''}
                 onChange={e => setFormData({...formData, email: e.target.value})}
               />
             </div>
@@ -217,7 +217,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }
             <textarea 
               rows={2}
               className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none resize-none"
-              value={formData.address}
+              value={formData.address || ''}
               onChange={e => setFormData({...formData, address: e.target.value})}
             />
           </div>
@@ -235,7 +235,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }
             <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Chave Pix (Para Comprovantes)</label>
             <input 
               className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none font-mono"
-              value={formData.pixKey}
+              value={formData.pixKey || ''}
               onChange={e => setFormData({...formData, pixKey: e.target.value})}
               placeholder="CNPJ, E-mail ou Celular"
             />
@@ -332,7 +332,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }
                     <LinkIcon className="absolute left-3 top-3.5 text-gray-400" size={16} />
                     <input 
                       className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all text-xs font-mono"
-                      value={formData.logoUrl}
+                      value={formData.logoUrl || ''}
                       onChange={e => setFormData({...formData, logoUrl: e.target.value})}
                       placeholder="Cole aqui o link de compartilhamento"
                     />

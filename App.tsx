@@ -420,6 +420,43 @@ const App: React.FC = () => {
     }
   };
 
+  const handleDeleteClient = async (clientId: string) => {
+    if (!clientId) {
+      alert("ID do cliente não encontrado.");
+      return;
+    }
+
+    try {
+      // 1. Verifica se o cliente tem vendas antes de permitir excluir
+      // Compara convertendo para string para evitar problemas de tipo (UUID vs Number)
+      const hasSales = salesHistory.some(s => String(s.clientId) === String(clientId));
+      
+      if (hasSales) {
+        alert("Este cliente possui vendas registradas. Exclua as vendas dele primeiro para poder removê-lo.");
+        return;
+      }
+
+      // 2. Tenta excluir no banco
+      await db.clients.delete(clientId);
+      
+      // 3. Atualiza estado local imediatamente
+      setClients(prev => prev.filter(c => String(c.id) !== String(clientId)));
+      
+      // 4. Fecha modal se ainda estiver aberto (geralmente fechado pelo componente, mas por garantia)
+      setClientModal({ type: ModalType.NONE });
+      
+      triggerNotify('Cliente Excluído!');
+    } catch (e: any) {
+      console.error("Erro Crítico ao excluir cliente:", e);
+      const msg = e.message || "Erro desconhecido";
+      if (msg.includes("foreign key") || msg.includes("violates foreign key constraint")) {
+        alert("Não é possível excluir: existem registros vinculados a este cliente no banco de dados.");
+      } else {
+        alert(`Erro ao excluir: ${msg}`);
+      }
+    }
+  };
+
   const handleImpersonate = (userId: string) => {
     setImpersonatedUserId(userId);
     setIsImpersonating(true);
@@ -627,7 +664,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {currentScreen === 'HOME' && !isPureAdmin && (
+      {currentScreen === 'HOME' && (!isPureAdmin || isImpersonating) && (
         <>
           <Header title={businessProfile.companyName} />
           <main className="px-6 mt-6 relative z-30 space-y-4 flex-1">
@@ -694,7 +731,7 @@ const App: React.FC = () => {
         </>
       )}
 
-      {currentScreen === 'SETTINGS' && !isPureAdmin && (
+      {currentScreen === 'SETTINGS' && (!isPureAdmin || isImpersonating) && (
         <div className="min-h-screen bg-slate-50 pb-20">
           <Header title="Configurações" showBack={!isProfileIncomplete} />
           <div className="px-6 py-6 space-y-6">
@@ -704,7 +741,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {currentScreen === 'CLIENTS' && !isPureAdmin && (
+      {currentScreen === 'CLIENTS' && (!isPureAdmin || isImpersonating) && (
         <div className="min-h-screen">
           <Header title="Clientes" showBack rightAction={<button onClick={() => setClientModal({ type: ModalType.ADD })} className="bg-white/20 p-2.5 rounded-2xl"><Plus size={22} /></button>} />
           <div className="px-6 py-8 space-y-3">
@@ -724,7 +761,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {currentScreen === 'PRODUCTS' && !isPureAdmin && (
+      {currentScreen === 'PRODUCTS' && (!isPureAdmin || isImpersonating) && (
         <div className="min-h-screen">
           <Header title="Produtos" showBack rightAction={<button onClick={() => setProductModal({ type: ModalType.ADD })} className="bg-white/20 p-2.5 rounded-2xl"><Plus size={22} /></button>} />
           <div className="px-6 pt-4">
@@ -750,7 +787,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {currentScreen === 'MONTHLY_SALES' && !isPureAdmin && (
+      {currentScreen === 'MONTHLY_SALES' && (!isPureAdmin || isImpersonating) && (
         <div className="min-h-screen">
           <Header title="Histórico" showBack />
           <div className="px-6 py-6 space-y-2">
@@ -792,25 +829,282 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {currentScreen === 'REPORTS' && !isPureAdmin && (
+      {currentScreen === 'REPORTS' && (!isPureAdmin || isImpersonating) && (
         <div className="min-h-screen bg-[#f3f4f6]">
           <Header title="Relatórios" showBack />
           <div className="p-4 space-y-4">
-             <div className="bg-white p-5 rounded-2xl shadow-md border-b-4 border-slate-100">
-                <h3 className="font-black text-slate-800 uppercase italic">Vendas: R$ {currentSummary.vendasTotal.toFixed(2)}</h3>
-                <h3 className="font-black text-green-600 uppercase italic mt-1">Lucro: R$ {currentSummary.lucro.toFixed(2)}</h3>
+             <div className="bg-white p-5 rounded-2xl shadow-md border-b-4 border-slate-100 text-center">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Resumo do Mês</p>
+                <h3 className="text-2xl font-black text-slate-800 uppercase italic">R$ {currentSummary.vendasTotal.toFixed(2)}</h3>
+                <h3 className="text-sm font-black text-green-600 uppercase italic mt-1 italic">Lucro: R$ {currentSummary.lucro.toFixed(2)}</h3>
              </div>
-             <button onClick={() => setCurrentScreen('CLIENT_REPORT')} className="w-full bg-white p-5 rounded-xl text-left font-black uppercase">Ranking Clientes</button>
-             <button onClick={() => setCurrentScreen('PRODUCT_REPORT')} className="w-full bg-white p-5 rounded-xl text-left font-black uppercase">Ranking Produtos</button>
+             
+             <div className="grid grid-cols-1 gap-3">
+               <button onClick={() => setCurrentScreen('CLIENT_REPORT')} className="bg-white p-6 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-500"><Users size={24} /></div>
+                    <div className="text-left">
+                      <p className="font-black text-slate-800 uppercase text-xs italic">Ranking Clientes</p>
+                      <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">Quem mais compra</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={20} className="text-slate-200" />
+               </button>
+
+               <button onClick={() => setCurrentScreen('PRODUCT_REPORT')} className="bg-white p-6 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-500"><Package size={24} /></div>
+                    <div className="text-left">
+                      <p className="font-black text-slate-800 uppercase text-xs italic">Ranking Produtos</p>
+                      <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">Produtos mais vendidos</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={20} className="text-slate-200" />
+               </button>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {(currentScreen === 'CLIENT_REPORT' || currentScreen === 'PRODUCT_REPORT') && (
+        <div className="min-h-screen bg-slate-50 flex flex-col">
+           <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-xl">
+             <div className="flex items-center justify-between px-6 pt-6 pb-2">
+                <button onClick={() => setCurrentScreen('REPORTS')} className="bg-white/10 p-2.5 rounded-2xl active:scale-90 transition-all"><ArrowLeft size={20}/></button>
+                <h3 className="text-lg font-black uppercase italic tracking-tighter">
+                  {currentScreen === 'CLIENT_REPORT' ? 'Ranking Clientes' : 'Ranking Produtos'}
+                </h3>
+                <button 
+                  onClick={() => {
+                    const data = currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking;
+                    const title = currentScreen === 'CLIENT_REPORT' ? 'RANKING DE CLIENTES' : 'RANKING DE PRODUTOS';
+                    const printContent = `
+                      <html>
+                        <head>
+                          <title>${title}</title>
+                          <style>
+                            body { font-family: sans-serif; padding: 40px; color: #334155; }
+                            h1 { font-style: italic; font-weight: 900; text-transform: uppercase; border-bottom: 4px solid #0ea5e9; padding-bottom: 10px; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                            th { background: #f8fafc; text-align: left; padding: 12px; font-size: 10px; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+                            td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
+                            .rank { font-weight: 900; color: #94a3b8; }
+                            .name { font-weight: 800; text-transform: uppercase; }
+                            .value { font-weight: 700; color: #0ea5e9; }
+                            .footer { margin-top: 40px; font-size: 10px; color: #94a3b8; text-transform: uppercase; }
+                          </style>
+                        </head>
+                        <body>
+                          <h1>${title} - ${reportTab}</h1>
+                          <p>${reportTab === 'DIARIO' ? currentDate.toLocaleDateString('pt-BR') : reportTab === 'MENSAL' ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}` : currentDate.getFullYear()}</p>
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>#</th>
+                                <th>Nome</th>
+                                <th>Vendas</th>
+                                <th>Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              ${data.map((item, i) => `
+                                <tr>
+                                  <td class="rank">${i + 1}</td>
+                                  <td class="name">${item.name}</td>
+                                  <td>${item.salesCount}</td>
+                                  <td class="value">R$ ${item.totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                </tr>
+                              `).join('')}
+                            </tbody>
+                          </table>
+                          <div class="footer">Gerado em ${new Date().toLocaleString('pt-BR')} via OmniVenda</div>
+                        </body>
+                      </html>
+                    `;
+                    const win = window.open('', '_blank');
+                    if (win) {
+                      win.document.write(printContent);
+                      win.document.close();
+                      setTimeout(() => win.print(), 500);
+                    }
+                  }}
+                  className="bg-white/10 p-2.5 rounded-2xl active:scale-90 transition-all"
+                >
+                  <Printer size={20} />
+                </button>
+             </div>
+             <div className="flex justify-between px-10 pb-4 mt-2">
+                <button onClick={() => setReportTab('DIARIO')} className={`text-sm font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${reportTab === 'DIARIO' ? 'border-yellow-400' : 'border-transparent text-white/40'}`}>Dia</button>
+                <button onClick={() => setReportTab('MENSAL')} className={`text-sm font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${reportTab === 'MENSAL' ? 'border-yellow-400' : 'border-transparent text-white/40'}`}>Mês</button>
+                <button onClick={() => setReportTab('ANUAL')} className={`text-sm font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${reportTab === 'ANUAL' ? 'border-yellow-400' : 'border-transparent text-white/40'}`}>Ano</button>
+             </div>
+             <div className="bg-black/10 flex items-center justify-between px-12 py-3">
+                <button onClick={() => changeDate(-1)} className="p-1 active:scale-75 transition-transform"><ChevronLeft size={24}/></button>
+                <span className="text-sm font-black uppercase italic">
+                  {reportTab === 'DIARIO' ? currentDate.toLocaleDateString('pt-BR') : 
+                   reportTab === 'MENSAL' ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}` : 
+                   currentDate.getFullYear()}
+                </span>
+                <button onClick={() => changeDate(1)} className="p-1 active:scale-75 transition-transform"><ChevronRight size={24}/></button>
+             </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-6 space-y-3 pb-24">
+            {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).length === 0 ? (
+              <EmptyState message="Sem dados no período" icon={BarChart3} />
+            ) : (
+              (currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).map((item, index) => (
+                <div key={index} className="bg-white p-4 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black italic text-xs">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <h4 className="font-black text-slate-800 text-xs uppercase italic truncate max-w-[150px]">{item.name}</h4>
+                      <p className="text-[8px] font-black text-slate-400 uppercase">{item.salesCount} Vendas</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-black text-blue-600">R$ {item.totalSold.toFixed(2)}</p>
+                    <p className="text-[7px] font-black text-green-500 uppercase tracking-widest">Lucro: R$ {item.totalProfit.toFixed(2)}</p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
 
       {/* Modals */}
       <ProductModal isOpen={productModal.type !== ModalType.NONE} onClose={() => setProductModal({ type: ModalType.NONE })} onSave={handleSaveProduct} initialData={productModal.data} />
-      <ClientForm isOpen={clientModal.type !== ModalType.NONE} onClose={() => setClientModal({ type: ModalType.NONE })} onSave={handleSaveClient} initialData={clientModal.data} />
+      <ClientForm isOpen={clientModal.type !== ModalType.NONE} onClose={() => setClientModal({ type: ModalType.NONE })} onSave={handleSaveClient} onDelete={handleDeleteClient} initialData={clientModal.data} />
       <NewSaleModal isOpen={saleModal} onClose={() => { setSaleModal(false); setEditingSale(null); }} products={products} clients={clients} onFinishSale={handleFinishSale} initialData={editingSale} />
       <SaleDetailModal isOpen={!!selectedSale} onClose={() => setSelectedSale(null)} sale={selectedSale} profile={businessProfile} clients={clients} onEdit={handleOpenEditSale} onDelete={handleDeleteSale} />
+      
+      {subscriptionModal.isOpen && subscriptionModal.business && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-sm bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-slate-800 p-6 text-white flex justify-between items-start">
+              <div>
+                <h3 className="text-lg font-black uppercase italic tracking-tighter">Gerenciar Assinatura</h3>
+                <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest">{subscriptionModal.business.companyName}</p>
+              </div>
+              <button 
+                onClick={() => setSubscriptionModal({ isOpen: false, business: null })}
+                className="p-2 bg-white/10 rounded-xl hover:bg-white/20 transition-all"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                <button 
+                  onClick={() => {
+                    // Simula entrar na conta da empresa (Impersonation)
+                    setImpersonatedUserId(subscriptionModal.business.id);
+                    setIsImpersonating(true);
+                    setSubscriptionModal({ isOpen: false, business: null });
+                    setCurrentScreen('HOME');
+                    triggerNotify(`Acessando ${subscriptionModal.business.companyName}`);
+                    fetchAllData();
+                  }}
+                  className="bg-blue-50 text-blue-600 p-3 rounded-2xl flex flex-col items-center gap-1 border border-blue-100 active:scale-95 transition-all"
+                >
+                  <ExternalLink size={20} />
+                  <span className="text-[7px] font-black uppercase">Acessar Conta</span>
+                </button>
+                <button 
+                  onClick={() => handleSendNotification(subscriptionModal.business)}
+                  className="bg-green-50 text-green-600 p-3 rounded-2xl flex flex-col items-center gap-1 border border-green-100 active:scale-95 transition-all"
+                >
+                  <Smartphone size={20} />
+                  <span className="text-[7px] font-black uppercase">WhatsApp</span>
+                </button>
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                <button 
+                  onClick={() => handleDeleteBusiness(subscriptionModal.business.id)}
+                  className="bg-red-50 text-red-600 p-3 rounded-2xl flex items-center justify-center gap-2 border border-red-100 active:scale-95 transition-all"
+                >
+                  <Trash2 size={16} />
+                  <span className="text-[7px] font-black uppercase">Excluir Empresa Permanentemente</span>
+                </button>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Tipo de Plano</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['START', 'PREMIUM', 'ULTRA', 'MASTER'].map(type => (
+                    <button
+                      key={type}
+                      onClick={() => {
+                        const updated = { ...subscriptionModal.business, planType: type };
+                        db.profile.update(updated).then(() => {
+                          setAllBusinessesStats(prev => prev.map(b => b.id === updated.id ? { ...b, planType: type } : b));
+                          setSubscriptionModal({ isOpen: true, business: updated });
+                          triggerNotify('Plano Alterado!');
+                        });
+                      }}
+                      className={`py-2.5 rounded-xl text-[8px] font-black uppercase tracking-widest border-2 transition-all ${
+                        subscriptionModal.business.planType === type 
+                        ? 'bg-purple-600 text-white border-purple-600 shadow-lg shadow-purple-100' 
+                        : 'bg-white text-slate-400 border-slate-100 hover:border-purple-200'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Status do Plano</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['ATIVO', 'BLOQUEADO', 'PENDENTE', 'INATIVO'].map(status => (
+                    <button
+                      key={status}
+                      onClick={() => {
+                        const date = (document.getElementById('sub-date') as HTMLInputElement).value;
+                        handleUpdateSubscription(subscriptionModal.business.id, status, date);
+                      }}
+                      className={`py-2.5 rounded-xl text-[8px] font-black uppercase tracking-widest border-2 transition-all ${
+                        subscriptionModal.business.planStatus === status 
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100' 
+                        : 'bg-white text-slate-400 border-slate-100 hover:border-blue-200'
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Próximo Vencimento</label>
+                <input 
+                  type="date"
+                  id="sub-date"
+                  defaultValue={subscriptionModal.business.nextBilling}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-500 transition-all"
+                />
+              </div>
+
+              <div className="pt-2">
+                <button 
+                  onClick={() => {
+                    const status = subscriptionModal.business.planStatus;
+                    const date = (document.getElementById('sub-date') as HTMLInputElement).value;
+                    handleUpdateSubscription(subscriptionModal.business.id, status, date);
+                  }}
+                  className="w-full bg-slate-800 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all border-b-4 border-slate-950"
+                >
+                  Salvar Data de Vencimento
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       <footer className="py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
         © {new Date().getFullYear()} JABASSO

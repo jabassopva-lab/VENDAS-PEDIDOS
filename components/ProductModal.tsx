@@ -42,13 +42,13 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
 
   useEffect(() => {
     if (initialData) {
-      setName(initialData.name);
+      setName(initialData.name || '');
       setBarcode(initialData.barcode || '');
-      setCostPrice(initialData.costPrice.toString());
-      setSellPrice(initialData.price.toString());
-      setWholesalePrice(initialData.wholesalePrice?.toString() || '');
+      setCostPrice(String(initialData.costPrice ?? ''));
+      setSellPrice(String(initialData.price ?? ''));
+      setWholesalePrice(String(initialData.wholesalePrice ?? ''));
       setSupplier(initialData.supplier || '');
-      setStock(initialData.stock.toString());
+      setStock(String(initialData.stock ?? ''));
       setDescription(initialData.description || '');
       setImageUrl(initialData.imageUrl || '');
       setCategory(initialData.category || 'Doces');

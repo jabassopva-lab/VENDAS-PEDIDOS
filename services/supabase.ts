@@ -123,8 +123,18 @@ export const db = {
         return;
       }
       const userId = await getUserId();
-      const { error } = await supabase.from('products').delete().eq('id', id).eq('user_id', userId);
-      if (error) throw error;
+      const { data, error, count } = await supabase
+        .from('products')
+        .delete({ count: 'exact' })
+        .eq('id', id)
+        .eq('user_id', userId)
+        .select();
+        
+      if (error) {
+        console.error("Erro ao deletar produto:", error);
+        throw error;
+      }
+      console.log("Produto deletado:", { id, count, data });
     }
   },
   clients: {
@@ -154,6 +164,29 @@ export const db = {
       if (error) throw error;
       if (!data || data.length === 0) throw new Error("Erro ao salvar cliente. Verifique as permissões do RLS.");
       return data[0];
+    },
+    delete: async (id: string) => {
+      if (!shouldUseSupabase()) {
+        const clients = getLocal('clients').filter((c: any) => c.id !== id);
+        setLocal('clients', clients);
+        return;
+      }
+      const userId = await getUserId();
+      
+      // Tenta deletar garantindo que pertence ao usuário
+      const { data, error, count } = await supabase
+        .from('clients')
+        .delete({ count: 'exact' })
+        .eq('id', id)
+        .eq('user_id', userId)
+        .select();
+
+      if (error) {
+        console.error("Erro ao deletar cliente no Supabase:", error);
+        throw error;
+      }
+      
+      console.log("Resultado da exclusão de cliente:", { id, count, data });
     }
   },
   sales: {

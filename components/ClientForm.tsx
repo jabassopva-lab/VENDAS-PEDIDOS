@@ -1,17 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, User, Phone, Mail, MapPin, FileText, Loader2 } from 'lucide-react';
+import { X, Save, User, Phone, Mail, MapPin, FileText, Loader2, Trash2 } from 'lucide-react';
 import { Client } from '../types';
 
 interface ClientFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (client: Omit<Client, 'id'>) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
   initialData?: Client;
 }
 
-const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, onSave, initialData }) => {
+const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, onSave, onDelete, initialData }) => {
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -23,8 +25,8 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, onSave, initia
   useEffect(() => {
     if (initialData) {
       setFormData({
-        name: initialData.name,
-        phone: initialData.phone,
+        name: initialData.name || '',
+        phone: initialData.phone || '',
         email: initialData.email || '',
         address: initialData.address || '',
         document: initialData.document || ''
@@ -36,7 +38,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, onSave, initia
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSaving) return;
+    if (isSaving || isDeleting) return;
     
     setIsSaving(true);
     try {
@@ -46,6 +48,21 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, onSave, initia
       console.error("Erro ao salvar cliente:", error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!initialData || !onDelete || isSaving || isDeleting) return;
+    if (!confirm(`Deseja realmente excluir o cliente "${initialData.name}"? Esta ação não pode ser desfeita.`)) return;
+
+    setIsDeleting(true);
+    try {
+      await onDelete(initialData.id);
+      onClose();
+    } catch (error: any) {
+      console.error("Falha na exclusão:", error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -61,9 +78,21 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, onSave, initia
             <User className="text-white/80" />
             {initialData ? 'Editar Cliente' : 'Novo Cliente'}
           </h2>
-          <button onClick={onClose} className="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-full transition-colors">
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            {initialData && onDelete && (
+              <button 
+                type="button"
+                disabled={isDeleting || isSaving}
+                onClick={handleDelete}
+                className="text-white/80 hover:text-red-300 p-2 rounded-full transition-colors disabled:opacity-50"
+              >
+                {isDeleting ? <Loader2 className="animate-spin" size={20} /> : <Trash2 size={20} />}
+              </button>
+            )}
+            <button onClick={onClose} className="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-full transition-colors">
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Form */}
@@ -74,7 +103,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, onSave, initia
               <User className="absolute left-3 top-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
               <input
                 required
-                disabled={isSaving}
+                disabled={isSaving || isDeleting}
                 type="text"
                 placeholder="Nome / Empresa"
                 className="w-full pl-10 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium text-gray-700 disabled:opacity-50"
@@ -88,7 +117,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, onSave, initia
                   <Phone className="absolute left-3 top-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
                   <input
                     required
-                    disabled={isSaving}
+                    disabled={isSaving || isDeleting}
                     type="tel"
                     placeholder="Telefone / WhatsApp"
                     className="w-full pl-10 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all text-gray-700 disabled:opacity-50"
@@ -99,7 +128,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, onSave, initia
                 <div className="relative group">
                   <FileText className="absolute left-3 top-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
                   <input
-                    disabled={isSaving}
+                    disabled={isSaving || isDeleting}
                     type="text"
                     placeholder="CPF / CNPJ"
                     className="w-full pl-10 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all text-gray-700 disabled:opacity-50"
@@ -112,7 +141,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, onSave, initia
             <div className="relative group">
               <Mail className="absolute left-3 top-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
               <input
-                disabled={isSaving}
+                disabled={isSaving || isDeleting}
                 type="email"
                 placeholder="Email (Opcional)"
                 className="w-full pl-10 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all text-gray-700 disabled:opacity-50"
@@ -124,7 +153,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, onSave, initia
             <div className="relative group">
               <MapPin className="absolute left-3 top-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
               <textarea
-                disabled={isSaving}
+                disabled={isSaving || isDeleting}
                 placeholder="Endereço Completo"
                 rows={3}
                 className="w-full pl-10 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all text-gray-700 resize-none disabled:opacity-50"
@@ -137,14 +166,15 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, onSave, initia
           <div className="pt-2 flex gap-3">
             <button 
               type="button"
+              disabled={isSaving || isDeleting}
               onClick={onClose}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-4 rounded-xl transition-all"
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-4 rounded-xl transition-all disabled:opacity-50"
             >
               Cancelar
             </button>
             <button 
               type="submit" 
-              disabled={isSaving}
+              disabled={isSaving || isDeleting}
               className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isSaving ? (
