@@ -322,8 +322,28 @@ export const db = {
       }
       // Tenta deletar do Supabase
       const userId = await getUserId();
-      const { error } = await supabase.from('sales').delete().eq('id', id).eq('user_id', userId);
-      if (error) throw error;
+      console.log("Supabase Delete - Iniciando exclusão de venda:", { id, userId });
+
+      // Usamos count: 'exact' e select() para confirmar se algo foi realmente deletado
+      const { data, error, count } = await supabase
+        .from('sales')
+        .delete({ count: 'exact' })
+        .eq('id', id)
+        .eq('user_id', userId)
+        .select();
+
+      if (error) {
+        console.error("Erro Crítico ao excluir venda no Supabase:", error);
+        throw error;
+      }
+
+      console.log("Supabase Delete - Resultado:", { id, count, data });
+      
+      if (count === 0) {
+        console.warn("Nenhuma venda foi excluída do banco. Verifique se o ID está correto ou se pertence ao seu usuário.");
+        // Não jogamos erro aqui para evitar travar a interface, 
+        // mas logamos para depuração.
+      }
     }
   },
   profile: {

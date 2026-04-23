@@ -386,8 +386,11 @@ const App: React.FC = () => {
     if (!confirm('Tem certeza que deseja excluir esta venda? Esta ação não pode ser desfeita.')) return;
     
     try {
-      const saleToDelete = salesHistory.find(s => s.id === saleId);
-      if (!saleToDelete) return;
+      const saleToDelete = salesHistory.find(s => String(s.id) === String(saleId));
+      if (!saleToDelete) {
+        console.warn("Venda não encontrada para exclusão:", saleId);
+        return;
+      }
       
       // Tenta restaurar o estoque se a venda estiver finalizada
       try {
@@ -411,7 +414,9 @@ const App: React.FC = () => {
       }
 
       await db.sales.delete(saleId);
-      setSalesHistory(prev => prev.filter(s => s.id !== saleId));
+      
+      // Atualiza o estado local garantindo comparação segura de tipos (ID pode ser número no DB)
+      setSalesHistory(prev => prev.filter(s => String(s.id) !== String(saleId)));
       setSelectedSale(null);
       triggerNotify('Venda Excluída!');
     } catch (e: any) {
