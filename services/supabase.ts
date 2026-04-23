@@ -46,7 +46,46 @@ const getUserId = async () => {
   return session?.user?.id;
 };
 
-const toBool = (val: any) => val === true || val === 'true';
+let cachedPaidColumn: string | null = null;
+
+const getPaidColumn = async () => {
+  if (cachedPaidColumn) return cachedPaidColumn;
+  try {
+    const { data } = await supabase.from('sales').select('*').limit(1);
+    if (data && data.length > 0) {
+      const keys = Object.keys(data[0]);
+      const candidates = ['is_paid', 'isPaid', 'ispaid', 'is_pago', 'pago', 'paid'];
+      const found = candidates.find(c => keys.includes(c));
+      if (found) {
+        cachedPaidColumn = found;
+        return found;
+      }
+    }
+  } catch (e) {
+    console.warn("Erro ao detectar coluna de pagamento:", e);
+  }
+  cachedPaidColumn = 'is_paid'; // Fallback padrão
+  return 'is_paid';
+};
+
+const toBool = (val: any) => {
+  if (val === true || val === 'true' || val === 1 || val === '1' || val === 't' || val === 'T' || val === 's' || val === 'S' || val === 'pago') return true;
+  if (val === false || val === 'false' || val === 0 || val === '0' || val === 'f' || val === 'F' || val === 'n' || val === 'N' || val === 'pendente') return false;
+  return !!val;
+};
+
+// Helper para detectar isPaid em objetos retornados pelo Supabase (mapeamento flexível de colunas)
+const s_isPaid = (s: any) => {
+  if (!s) return null;
+  // Ordem de preferência: is_paid, isPaid, ispaid, is_pago, pago, paid
+  const possibleKeys = ['is_paid', 'isPaid', 'ispaid', 'is_pago', 'pago', 'paid'];
+  for (const key of possibleKeys) {
+    if (s[key] !== undefined && s[key] !== null) {
+      return toBool(s[key]);
+    }
+  }
+  return null;
+};
 
 export const db = {
   products: {
@@ -202,7 +241,7 @@ export const db = {
         paymentMethod: s.payment_method ?? s.paymentMethod,
         paymentTerms: s.payment_terms ?? s.paymentTerms,
         deliveryStatus: s.delivery_status ?? s.deliveryStatus,
-        isPaid: toBool(s.is_paid) || toBool(s.isPaid) || toBool(s.ispaid)
+        isPaid: s_isPaid(s) ?? false
       }));
     },
     create: async (sale: any) => {
@@ -215,7 +254,9 @@ export const db = {
       }
       
       const userId = await getUserId();
-      // Mapeamento DEFENSIVO: Garante que nada chegue NULL no banco se tivermos um valor padrão possível.
+      const paidCol = await getPaidColumn();
+      
+      // Mapeamento COMPLETO
       const payload: any = { 
         user_id: userId,
         client_id: sale.clientId || null,
@@ -228,43 +269,66 @@ export const db = {
         payment_method: sale.paymentMethod || 'Dinheiro',
         payment_terms: sale.paymentTerms || 'À vista',
         status: sale.status || 'FINALIZADA',
-        is_paid: !!sale.isPaid,
         delivery_status: sale.deliveryStatus || 'ENTREGUE'
       };
 
-      console.log("Supabase Create - Payload Sanitizado:", payload);
-      
-      const { data, error } = await supabase.from('sales').insert(payload).select().single();
-      
-      if (error) {
-        console.error("Erro Crítico no Supabase Insert:", error);
-        
-        // Fallback Ultra-Estável: Apenas o que GARANTIDAMENTE existe
-        if (error.code === 'PGRST204' || error.message?.includes('column')) {
-          console.warn("Tentando salvamento de emergência...");
-          const minimalPayload = {
-            user_id: userId,
-            client_id: payload.client_id,
-            client_name: payload.client_name,
-            total: payload.total,
-            items: payload.items
-          };
-          const { data: fData, error: fError } = await supabase.from('sales').insert(minimalPayload).select('id').single();
-          if (fError) throw fError;
-          return { ...sale, id: fData.id };
-        }
-        throw error;
-      }
+      payload[paidCol] = toBool(sale.isPaid);
 
-      const saved = data;
-      return {
-        ...sale,
-        id: saved.id,
-        clientId: saved.client_id ?? sale.clientId,
-        clientName: saved.client_name ?? sale.clientName,
-        isPaid: toBool(saved.is_paid) || toBool(saved.isPaid),
-        deliveryStatus: saved.delivery_status ?? sale.deliveryStatus
-      };
+      console.log("Supabase Create - Payload:", payload);
+      try {
+        const { data, error } = await supabase.from('sales').insert(payload).select().single();
+        
+        if (error) {
+          console.error("Erro no Supabase Insert Inicial:", error);
+          if (error.code === 'PGRST204' || error.message?.includes('column')) {
+            console.warn("Tentando salvamento minimal (fallback)...");
+            const minimalPayload: any = {
+              user_id: userId,
+              client_id: payload.client_id,
+              client_name: payload.client_name,
+              total: payload.total,
+              items: payload.items,
+              date: payload.date,
+              time: payload.time,
+              status: payload.status
+            };
+            
+            // Tenta usar a coluna de pagamento detectada
+            if (sale.isPaid !== undefined) {
+               minimalPayload[paidCol] = toBool(sale.isPaid);
+            }
+            
+            console.log("Supabase Create Fallback - Payload:", minimalPayload);
+            const { data: fData, error: fError } = await supabase.from('sales').insert(minimalPayload).select().single();
+            if (fError) {
+              if (fError.message?.includes(paidCol) || fError.message?.includes('column')) {
+                console.warn(`Coluna ${paidCol} inexistente no banco. Removendo do payload.`);
+                delete minimalPayload[paidCol];
+                const { data: fData2, error: fError2 } = await supabase.from('sales').insert(minimalPayload).select().single();
+                if (fError2) throw fError2;
+                return { ...sale, id: fData2.id, isPaid: !!sale.isPaid };
+              }
+              throw fError;
+            }
+            return { ...sale, id: fData.id, isPaid: s_isPaid(fData) ?? !!sale.isPaid };
+          }
+          throw error;
+        }
+
+        const saved = data;
+        console.log("Supabase Create - Sucesso. is_paid retornado:", s_isPaid(saved));
+        return {
+          ...sale,
+          id: saved.id,
+          clientId: saved.client_id ?? sale.clientId,
+          clientName: saved.client_name ?? sale.clientName,
+          isPaid: s_isPaid(saved) ?? !!sale.isPaid,
+          deliveryStatus: saved.delivery_status ?? sale.deliveryStatus
+        };
+      } catch (err) {
+        console.error("Falha fatal no salvamento da venda:", err);
+        throw err;
+      }
     },
     update: async (sale: any) => {
       if (!shouldUseSupabase()) {
@@ -278,6 +342,8 @@ export const db = {
       }
       
       const userId = await getUserId();
+      const paidCol = await getPaidColumn();
+
       const payload: any = { 
         user_id: userId,
         client_id: sale.clientId || null,
@@ -288,29 +354,50 @@ export const db = {
         payment_method: sale.paymentMethod || 'Dinheiro',
         payment_terms: sale.paymentTerms || 'À vista',
         status: sale.status || 'FINALIZADA',
-        is_paid: !!sale.isPaid,
         delivery_status: sale.deliveryStatus || 'ENTREGUE'
       };
       
-      const { data, error } = await supabase.from('sales').update(payload).eq('id', sale.id).select().single();
-      
-      if (error) {
-        console.error("Erro no Supabase Update:", error);
-        const minimalUpdate = { 
-          total: Number(sale.total) || 0, 
-          items: Array.isArray(sale.items) ? sale.items : [] 
+      payload[paidCol] = toBool(sale.isPaid);
+
+      console.log("Supabase Update - Payload:", payload);
+      try {
+        const { data, error } = await supabase.from('sales').update(payload).eq('id', sale.id).select().single();
+        
+        if (error) {
+          console.error("Erro no Supabase Update Inicial:", error);
+          if (error.code === 'PGRST204' || error.message?.includes('column')) {
+            console.warn("Tentando update minimal (fallback)...");
+            const minimalUpdate: any = { 
+              total: Number(sale.total) || 0, 
+              items: Array.isArray(sale.items) ? sale.items : [] 
+            };
+            if (sale.isPaid !== undefined) minimalUpdate[paidCol] = toBool(sale.isPaid);
+
+            const { data: fData, error: fError } = await supabase.from('sales').update(minimalUpdate).eq('id', sale.id).select().single();
+            if (fError) {
+               if (fError.message?.includes(paidCol) || fError.message?.includes('column')) {
+                 delete minimalUpdate[paidCol];
+                 const { error: fError2 } = await supabase.from('sales').update(minimalUpdate).eq('id', sale.id);
+                 if (fError2) throw fError2;
+                 return sale;
+               }
+               throw fError;
+            }
+            return { ...sale, ...fData, isPaid: s_isPaid(fData) ?? sale.isPaid };
+          }
+          throw error;
+        }
+        
+        const saved = data;
+        return { 
+          ...sale, 
+          ...saved,
+          isPaid: s_isPaid(saved) ?? sale.isPaid
         };
-        const { error: fError } = await supabase.from('sales').update(minimalUpdate).eq('id', sale.id);
-        if (fError) throw fError;
-        return sale;
+      } catch (err) {
+        console.error("Erro fatal no update da venda:", err);
+        throw err;
       }
-      
-      const saved = data;
-      return { 
-        ...sale, 
-        ...saved,
-        isPaid: toBool(saved.is_paid) || toBool(saved.isPaid)
-      };
     },
     delete: async (id: string | number) => {
       if (!shouldUseSupabase()) {
