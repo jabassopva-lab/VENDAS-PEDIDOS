@@ -494,15 +494,18 @@ const App: React.FC = () => {
     const monthStr = (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getFullYear();
     const yearStr = d.getFullYear().toString();
     const safeNumber = (val: any) => {
-      if (typeof val === 'number') return val;
+      if (typeof val === 'number') return isNaN(val) ? 0 : val;
       if (typeof val === 'string') {
-        return Number(val.replace(',', '.')) || 0;
+        const cleaned = val.replace(/[R$\s]/g, '').replace(',', '.');
+        return Number(cleaned) || 0;
       }
       return Number(val) || 0;
     };
 
     const filtered = salesHistory.filter(s => {
       if (!s.date) return false;
+      // Considera FINALIZADA e PENDENTE como vendas válidas para o resumo
+      if (!['FINALIZADA', 'PENDENTE'].includes(s.status)) return false;
       if (reportTab === 'DIARIO') return s.date === dayStr;
       if (reportTab === 'MENSAL') return s.date.endsWith(monthStr);
       if (reportTab === 'ANUAL') return s.date.endsWith(yearStr);
@@ -512,9 +515,9 @@ const App: React.FC = () => {
     filtered.forEach(s => {
       const total = safeNumber(s.total);
       const profit = safeNumber(s.profit || 0);
-      const isPaid = s.isPaid === true || String(s.isPaid) === 'true';
+      const isPaid = s.isPaid === true || String(s.isPaid) === 'true' || Number(s.isPaid) === 1;
 
-      if (s.status === 'FINALIZADA') {
+      if (s.status === 'FINALIZADA' || s.status === 'PENDENTE') {
         stats.vendasCount++; stats.vendasTotal += total; stats.lucro += profit;
         if (isPaid) { stats.recebidoCount++; stats.recebidoTotal += total; }
         else { stats.aReceberCount++; stats.aReceberTotal += total; }
@@ -531,16 +534,17 @@ const App: React.FC = () => {
     const yearStr = d.getFullYear().toString();
     
     const safeNumber = (val: any) => {
-      if (typeof val === 'number') return val;
+      if (typeof val === 'number') return isNaN(val) ? 0 : val;
       if (typeof val === 'string') {
-        return Number(val.replace(',', '.')) || 0;
+        const cleaned = val.replace(/[R$\s]/g, '').replace(',', '.');
+        return Number(cleaned) || 0;
       }
       return Number(val) || 0;
     };
 
     const filtered = salesHistory.filter(s => {
-      // Incluímos FINALIZADA no ranking (ignora ORCAMENTO e CANCELADA)
-      if (s.status !== 'FINALIZADA' || !s.date) return false;
+      // Incluímos FINALIZADA e PENDENTE no ranking
+      if (!['FINALIZADA', 'PENDENTE'].includes(s.status) || !s.date) return false;
       if (reportTab === 'DIARIO') return s.date === dayStr;
       if (reportTab === 'MENSAL') return s.date.endsWith(monthStr);
       if (reportTab === 'ANUAL') return s.date.endsWith(yearStr);
@@ -564,7 +568,7 @@ const App: React.FC = () => {
       
       const total = safeNumber(sale.total);
       const profit = safeNumber(sale.profit || 0);
-      const isPaid = sale.isPaid === true || String(sale.isPaid) === 'true';
+      const isPaid = sale.isPaid === true || String(sale.isPaid) === 'true' || Number(sale.isPaid) === 1;
 
       clientsMap[groupKey].salesCount++;
       clientsMap[groupKey].totalSold += total;
