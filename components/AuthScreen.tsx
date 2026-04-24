@@ -111,6 +111,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
               value={identifier}
               onChange={e => setIdentifier(e.target.value)}
               required
+              autoComplete="off"
             />
           </div>
 
@@ -131,6 +132,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                 onChange={e => setPassword(e.target.value)}
                 required
                 minLength={6}
+                autoComplete="new-password"
               />
               <button
                 type="button"
