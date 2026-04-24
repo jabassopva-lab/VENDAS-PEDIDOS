@@ -47,6 +47,7 @@ const getUserId = async () => {
 };
 
 let cachedPaidColumn: string | null = null;
+let cachedProfitColumn: string | null = null;
 
 const getPaidColumn = async () => {
   if (cachedPaidColumn) return cachedPaidColumn;
@@ -68,6 +69,26 @@ const getPaidColumn = async () => {
   return 'is_paid';
 };
 
+const getProfitColumn = async () => {
+  if (cachedProfitColumn) return cachedProfitColumn;
+  try {
+    const { data } = await supabase.from('sales').select('*').limit(1);
+    if (data && data.length > 0) {
+      const keys = Object.keys(data[0]);
+      const candidates = ['profit', 'lucro', 'total_profit', 'totalProfit'];
+      const found = candidates.find(c => keys.includes(c));
+      if (found) {
+        cachedProfitColumn = found;
+        return found;
+      }
+    }
+  } catch (e) {
+    console.warn("Erro ao detectar coluna de lucro:", e);
+  }
+  cachedProfitColumn = 'profit'; // Fallback padrão
+  return 'profit';
+};
+
 const toBool = (val: any) => {
   if (val === true || val === 'true' || val === 1 || val === '1' || val === 't' || val === 'T' || val === 's' || val === 'S' || val === 'pago') return true;
   if (val === false || val === 'false' || val === 0 || val === '0' || val === 'f' || val === 'F' || val === 'n' || val === 'N' || val === 'pendente') return false;
@@ -82,6 +103,17 @@ const s_isPaid = (s: any) => {
   for (const key of possibleKeys) {
     if (s[key] !== undefined && s[key] !== null) {
       return toBool(s[key]);
+    }
+  }
+  return null;
+};
+
+const s_profit = (s: any) => {
+  if (!s) return null;
+  const possibleKeys = ['profit', 'lucro', 'total_profit', 'totalProfit'];
+  for (const key of possibleKeys) {
+    if (s[key] !== undefined && s[key] !== null) {
+      return Number(s[key]);
     }
   }
   return null;
@@ -241,7 +273,8 @@ export const db = {
         paymentMethod: s.payment_method ?? s.paymentMethod,
         paymentTerms: s.payment_terms ?? s.paymentTerms,
         deliveryStatus: s.delivery_status ?? s.deliveryStatus,
-        isPaid: s_isPaid(s) ?? false
+        isPaid: s_isPaid(s) ?? false,
+        profit: s_profit(s) ?? 0
       }));
     },
     create: async (sale: any) => {
@@ -255,6 +288,7 @@ export const db = {
       
       const userId = await getUserId();
       const paidCol = await getPaidColumn();
+      const profitCol = await getProfitColumn();
       
       // Mapeamento COMPLETO
       const payload: any = { 
@@ -262,7 +296,6 @@ export const db = {
         client_id: sale.clientId || null,
         client_name: sale.clientName || 'Venda Avulsa',
         total: Number(sale.total) || 0,
-        profit: Number(sale.profit) || 0,
         items: Array.isArray(sale.items) ? sale.items : [],
         date: sale.date || new Date().toLocaleDateString('pt-BR'),
         time: sale.time || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
@@ -273,6 +306,7 @@ export const db = {
       };
 
       payload[paidCol] = toBool(sale.isPaid);
+      payload[profitCol] = Number(sale.profit) || 0;
 
       console.log("Supabase Create - Payload:", payload);
       try {
@@ -293,10 +327,11 @@ export const db = {
               status: payload.status
             };
             
-            // Tenta usar a coluna de pagamento detectada
+            // Tenta usar colunas detectadas
             if (sale.isPaid !== undefined) {
                minimalPayload[paidCol] = toBool(sale.isPaid);
             }
+            minimalPayload[profitCol] = payload[profitCol];
             
             console.log("Supabase Create Fallback - Payload:", minimalPayload);
             const { data: fData, error: fError } = await supabase.from('sales').insert(minimalPayload).select().single();
@@ -343,13 +378,13 @@ export const db = {
       
       const userId = await getUserId();
       const paidCol = await getPaidColumn();
+      const profitCol = await getProfitColumn();
 
       const payload: any = { 
         user_id: userId,
         client_id: sale.clientId || null,
         client_name: sale.clientName || 'Venda Avulsa',
         total: Number(sale.total) || 0,
-        profit: Number(sale.profit) || 0,
         items: Array.isArray(sale.items) ? sale.items : [],
         payment_method: sale.paymentMethod || 'Dinheiro',
         payment_terms: sale.paymentTerms || 'À vista',
@@ -358,6 +393,7 @@ export const db = {
       };
       
       payload[paidCol] = toBool(sale.isPaid);
+      payload[profitCol] = Number(sale.profit) || 0;
 
       console.log("Supabase Update - Payload:", payload);
       try {
@@ -372,6 +408,7 @@ export const db = {
               items: Array.isArray(sale.items) ? sale.items : [] 
             };
             if (sale.isPaid !== undefined) minimalUpdate[paidCol] = toBool(sale.isPaid);
+            minimalUpdate[profitCol] = Number(sale.profit) || 0;
 
             const { data: fData, error: fError } = await supabase.from('sales').update(minimalUpdate).eq('id', sale.id).select().single();
             if (fError) {
