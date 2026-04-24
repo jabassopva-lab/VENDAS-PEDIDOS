@@ -50,7 +50,8 @@ import {
   EyeOff,
   UserPlus,
   LogIn,
-  X
+  X,
+  DollarSign
 } from 'lucide-react';
 import ProductModal from './components/ProductModal.tsx';
 import ClientForm from './components/ClientForm.tsx';
@@ -880,7 +881,10 @@ const App: React.FC = () => {
              <div className="bg-white p-5 rounded-2xl shadow-md border-b-4 border-slate-100 text-center">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Resumo do Mês</p>
                 <h3 className="text-2xl font-black text-slate-800 uppercase italic">R$ {currentSummary.vendasTotal.toFixed(2)}</h3>
-                <h3 className="text-sm font-black text-green-600 uppercase italic mt-1 italic">Lucro: R$ {currentSummary.lucro.toFixed(2)}</h3>
+                <div className="flex justify-center gap-4 mt-1">
+                   <span className="text-[10px] font-black text-green-600 uppercase italic">Lucro: R$ {currentSummary.lucro.toFixed(2)}</span>
+                   <span className="text-[10px] font-black text-red-500 uppercase italic">A Receber: R$ {currentSummary.aReceberTotal.toFixed(2)}</span>
+                </div>
              </div>
              
              <div className="grid grid-cols-1 gap-3">
@@ -890,6 +894,17 @@ const App: React.FC = () => {
                     <div className="text-left">
                       <p className="font-black text-slate-800 uppercase text-xs italic">Ranking Clientes</p>
                       <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">Quem mais compra</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={20} className="text-slate-200" />
+               </button>
+
+               <button onClick={() => setCurrentScreen('PENDING_REPORT')} className="bg-white p-6 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500"><DollarSign size={24} /></div>
+                    <div className="text-left">
+                      <p className="font-black text-slate-800 uppercase text-xs italic">Ranking Pendentes</p>
+                      <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">Total a receber por cliente</p>
                     </div>
                   </div>
                   <ChevronRight size={20} className="text-slate-200" />
@@ -910,18 +925,18 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {(currentScreen === 'CLIENT_REPORT' || currentScreen === 'PRODUCT_REPORT') && (
+      {(currentScreen === 'CLIENT_REPORT' || currentScreen === 'PRODUCT_REPORT' || currentScreen === 'PENDING_REPORT') && (
         <div className="min-h-screen bg-slate-50 flex flex-col">
            <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-xl">
              <div className="flex items-center justify-between px-6 pt-6 pb-2">
                 <button onClick={() => setCurrentScreen('REPORTS')} className="bg-white/10 p-2.5 rounded-2xl active:scale-90 transition-all"><ArrowLeft size={20}/></button>
-                <h3 className="text-lg font-black uppercase italic tracking-tighter">
-                  {currentScreen === 'CLIENT_REPORT' ? 'Ranking Clientes' : 'Ranking Produtos'}
+                <h3 className="text-lg font-black uppercase italic tracking-tighter text-center flex-1">
+                  {currentScreen === 'CLIENT_REPORT' ? 'Ranking Clientes' : currentScreen === 'PRODUCT_REPORT' ? 'Ranking Produtos' : 'Contas a Receber'}
                 </h3>
                 <button 
                   onClick={() => {
-                    const data = currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking;
-                    const title = currentScreen === 'CLIENT_REPORT' ? 'RANKING DE CLIENTES' : 'RANKING DE PRODUTOS';
+                    const data = currentScreen === 'CLIENT_REPORT' ? clientRanking : currentScreen === 'PRODUCT_REPORT' ? productRanking : [...clientRanking].filter(c => c.totalPendingAmount > 0).sort((a, b) => b.totalPendingAmount - a.totalPendingAmount);
+                    const title = currentScreen === 'CLIENT_REPORT' ? 'RANKING DE CLIENTES' : currentScreen === 'PRODUCT_REPORT' ? 'RANKING DE PRODUTOS' : 'RELATÓRIO DE PENDÊNCIAS';
                     const printContent = `
                       <html>
                         <head>
@@ -935,6 +950,7 @@ const App: React.FC = () => {
                             .rank { font-weight: 900; color: #94a3b8; }
                             .name { font-weight: 800; text-transform: uppercase; }
                             .value { font-weight: 700; color: #0ea5e9; }
+                            .pending { color: #f43f5e; }
                             .footer { margin-top: 40px; font-size: 10px; color: #94a3b8; text-transform: uppercase; }
                           </style>
                         </head>
@@ -946,8 +962,7 @@ const App: React.FC = () => {
                               <tr>
                                 <th>#</th>
                                 <th>Nome</th>
-                                <th>Vendas</th>
-                                <th>Total</th>
+                                ${currentScreen === 'PENDING_REPORT' ? '<th>Dívida Total</th>' : '<th>Vendas</th><th>Total</th>'}
                               </tr>
                             </thead>
                             <tbody>
@@ -955,8 +970,10 @@ const App: React.FC = () => {
                                 <tr>
                                   <td class="rank">${i + 1}</td>
                                   <td class="name">${item.name}</td>
-                                  <td>${item.salesCount}</td>
-                                  <td class="value">R$ ${item.totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                  ${currentScreen === 'PENDING_REPORT' 
+                                    ? `<td class="value pending">R$ ${item.totalPendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>`
+                                    : `<td>${item.salesCount}</td><td class="value">R$ ${item.totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>`
+                                  }
                                 </tr>
                               `).join('')}
                             </tbody>
@@ -994,10 +1011,20 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-3 pb-24">
-            {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).length === 0 ? (
+            {(currentScreen === 'CLIENT_REPORT' 
+               ? clientRanking 
+               : currentScreen === 'PRODUCT_REPORT' 
+               ? productRanking 
+               : [...clientRanking].filter(c => c.totalPendingAmount > 0).sort((a, b) => b.totalPendingAmount - a.totalPendingAmount)
+            ).length === 0 ? (
               <EmptyState message="Sem dados no período" icon={BarChart3} />
             ) : (
-              (currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).map((item, index) => (
+              (currentScreen === 'CLIENT_REPORT' 
+                ? clientRanking 
+                : currentScreen === 'PRODUCT_REPORT' 
+                ? productRanking 
+                : [...clientRanking].filter(c => c.totalPendingAmount > 0).sort((a, b) => b.totalPendingAmount - a.totalPendingAmount)
+              ).map((item, index) => (
                 <div key={index} className="bg-white p-4 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black italic text-xs">
@@ -1009,8 +1036,14 @@ const App: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-black text-blue-600">R$ {item.totalSold.toFixed(2)}</p>
-                    <p className="text-[7px] font-black text-green-500 uppercase tracking-widest">Lucro: R$ {item.totalProfit.toFixed(2)}</p>
+                    {currentScreen === 'PENDING_REPORT' ? (
+                       <p className="text-sm font-black text-red-500">R$ {item.totalPendingAmount.toFixed(2)}</p>
+                    ) : (
+                      <>
+                        <p className="text-sm font-black text-blue-600">R$ {item.totalSold.toFixed(2)}</p>
+                        <p className="text-[7px] font-black text-green-500 uppercase tracking-widest">Lucro: R$ {item.totalProfit.toFixed(2)}</p>
+                      </>
+                    )}
                   </div>
                 </div>
               ))
