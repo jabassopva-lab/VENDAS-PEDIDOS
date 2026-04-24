@@ -41,9 +41,13 @@ export const setImpersonatedUserId = (id: string | null) => {
 };
 
 const getUserId = async () => {
-  if (impersonatedUserId) return impersonatedUserId;
   const { data: { session } } = await supabase.auth.getSession();
-  return session?.user?.id;
+  if (!session) {
+    impersonatedUserId = null;
+    return null;
+  }
+  if (impersonatedUserId) return impersonatedUserId;
+  return session.user.id;
 };
 
 let cachedPaidColumn: string | null = null;
@@ -310,12 +314,25 @@ export const db = {
 
       console.log("Supabase Create - Payload:", payload);
       try {
-        const { data, error } = await supabase.from('sales').insert(payload).select().single();
+        // Tenta insert com select completo primeiro
+        let { data, error } = await supabase.from('sales').insert(payload).select().single();
         
         if (error) {
           console.error("Erro no Supabase Insert Inicial:", error);
-          if (error.code === 'PGRST204' || error.message?.includes('column')) {
-            console.warn("Tentando salvamento minimal (fallback)...");
+          
+          // Se o erro for de coluna inexistente, tenta com select reduzido
+          if (error.message?.includes('column') || error.code === 'PGRST204') {
+             console.warn("Tentando insert com select seguro (id)...");
+             const { data: sData, error: sError } = await supabase.from('sales').insert(payload).select('id').single();
+             if (!sError) {
+                data = sData;
+                error = null;
+             }
+          }
+          
+          // Se ainda tiver erro, tenta o fallback manual já existente
+          if (error) {
+            console.warn("Iniciando fallback minimal para criação...");
             const minimalPayload: any = {
               user_id: userId,
               client_id: payload.client_id,
@@ -324,41 +341,34 @@ export const db = {
               items: payload.items,
               date: payload.date,
               time: payload.time,
-              status: payload.status
+              status: payload.status,
+              payment_method: payload.payment_method,
+              payment_terms: payload.payment_terms
             };
             
-            // Tenta usar colunas detectadas
             if (sale.isPaid !== undefined) {
-               minimalPayload[paidCol] = toBool(sale.isPaid);
+               try { minimalPayload[paidCol] = toBool(sale.isPaid); } catch(e) {}
             }
-            minimalPayload[profitCol] = payload[profitCol];
+            try { minimalPayload[profitCol] = payload[profitCol]; } catch(e) {}
             
-            console.log("Supabase Create Fallback - Payload:", minimalPayload);
-            const { data: fData, error: fError } = await supabase.from('sales').insert(minimalPayload).select().single();
+            const { data: fData, error: fError } = await supabase.from('sales').insert(minimalPayload).select('id').single();
             if (fError) {
-              if (fError.message?.includes(paidCol) || fError.message?.includes('column')) {
-                console.warn(`Coluna ${paidCol} inexistente no banco. Removendo do payload.`);
-                delete minimalPayload[paidCol];
-                const { data: fData2, error: fError2 } = await supabase.from('sales').insert(minimalPayload).select().single();
-                if (fError2) throw fError2;
-                return { ...sale, id: fData2.id, isPaid: !!sale.isPaid };
-              }
-              throw fError;
+              console.error("Erro no fallback do create:", fError);
+              const toRemove = ['delivery_status', 'payment_method', 'payment_terms', paidCol];
+              toRemove.forEach(k => delete minimalPayload[k]);
+              const { data: fData2, error: fError2 } = await supabase.from('sales').insert(minimalPayload).select('id').single();
+              if (fError2) throw fError2;
+              return { ...sale, id: fData2.id, isPaid: !!sale.isPaid };
             }
-            return { ...sale, id: fData.id, isPaid: s_isPaid(fData) ?? !!sale.isPaid };
+            return { ...sale, id: fData.id, isPaid: !!sale.isPaid };
           }
-          throw error;
         }
 
         const saved = data;
-        console.log("Supabase Create - Sucesso. is_paid retornado:", s_isPaid(saved));
         return {
           ...sale,
           id: saved.id,
-          clientId: saved.client_id ?? sale.clientId,
-          clientName: saved.client_name ?? sale.clientName,
-          isPaid: s_isPaid(saved) ?? !!sale.isPaid,
-          deliveryStatus: saved.delivery_status ?? sale.deliveryStatus
+          isPaid: s_isPaid(saved) ?? !!sale.isPaid
         };
       } catch (err) {
         console.error("Falha fatal no salvamento da venda:", err);
@@ -397,32 +407,50 @@ export const db = {
 
       console.log("Supabase Update - Payload:", payload);
       try {
-        const { data, error } = await supabase.from('sales').update(payload).eq('id', sale.id).select().single();
+        let { data, error } = await supabase.from('sales').update(payload).eq('id', sale.id).select().single();
         
         if (error) {
           console.error("Erro no Supabase Update Inicial:", error);
-          if (error.code === 'PGRST204' || error.message?.includes('column')) {
-            console.warn("Tentando update minimal (fallback)...");
+          
+          if (error.message?.includes('column') || error.code === 'PGRST204') {
+             console.warn("Tentando update com select seguro (id)...");
+             const { data: sData, error: sError } = await supabase.from('sales').update(payload).eq('id', sale.id).select('id').single();
+             if (!sError) {
+                data = sData;
+                error = null;
+             }
+          }
+
+          if (error) {
+            console.warn("Iniciando update minimal (fallback)...");
             const minimalUpdate: any = { 
               total: Number(sale.total) || 0, 
-              items: Array.isArray(sale.items) ? sale.items : [] 
+              items: Array.isArray(sale.items) ? sale.items : [],
+              client_id: sale.clientId || null,
+              client_name: sale.clientName || 'Venda Avulsa',
+              status: sale.status || 'FINALIZADA',
+              payment_method: sale.paymentMethod || 'Dinheiro',
+              payment_terms: sale.paymentTerms || 'À vista',
+              date: sale.date,
+              time: sale.time
             };
-            if (sale.isPaid !== undefined) minimalUpdate[paidCol] = toBool(sale.isPaid);
-            minimalUpdate[profitCol] = Number(sale.profit) || 0;
 
-            const { data: fData, error: fError } = await supabase.from('sales').update(minimalUpdate).eq('id', sale.id).select().single();
-            if (fError) {
-               if (fError.message?.includes(paidCol) || fError.message?.includes('column')) {
-                 delete minimalUpdate[paidCol];
-                 const { error: fError2 } = await supabase.from('sales').update(minimalUpdate).eq('id', sale.id);
-                 if (fError2) throw fError2;
-                 return sale;
-               }
-               throw fError;
+            if (sale.isPaid !== undefined) {
+              try { minimalUpdate[paidCol] = toBool(sale.isPaid); } catch(e) {}
             }
-            return { ...sale, ...fData, isPaid: s_isPaid(fData) ?? sale.isPaid };
+            try { minimalUpdate[profitCol] = Number(sale.profit) || 0; } catch(e) {}
+
+            const { data: fData, error: fError } = await supabase.from('sales').update(minimalUpdate).eq('id', sale.id).select('id').single();
+            if (fError) {
+               console.error("Erro no fallback do update:", fError);
+               const keysToRemove = ['delivery_status', 'payment_method', 'payment_terms', paidCol];
+               keysToRemove.forEach(k => delete minimalUpdate[k]);
+               const { data: fData2, error: fError2 } = await supabase.from('sales').update(minimalUpdate).eq('id', sale.id).select('id').single();
+               if (fError2) throw fError2;
+               return { ...sale, id: fData2.id };
+            }
+            return { ...sale, id: fData.id };
           }
-          throw error;
         }
         
         const saved = data;
@@ -450,56 +478,62 @@ export const db = {
 
       console.log("Supabase Delete - Executando para ID:", id, "Usuário:", userId);
 
-      // Tentativa 1: Exclusão segura vinculada ao usuário logado
-      const { error, count } = await supabase
+      // Usamos .select('id') para garantir que temos feedback do que foi deletado sem dar erro em colunas inexistentes
+      const { data, error, count } = await supabase
         .from('sales')
         .delete({ count: 'exact' })
         .eq('id', id)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .select('id');
 
       if (error) {
-        console.error("Erro Supabase (Fase 1):", error);
+        console.error("Erro Supabase ao deletar venda:", error);
         throw error;
       }
 
-      console.log("Supabase Delete - Fase 1 concluída. Count:", count);
+      const rowsAffected = count !== null ? count : (data ? data.length : 0);
+      console.log("Supabase Delete - Linhas afetadas (Fase 1):", rowsAffected);
 
-      // Tentativa 2: Se não deletou nada (count 0), pode ser que o ID não esteja com user_id ou seja outro tipo
-      if (count === 0) {
-        console.warn("Exclusão não afetou nenhuma linha com user_id. Tentando exclusão direta por ID...");
+      if (rowsAffected === 0) {
+        console.warn("Nenhuma linha afetada com user_id. Tentando exclusão apenas por ID (fallback)...");
         
-        // Se o ID parece numérico, tentamos como número também (caso a coluna seja int e o JS passe string)
-        const numericId = !isNaN(Number(id)) ? Number(id) : null;
-        
-        let query = supabase.from('sales').delete({ count: 'exact' }).eq('id', id);
-        
-        const { error: error2, count: count2 } = await query;
-        
+        // Se falhou com user_id, tentamos apenas por ID (respeitando o RLS do banco)
+        const { data: data2, error: error2, count: count2 } = await supabase
+          .from('sales')
+          .delete({ count: 'exact' })
+          .eq('id', id)
+          .select('id');
+
         if (error2) {
-           console.error("Erro Supabase (Fase 2):", error2);
-           throw error2;
-        }
-        
-        if (count2 === 0 && numericId !== null) {
-           console.warn("Segunda tentativa falhou. Tentando com ID numérico...");
-           const { error: error3, count: count3 } = await supabase.from('sales').delete({ count: 'exact' }).eq('id', numericId);
-           if (error3) throw error3;
-           if (count3 && count3 > 0) {
-             console.log("Venda excluída com sucesso usando ID numérico!");
-             return;
-           }
+          console.error("Erro Supabase no fallback de exclusão:", error2);
+          throw error2;
         }
 
-        if (count2 && count2 > 0) {
-          console.log("Venda excluída com sucesso na Fase 2 (apenas por ID)!");
-        } else {
-          console.error("Falha total na exclusão: O registro não existe ou você não tem permissão RLS para removê-lo.");
-          // Lançamos um erro para que a UI saiba que não funcionou
-          throw new Error("Não foi possível remover o registro no banco de dados. Ele pode já ter sido excluído ou você não tem permissão.");
+        const rowsAffected2 = count2 !== null ? count2 : (data2 ? data2.length : 0);
+        console.log("Supabase Delete - Linhas afetadas (Fase 2):", rowsAffected2);
+
+        if (rowsAffected2 === 0) {
+          // Se ainda assim não deletou nada, tentamos conversão numérica se aplicável
+          const numericId = !isNaN(Number(id)) ? Number(id) : null;
+          if (numericId !== null && String(numericId) === String(id)) {
+             console.warn("Tentando exclusão com ID convertido para número:", numericId);
+             const { data: data3, count: count3 } = await supabase
+               .from('sales')
+               .delete({ count: 'exact' })
+               .eq('id', numericId)
+               .select('id');
+             
+             if (count3 && count3 > 0) {
+               console.log("Venda excluída com ID numérico.");
+               return;
+             }
+          }
+          
+          throw new Error("Não foi possível excluir o registro. Verifique se ele ainda existe ou se você tem permissão.");
         }
-      } else {
-        console.log("Venda excluída com sucesso!");
       }
+      
+      console.log("Venda excluída com sucesso!");
     }
   },
   profile: {

@@ -99,6 +99,7 @@ const EmptyState = ({ message, icon: Icon = Store }: { message: string, icon?: a
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [isTestMode, setIsTestMode] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<Screen>('HOME');
   const [saveNotify, setSaveNotify] = useState<{show: boolean, msg: string}>({show: false, msg: ''});
@@ -108,7 +109,35 @@ const App: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [salesHistory, setSalesHistory] = useState<Sale[]>([]);
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(DEFAULT_PROFILE);
-  
+
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      alert("As senhas não coincidem!");
+      return;
+    }
+    if (newPassword.length < 6) {
+      alert("A senha deve ter no mínimo 6 caracteres.");
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      alert("Senha atualizada com sucesso!");
+      setIsResettingPassword(false);
+    } catch (err: any) {
+      alert("Erro ao atualizar senha: " + err.message);
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const [reportTab, setReportTab] = useState<'DIARIO' | 'MENSAL' | 'ANUAL'>('MENSAL');
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -124,6 +153,15 @@ const App: React.FC = () => {
   const [allBusinessesStats, setAllBusinessesStats] = useState<any[]>([]);
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [subscriptionModal, setSubscriptionModal] = useState<{ isOpen: boolean, business: any | null }>({ isOpen: false, business: null });
+
+  const resetBusinessData = () => {
+    setProducts([]);
+    setClients([]);
+    setSalesHistory([]);
+    setBusinessProfile(DEFAULT_PROFILE);
+    setImpersonatedUserId(null);
+    setIsImpersonating(false);
+  };
 
   const handleExitImpersonation = () => {
     setImpersonatedUserId(null);
@@ -146,12 +184,12 @@ const App: React.FC = () => {
   }, [session]);
 
   const isProfileIncomplete = useMemo(() => {
-    if (isPureAdmin || isImpersonating) return false;
+    if (isPureAdmin || isImpersonating || isResettingPassword) return false;
     return !businessProfile.companyName || 
            businessProfile.companyName === 'MINHA EMPRESA' || 
            !businessProfile.phone || 
            businessProfile.phone.trim() === '';
-  }, [businessProfile, isPureAdmin, isImpersonating]);
+  }, [businessProfile, isPureAdmin, isImpersonating, isResettingPassword]);
 
   useEffect(() => {
     if (isProfileIncomplete && session && !loading && currentScreen !== 'SETTINGS') {
@@ -183,14 +221,30 @@ const App: React.FC = () => {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) fetchAllData();
+      if (session) {
+        // Verifica se é um redirecionamento de recuperação de senha pelo URL
+        if (window.location.hash.includes('type=recovery')) {
+          setIsResettingPassword(true);
+        }
+        fetchAllData();
+      }
       else setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth Event:", event);
       setSession(session);
-      if (session) fetchAllData();
-      else setLoading(false);
+      
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsResettingPassword(true);
+      }
+      
+      if (session) {
+        fetchAllData();
+      } else {
+        resetBusinessData();
+        setLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -411,7 +465,6 @@ const App: React.FC = () => {
         }
       } catch (stockError) {
         console.warn("Erro ao restaurar estoque durante exclusão:", stockError);
-        // Prosseguimos com a exclusão da venda mesmo se a restauração de estoque falhar
       }
 
       await db.sales.delete(saleId);
@@ -472,20 +525,20 @@ const App: React.FC = () => {
 
   const handleLogout = async () => {
     if (isImpersonating) {
-      setImpersonatedUserId(null);
-      setIsImpersonating(false);
-      fetchAllData();
-      setCurrentScreen('DEVELOPER_PANEL');
+      handleExitImpersonation();
       return;
     }
+    setLoading(true);
     if (isTestMode) {
       localStorage.removeItem('omnivenda_test_session');
       setIsTestMode(false);
     } else {
       await supabase.auth.signOut();
     }
+    resetBusinessData();
     setSession(null);
     setCurrentScreen('HOME');
+    setLoading(false);
   };
 
   const currentSummary = useMemo(() => {
@@ -496,8 +549,16 @@ const App: React.FC = () => {
     const safeNumber = (val: any) => {
       if (typeof val === 'number') return isNaN(val) ? 0 : val;
       if (typeof val === 'string') {
-        const cleaned = val.replace(/[R$\s]/g, '').replace(',', '.');
-        return Number(cleaned) || 0;
+        let cleaned = val.replace(/[R$\s]/g, '');
+        if (cleaned.includes(',') && cleaned.includes('.')) {
+          // Formato pt-BR: 1.234,56
+          cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+        } else if (cleaned.includes(',')) {
+          // Formato apenas com vírgula: 1234,56
+          cleaned = cleaned.replace(',', '.');
+        }
+        const num = Number(cleaned);
+        return isNaN(num) ? 0 : num;
       }
       return Number(val) || 0;
     };
@@ -506,6 +567,7 @@ const App: React.FC = () => {
       if (!s.date) return false;
       // Considera FINALIZADA e PENDENTE como vendas válidas para o resumo
       if (!['FINALIZADA', 'PENDENTE'].includes(s.status)) return false;
+      if (reportTab === 'TOTAL') return true;
       if (reportTab === 'DIARIO') return s.date === dayStr;
       if (reportTab === 'MENSAL') return s.date.endsWith(monthStr);
       if (reportTab === 'ANUAL') return s.date.endsWith(yearStr);
@@ -536,8 +598,14 @@ const App: React.FC = () => {
     const safeNumber = (val: any) => {
       if (typeof val === 'number') return isNaN(val) ? 0 : val;
       if (typeof val === 'string') {
-        const cleaned = val.replace(/[R$\s]/g, '').replace(',', '.');
-        return Number(cleaned) || 0;
+        let cleaned = val.replace(/[R$\s]/g, '');
+        if (cleaned.includes(',') && cleaned.includes('.')) {
+          cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+        } else if (cleaned.includes(',')) {
+          cleaned = cleaned.replace(',', '.');
+        }
+        const num = Number(cleaned);
+        return isNaN(num) ? 0 : num;
       }
       return Number(val) || 0;
     };
@@ -545,6 +613,7 @@ const App: React.FC = () => {
     const filtered = salesHistory.filter(s => {
       // Incluímos FINALIZADA e PENDENTE no ranking
       if (!['FINALIZADA', 'PENDENTE'].includes(s.status) || !s.date) return false;
+      if (reportTab === 'TOTAL') return true;
       if (reportTab === 'DIARIO') return s.date === dayStr;
       if (reportTab === 'MENSAL') return s.date.endsWith(monthStr);
       if (reportTab === 'ANUAL') return s.date.endsWith(yearStr);
@@ -554,7 +623,8 @@ const App: React.FC = () => {
     const clientsMap: Record<string, any> = {};
     filtered.forEach(sale => {
       const rawName = (sale.clientName || 'Venda Avulsa').trim();
-      const groupKey = sale.clientId && sale.clientId !== 'undefined' ? sale.clientId : `name_${rawName.toUpperCase()}`;
+      // Agrupamento por nome normalizado para unir vendas com/sem ID do mesmo cliente
+      const groupKey = rawName === 'Venda Avulsa' ? `anon_${sale.id}` : rawName.toUpperCase();
       
       if (!clientsMap[groupKey]) {
         clientsMap[groupKey] = { 
@@ -714,6 +784,69 @@ const App: React.FC = () => {
       </header>
     </div>
   );
+
+  if (isResettingPassword) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#fffbeb] relative overflow-hidden">
+        <div className="absolute -top-20 -right-20 text-yellow-200/50 rotate-12 opacity-50">
+          <Palmtree size={300} />
+        </div>
+        <div className="w-full max-w-md bg-white rounded-[3rem] shadow-2xl p-8 z-10 border-b-8 border-blue-500">
+          <div className="flex flex-col items-center mb-8">
+            <div className="w-20 h-20 bg-blue-500 rounded-3xl flex items-center justify-center text-white shadow-lg mb-4 transform rotate-3 border-2 border-yellow-400">
+              <Lock size={40} strokeWidth={3} />
+            </div>
+            <h1 className="text-2xl font-black text-slate-800 italic uppercase tracking-tighter text-center">Nova Senha Cloud</h1>
+            <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mt-1">Defina sua nova senha de acesso</p>
+          </div>
+
+          <form onSubmit={handleUpdatePassword} className="space-y-4">
+            <div className="relative">
+              <Lock className="absolute left-4 top-4 text-slate-400" size={18} />
+              <input 
+                type="password" 
+                placeholder="Nova Senha (mín. 6 chars)" 
+                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+            </div>
+
+            <div className="relative">
+              <Lock className="absolute left-4 top-4 text-slate-400" size={18} />
+              <input 
+                type="password" 
+                placeholder="Confirme a Nova Senha" 
+                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={resetLoading}
+              className="w-full bg-[#0ea5e9] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-100 hover:bg-blue-600 active:scale-95 transition-all flex items-center justify-center gap-2 border-b-4 border-blue-700 mt-4"
+            >
+              {resetLoading ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle size={20} />}
+              Atualizar Senha Agora
+            </button>
+
+            <button 
+              type="button"
+              onClick={() => setIsResettingPassword(false)}
+              className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-500 transition-colors py-2"
+            >
+              Cancelar e voltar
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   if (!session) return <AuthScreen onAuthSuccess={handleAuthSuccess} />;
 
@@ -1023,15 +1156,16 @@ const App: React.FC = () => {
                 <button onClick={() => setReportTab('DIARIO')} className={`text-sm font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${reportTab === 'DIARIO' ? 'border-yellow-400' : 'border-transparent text-white/40'}`}>Dia</button>
                 <button onClick={() => setReportTab('MENSAL')} className={`text-sm font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${reportTab === 'MENSAL' ? 'border-yellow-400' : 'border-transparent text-white/40'}`}>Mês</button>
                 <button onClick={() => setReportTab('ANUAL')} className={`text-sm font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${reportTab === 'ANUAL' ? 'border-yellow-400' : 'border-transparent text-white/40'}`}>Ano</button>
+                <button onClick={() => setReportTab('TOTAL')} className={`text-sm font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${reportTab === 'TOTAL' ? 'border-yellow-400' : 'border-transparent text-white/40'}`}>Tudo</button>
              </div>
              <div className="bg-black/10 flex items-center justify-between px-12 py-3">
-                <button onClick={() => changeDate(-1)} className="p-1 active:scale-75 transition-transform"><ChevronLeft size={24}/></button>
+                <button onClick={() => changeDate(-1)} className="p-1 active:scale-75 transition-transform disabled:opacity-30" disabled={reportTab === 'TOTAL'}><ChevronLeft size={24}/></button>
                 <span className="text-sm font-black uppercase italic">
                   {reportTab === 'DIARIO' ? currentDate.toLocaleDateString('pt-BR') : 
                    reportTab === 'MENSAL' ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}` : 
-                   currentDate.getFullYear()}
+                   reportTab === 'ANUAL' ? currentDate.getFullYear() : "Todo o Período"}
                 </span>
-                <button onClick={() => changeDate(1)} className="p-1 active:scale-75 transition-transform"><ChevronRight size={24}/></button>
+                <button onClick={() => changeDate(1)} className="p-1 active:scale-75 transition-transform disabled:opacity-30" disabled={reportTab === 'TOTAL'}><ChevronRight size={24}/></button>
              </div>
           </div>
 
