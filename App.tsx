@@ -493,6 +493,14 @@ const App: React.FC = () => {
     const dayStr = d.toLocaleDateString('pt-BR');
     const monthStr = (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getFullYear();
     const yearStr = d.getFullYear().toString();
+    const safeNumber = (val: any) => {
+      if (typeof val === 'number') return val;
+      if (typeof val === 'string') {
+        return Number(val.replace(',', '.')) || 0;
+      }
+      return Number(val) || 0;
+    };
+
     const filtered = salesHistory.filter(s => {
       if (!s.date) return false;
       if (reportTab === 'DIARIO') return s.date === dayStr;
@@ -502,12 +510,16 @@ const App: React.FC = () => {
     });
     const stats = { vendasCount: 0, vendasTotal: 0, lucro: 0, recebidoCount: 0, recebidoTotal: 0, aReceberCount: 0, aReceberTotal: 0, orcamentosCount: 0, orcamentosTotal: 0, entregaCount: 0, entregaTotal: 0 };
     filtered.forEach(s => {
+      const total = safeNumber(s.total);
+      const profit = safeNumber(s.profit || 0);
+      const isPaid = s.isPaid === true || String(s.isPaid) === 'true';
+
       if (s.status === 'FINALIZADA') {
-        stats.vendasCount++; stats.vendasTotal += Number(s.total); stats.lucro += Number(s.profit || 0);
-        if (s.isPaid) { stats.recebidoCount++; stats.recebidoTotal += Number(s.total); }
-        else { stats.aReceberCount++; stats.aReceberTotal += Number(s.total); }
-        if (s.deliveryStatus === 'PENDENTE') { stats.entregaCount++; stats.entregaTotal += Number(s.total); }
-      } else { stats.orcamentosCount++; stats.orcamentosTotal += Number(s.total); }
+        stats.vendasCount++; stats.vendasTotal += total; stats.lucro += profit;
+        if (isPaid) { stats.recebidoCount++; stats.recebidoTotal += total; }
+        else { stats.aReceberCount++; stats.aReceberTotal += total; }
+        if (s.deliveryStatus === 'PENDENTE') { stats.entregaCount++; stats.entregaTotal += total; }
+      } else { stats.orcamentosCount++; stats.orcamentosTotal += total; }
     });
     return stats;
   }, [salesHistory, reportTab, currentDate]);
@@ -518,9 +530,17 @@ const App: React.FC = () => {
     const monthStr = (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getFullYear();
     const yearStr = d.getFullYear().toString();
     
+    const safeNumber = (val: any) => {
+      if (typeof val === 'number') return val;
+      if (typeof val === 'string') {
+        return Number(val.replace(',', '.')) || 0;
+      }
+      return Number(val) || 0;
+    };
+
     const filtered = salesHistory.filter(s => {
-      // Incluímos FINALIZADA e PENDENTE no ranking (ignora apenas CANCELADA)
-      if (!['FINALIZADA', 'PENDENTE'].includes(s.status) || !s.date) return false;
+      // Incluímos FINALIZADA no ranking (ignora ORCAMENTO e CANCELADA)
+      if (s.status !== 'FINALIZADA' || !s.date) return false;
       if (reportTab === 'DIARIO') return s.date === dayStr;
       if (reportTab === 'MENSAL') return s.date.endsWith(monthStr);
       if (reportTab === 'ANUAL') return s.date.endsWith(yearStr);
@@ -529,9 +549,6 @@ const App: React.FC = () => {
 
     const clientsMap: Record<string, any> = {};
     filtered.forEach(sale => {
-      // Normalização: Se temos ID usamos ID, se não temos usamos Nome limpo.
-      // Se tivermos ID mas houver vendas sem ID com o mesmo nome, o ranking pode ficar separado,
-      // mas é mais seguro do que misturar nomes idênticos de pessoas diferentes.
       const rawName = (sale.clientName || 'Venda Avulsa').trim();
       const groupKey = sale.clientId && sale.clientId !== 'undefined' ? sale.clientId : `name_${rawName.toUpperCase()}`;
       
@@ -545,10 +562,14 @@ const App: React.FC = () => {
         };
       }
       
+      const total = safeNumber(sale.total);
+      const profit = safeNumber(sale.profit || 0);
+      const isPaid = sale.isPaid === true || String(sale.isPaid) === 'true';
+
       clientsMap[groupKey].salesCount++;
-      clientsMap[groupKey].totalSold += Number(sale.total) || 0;
-      clientsMap[groupKey].totalProfit += Number(sale.profit || 0);
-      if (!sale.isPaid) clientsMap[groupKey].totalPendingAmount += Number(sale.total) || 0;
+      clientsMap[groupKey].totalSold += total;
+      clientsMap[groupKey].totalProfit += profit;
+      if (!isPaid) clientsMap[groupKey].totalPendingAmount += total;
     });
     
     return Object.values(clientsMap).sort((a, b) => b.totalSold - a.totalSold);
