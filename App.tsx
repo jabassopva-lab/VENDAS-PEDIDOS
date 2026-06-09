@@ -51,7 +51,8 @@ import {
   UserPlus,
   LogIn,
   X,
-  DollarSign
+  DollarSign,
+  LayoutDashboard
 } from 'lucide-react';
 import {
   AreaChart,
@@ -1088,13 +1089,15 @@ const App: React.FC = () => {
     });
 
     if (reportTab === 'MENSAL') {
-      const dailySums: Record<string, { label: string, total: number, profit: number }> = {};
+      const dailySums: Record<string, { label: string, dayNum: number, total: number, profit: number }> = {};
       const year = d.getFullYear();
       const month = d.getMonth();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const monthLabel = String(month + 1).padStart(2, '0');
       for (let i = 1; i <= daysInMonth; i++) {
-        const label = String(i).padStart(2, '0');
-        dailySums[label] = { label, total: 0, profit: 0 };
+        const dayKey = String(i).padStart(2, '0');
+        const label = `${dayKey}/${monthLabel}`;
+        dailySums[dayKey] = { label, dayNum: i, total: 0, profit: 0 };
       }
       
       filtered.forEach(s => {
@@ -1107,7 +1110,7 @@ const App: React.FC = () => {
           }
         }
       });
-      return Object.values(dailySums).sort((a, b) => Number(a.label) - Number(b.label));
+      return Object.values(dailySums).sort((a, b) => a.dayNum - b.dayNum);
     } else if (reportTab === 'ANUAL') {
       const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
       const monthlySums = MONTH_LABELS.map((label, idx) => ({
@@ -1667,7 +1670,8 @@ const App: React.FC = () => {
              </div>
              
              <div className="grid grid-cols-1 gap-3">
-               {/* PREMIUM EXECUTIVE DASHBOARD */}
+               {/* PREMIUM EXECUTIVE DASHBOARD - HIDDEN */}
+               {false && (
                <div className="col-span-1 space-y-4">
                  {/* Dynamic Recharts Chart Section */}
                  <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 space-y-3 text-left">
@@ -1769,8 +1773,9 @@ const App: React.FC = () => {
                        </div>
                     )}
                  </div>
-
-                 {/* Three Ranking Action Buttons */}
+                </div>
+                )}
+                 {/* Three Ranking Action Buttons - TARGETED */}
                  <div className="space-y-3 text-left">
                     <span className="text-[9px] font-black uppercase tracking-widest text-[#94a3b8] ml-1 block font-sans">Explorar Rankings</span>
                     <div className="grid grid-cols-1 gap-3">
@@ -1799,17 +1804,27 @@ const App: React.FC = () => {
                       <button onClick={() => setCurrentScreen('PRODUCT_REPORT')} className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between active:scale-95 transition-all">
                          <div className="flex items-center gap-4">
                            <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-500"><Package size={24} /></div>
-                           <div className="text-left font-sans">
+                           <div className="text-left font-sans font-sans">
                              <p className="font-black text-slate-800 uppercase text-xs italic">Ranking Produtos</p>
-                             <p className="text-[7px] font-black text-[#94a3b8] uppercase tracking-widest leading-none mt-1">Produtos mais vendidos no período</p>
+                             <p className="text-[7px] font-black text-[#94a3b8] uppercase tracking-widest leading-none mt-1 font-sans">Produtos mais vendidos no período</p>
                            </div>
                          </div>
                          <ChevronRight size={20} className="text-slate-300" />
                       </button>
+
+                      <button onClick={() => setCurrentScreen('DASHBOARD')} className="bg-slate-900 text-white p-6 rounded-[2rem] shadow-sm flex items-center justify-between active:scale-95 transition-all">
+                         <div className="flex items-center gap-4">
+                           <div className="w-12 h-12 bg-sky-500 rounded-2xl flex items-center justify-center text-white"><LayoutDashboard size={24} /></div>
+                           <div className="text-left font-sans">
+                             <p className="font-black text-white uppercase text-xs italic">Dashboard Executivo</p>
+                             <p className="text-[7px] font-black text-sky-400 uppercase tracking-widest leading-none mt-1 font-sans">Gráficos, faturamento e lucro</p>
+                           </div>
+                         </div>
+                         <ChevronRight size={20} className="text-sky-400" />
+                      </button>
                     </div>
                  </div>
-               </div>
-               <button onClick={() => setCurrentScreen('CLIENT_REPORT')} className="hidden bg-white p-6 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all">
+                <button onClick={() => setCurrentScreen('CLIENT_REPORT')} className="hidden bg-white p-6 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-500"><Users size={24} /></div>
                     <div className="text-left">
@@ -1842,6 +1857,126 @@ const App: React.FC = () => {
                   <ChevronRight size={20} className="text-slate-200" />
                </button>
              </div>
+          </div>
+        </div>
+      )}
+
+      {currentScreen === 'DASHBOARD' && (
+        <div className="min-h-screen bg-slate-50 flex flex-col pb-32">
+          {/* Header */}
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-xl">
+            <div className="flex items-center justify-between px-6 pt-6 pb-6">
+              <button onClick={() => setCurrentScreen('REPORTS')} className="bg-white/10 p-2.5 rounded-2xl active:scale-90 transition-all">
+                <ArrowLeft size={20} />
+              </button>
+              <h3 className="text-lg font-black uppercase italic tracking-tighter text-center flex-1">
+                Dashboard Executivo
+              </h3>
+              <div className="w-10 h-10" />
+            </div>
+          </div>
+
+          <div className="p-4 space-y-4">
+            {/* 1. Progressão de Vendas (AreaChart) */}
+            <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 space-y-3 text-left">
+               <div className="flex items-center justify-between">
+                  <div>
+                     <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 leading-none">Progressão de Vendas</h4>
+                     <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Evolução de faturamento e lucro</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                     <span className="flex items-center gap-1 text-[8px] font-black text-sky-500 uppercase">
+                       <span className="w-1.5 h-1.5 rounded-full bg-sky-500 inline-block font-sans"></span> Faturamento
+                     </span>
+                     <span className="flex items-center gap-1 text-[8px] font-black text-green-500 uppercase">
+                       <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block font-sans"></span> Lucro
+                     </span>
+                  </div>
+               </div>
+
+               <div className="w-full h-48">
+                  {dashboardChartData.length === 0 || dashboardChartData.every(item => item.total === 0) ? (
+                     <div className="w-full h-full flex flex-col items-center justify-center border border-dashed border-slate-100 rounded-2xl bg-slate-50 text-center p-4">
+                        <BarChart3 className="text-slate-300 mb-2" size={24} />
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none font-sans">Sem movimentação no período</span>
+                     </div>
+                  ) : (
+                     <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={dashboardChartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                           <defs>
+                              <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                                 <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.2}/>
+                                 <stop offset="95%" stopColor="#38bdf8" stopOpacity={0}/>
+                              </linearGradient>
+                              <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                                 <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                                 <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                              </linearGradient>
+                           </defs>
+                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                           <XAxis 
+                             dataKey="label" 
+                             stroke="#94a3b8" 
+                             fontSize={8} 
+                             fontWeight={900}
+                             tickLine={false} 
+                             axisLine={false} 
+                           />
+                           <YAxis 
+                             stroke="#94a3b8" 
+                             fontSize={8} 
+                             fontWeight={900}
+                             tickLine={false} 
+                             axisLine={false}
+                             tickFormatter={(val) => `R$ ${val}`} 
+                           />
+                           <Tooltip 
+                             contentStyle={{ background: '#0f172a', border: 'none', borderRadius: '1rem', padding: '10px' }}
+                             labelStyle={{ fontSize: '9px', fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', fontFamily: 'sans-serif' }}
+                             itemStyle={{ fontSize: '10px', fontWeight: '900', padding: '2px 0', fontFamily: 'sans-serif' }}
+                             formatter={(value: any, name: string) => [
+                               `R$ ${Number(value).toFixed(2)}`, 
+                               name === 'total' ? 'FATURAMENTO' : 'LUCRO'
+                             ]}
+                           />
+                           <Area type="monotone" dataKey="total" name="total" stroke="#38bdf8" strokeWidth={2.5} fillOpacity={1} fill="url(#colorTotal)" />
+                           <Area type="monotone" dataKey="profit" name="profit" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorProfit)" />
+                        </AreaChart>
+                     </ResponsiveContainer>
+                  )}
+               </div>
+            </div>
+
+            {/* 2. Meios de Pagamento */}
+            <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 space-y-4 text-left">
+               <div>
+                  <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 leading-none">Meios de Pagamento</h4>
+                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Receita distribuída por forma de pagamento</p>
+               </div>
+               
+               {paymentMethodsBreakdown.length === 0 ? (
+                  <div className="text-center p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-100">
+                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Sem dados de pagamento</p>
+                  </div>
+               ) : (
+                  <div className="space-y-3 font-sans">
+                     {paymentMethodsBreakdown.map((item, idx) => (
+                        <div key={idx} className="space-y-1">
+                           <div className="flex justify-between items-center text-[9px] font-black uppercase">
+                              <span className="text-slate-600 italic tracking-wide">{item.name}</span>
+                              <span className="text-slate-800">R$ {item.value.toFixed(2)} ({item.percent.toFixed(0)}%)</span>
+                           </div>
+                           <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-gradient-to-r from-sky-400 to-blue-500 rounded-full transition-all duration-500"
+                                style={{ width: `${item.percent}%` }}
+                              />
+                           </div>
+                        </div>
+                     ))}
+                  </div>
+               )}
+            </div>
           </div>
         </div>
       )}
