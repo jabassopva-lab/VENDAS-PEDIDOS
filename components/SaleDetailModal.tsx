@@ -39,7 +39,7 @@ const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sale
       return `• ${item.quantity}x ${item.name} - R$ ${(unitPrice * item.quantity).toFixed(2)}`;
     }).join('\n');
     
-    const message = `*${companyName} - Pedido #${sale.id}*
+    const message = `*${companyName} - Pedido ${sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : sale.id}*
 ---------------------------
 👤 *Cliente:* ${sale.clientName}
 📅 *Data:* ${sale.date} às ${sale.time}
@@ -67,116 +67,298 @@ Obrigado pela preferência!`;
   const handlePrint = () => {
     const logoUrl = convertDriveLink(profile.logoUrl || '');
     const companyName = profile.companyName || 'OMNIVENDA';
-    const logoHtml = logoUrl ? `<img src="${logoUrl}" style="height: 60px; margin-bottom: 10px; object-fit: contain;">` : '';
+    const logoHtml = logoUrl ? `<img src="${logoUrl}" style="max-height: 80px; max-width: 180px; margin-bottom: 8px; object-fit: contain;">` : '';
+    const clientPhone = clientData?.phone || '';
+    const clientAddress = clientData?.address || '';
 
     const printContent = `
       <html>
         <head>
-          <title>Pedido #${sale.id}</title>
-          <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+          <title>Pedido ${sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : sale.id}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
           <style>
-            @page { size: A4; margin: 10mm; }
+            @page { size: A4; margin: 12mm; }
             body { 
-              font-family: 'Fredoka', sans-serif; 
+              font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
               color: #1e293b; 
               margin: 0; 
               padding: 0; 
-              background: #fff;
+              background: #f8fafc;
+              -webkit-font-smoothing: antialiased;
             }
             .ticket {
-              max-width: 800px;
-              margin: 0 auto;
-              border: 1px solid #f1f5f9;
-              border-radius: 8px;
+              max-width: 750px;
+              margin: 20px auto;
+              background: #ffffff;
+              border: 1px solid #e2e8f0;
+              border-radius: 16px;
+              box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+              overflow: hidden;
+              position: relative;
+            }
+            .brand-bar {
+              height: 6px;
+              background: linear-gradient(90deg, #0ea5e9, #0284c7);
             }
             .header { 
-              padding: 30px; 
-              text-align: center;
+              padding: 30px 40px; 
               border-bottom: 1px solid #f1f5f9;
+              background: #fafafb;
             }
-            .header h1 { margin: 0; font-size: 24px; text-transform: uppercase; font-weight: 800; color: #0f172a; }
-            .header p { margin: 4px 0 0; color: #94a3b8; font-size: 12px; font-weight: 500; }
-            
-            .info-bar { 
-              display: flex; 
-              justify-content: space-between; 
-              padding: 15px 30px; 
-              border-bottom: 1px solid #f1f5f9;
-            }
-            .info-item h4 { margin: 0; font-size: 9px; text-transform: uppercase; color: #cbd5e1; letter-spacing: 1px; }
-            .info-item p { margin: 2px 0 0; font-size: 13px; font-weight: 700; }
-
-            .section { padding: 20px 30px; }
-            .section-title { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; display: inline-block; }
-            
-            .client-card {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              padding: 10px 0;
-            }
-
-            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-            th { text-align: left; padding: 10px; font-size: 10px; color: #cbd5e1; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; }
-            td { padding: 10px; border-bottom: 1px solid #f8fafc; font-size: 13px; }
-            
-            .total-box {
-              padding: 25px 30px;
+            .header-main {
               display: flex;
               justify-content: space-between;
-              align-items: center;
-              border-top: 1px solid #f1f5f9;
+              align-items: flex-start;
+              gap: 20px;
             }
-            .total-label { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #94a3b8; }
-            .total-value { font-size: 24px; font-weight: 800; color: #0f172a; }
+            .header-company {
+              flex: 1;
+            }
+            .header-company h1 { 
+              margin: 0; 
+              font-size: 22px; 
+              font-weight: 800; 
+              color: #0f172a; 
+              letter-spacing: -0.5px;
+              text-transform: uppercase;
+            }
+            .company-doc { 
+              margin: 6px 0 2px 0; 
+              color: #64748b; 
+              font-size: 11px; 
+              font-weight: 500; 
+            }
+            .company-contact {
+              margin: 0;
+              color: #64748b;
+              font-size: 11px;
+              font-weight: 500;
+            }
+            .header-meta {
+              text-align: right;
+              display: flex;
+              flex-direction: column;
+              align-items: flex-end;
+              gap: 8px;
+            }
+            .badge {
+              padding: 6px 12px;
+              border-radius: 9999px;
+              font-size: 10px;
+              font-weight: 700;
+              letter-spacing: 0.5px;
+              text-transform: uppercase;
+              display: inline-block;
+            }
+            .badge-budget {
+              background-color: #fef3c7;
+              color: #d97706;
+            }
+            .badge-finalized {
+              background-color: #d1fae5;
+              color: #065f46;
+            }
+            .order-id {
+              font-size: 11px;
+              font-weight: 700;
+              color: #64748b;
+              letter-spacing: 0.5px;
+            }
+            .order-id span {
+              font-size: 18px;
+              color: #0f172a;
+              font-weight: 800;
+            }
+            .order-date {
+              font-size: 11px;
+              color: #94a3b8;
+              font-weight: 500;
+            }
 
-            .footer { text-align: center; padding: 20px; color: #e2e8f0; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+            .details-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 25px;
+              padding: 25px 40px;
+              border-bottom: 1px solid #f1f5f9;
+            }
+            .details-column {
+              display: flex;
+              flex-direction: column;
+            }
+            .section-title { 
+              font-size: 10px; 
+              font-weight: 800; 
+              color: #94a3b8; 
+              text-transform: uppercase; 
+              margin-bottom: 8px; 
+              letter-spacing: 0.5px;
+            }
+            .details-box {
+              background-color: #f8fafc;
+              padding: 16px;
+              border-radius: 12px;
+              border: 1px solid #f1f5f9;
+              flex: 1;
+            }
+            .client-name {
+              font-size: 14px;
+              font-weight: 700;
+              color: #0f172a;
+              margin: 0 0 6px 0;
+              text-transform: uppercase;
+            }
+            .client-detail {
+              font-size: 12px;
+              color: #475569;
+              margin: 4px 0;
+              line-height: 1.4;
+            }
+            .client-detail strong {
+              color: #64748b;
+              font-weight: 600;
+              font-size: 11px;
+            }
+
+            .table-section {
+              padding: 25px 40px;
+            }
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+            }
+            th { 
+              text-align: left; 
+              padding: 12px 10px; 
+              font-size: 10px; 
+              color: #64748b; 
+              text-transform: uppercase; 
+              border-bottom: 2px solid #f1f5f9; 
+              letter-spacing: 0.5px;
+              font-weight: 700;
+            }
+            td { 
+              padding: 14px 10px; 
+              border-bottom: 1px solid #f8fafc; 
+              font-size: 13px; 
+              color: #1e293b;
+            }
+            .item-name {
+              font-weight: 600;
+              color: #0f172a;
+            }
+
+            .total-section {
+              padding: 25px 40px;
+              background-color: #fafafb;
+              border-top: 1px solid #f1f5f9;
+              display: flex;
+              flex-direction: column;
+              align-items: flex-end;
+              gap: 8px;
+            }
+            .total-row {
+              display: flex;
+              justify-content: space-between;
+              width: 280px;
+              font-size: 12px;
+              color: #64748b;
+            }
+            .total-row-main {
+              display: flex;
+              justify-content: space-between;
+              align-items: baseline;
+              width: 320px;
+              padding-top: 10px;
+              border-top: 1px solid #e2e8f0;
+              margin-top: 5px;
+            }
+            .total-label-main {
+              font-size: 11px;
+              font-weight: 800;
+              color: #0f172a;
+              letter-spacing: 0.5px;
+            }
+            .total-val-main {
+              font-size: 24px;
+              font-weight: 800;
+              color: #0ea5e9;
+            }
+
+            .footer { 
+              text-align: center; 
+              padding: 25px; 
+              color: #94a3b8; 
+              font-size: 10px; 
+              font-weight: 600; 
+              text-transform: uppercase; 
+              letter-spacing: 1px; 
+            }
+
+            @media print {
+              body {
+                background: #ffffff;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              .ticket {
+                border: none;
+                box-shadow: none;
+                margin: 0;
+                max-width: 100%;
+              }
+            }
           </style>
         </head>
         <body>
             <div class="ticket">
+                <div class="brand-bar"></div>
                 <div class="header">
-                    ${logoHtml}
-                    <h1>${companyName}</h1>
-                    <p>${profile.document || ''} • ${profile.phone || ''}</p>
-                </div>
-
-                <div class="info-bar">
-                    <div class="info-item">
-                        <h4>Pedido No.</h4>
-                        <p>#${sale.id}</p>
-                    </div>
-                    <div class="info-item" style="text-align: center;">
-                        <h4>Data/Hora</h4>
-                        <p>${sale.date} ${sale.time}</p>
-                    </div>
-                    <div class="info-item" style="text-align: right;">
-                        <h4>Condição</h4>
-                        <p>${sale.paymentTerms || 'À vista'}</p>
-                    </div>
-                </div>
-
-                <div class="section">
-                    <div class="section-title">Cliente</div>
-                    <div class="client-card">
-                        <div>
-                            <p style="font-size: 14px; font-weight: 700; margin: 0;">${sale.clientName}</p>
-                            <p style="font-size: 11px; color: #94a3b8; margin: 2px 0 0;">${clientData?.phone || ''}</p>
+                    <div class="header-main">
+                        <div class="header-company">
+                            ${logoHtml}
+                            <h1>${companyName}</h1>
+                            <p class="company-doc">${profile.document || ''}</p>
+                            <p class="company-contact">${profile.phone || ''}</p>
                         </div>
-                        <div style="text-align: right;">
-                            <p style="font-size: 11px; color: #94a3b8; margin: 0;">${clientData?.address || ''}</p>
+                        <div class="header-meta">
+                            <div class="badge ${sale.status === 'ORCAMENTO' ? 'badge-budget' : 'badge-finalized'}">
+                                ${sale.status === 'ORCAMENTO' ? 'ORÇAMENTO' : 'COMPROVANTE DE PEDIDO'}
+                            </div>
+                            <div class="order-id">PEDIDO NO. <span>${sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : sale.id}</span></div>
+                            <div class="order-date">${sale.date} às ${sale.time}</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="section" style="padding-top: 0;">
-                    <div class="section-title">Itens do Pedido</div>
+                <div class="details-grid">
+                    <div class="details-column">
+                        <div class="section-title">Cliente</div>
+                        <div class="details-box">
+                            <p class="client-name">${sale.clientName}</p>
+                            ${clientPhone ? `<p class="client-detail"><strong>WhatsApp / Tel:</strong> ${clientPhone}</p>` : ''}
+                            ${clientAddress ? `<p class="client-detail"><strong>Endereço:</strong> ${clientAddress}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="details-column">
+                        <div class="section-title">Informações de Venda</div>
+                        <div class="details-box">
+                            <p class="client-detail"><strong>Forma de Pagamento:</strong> ${sale.paymentMethod || 'Dinheiro'}</p>
+                            <p class="client-detail"><strong>Condição de Pagamento:</strong> ${sale.paymentTerms || 'À vista'}</p>
+                            <p class="client-detail"><strong>Validade / Tipo:</strong> Documento sem valor fiscal</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-section">
+                    <div class="section-title">Produtos do Pedido</div>
                     <table>
                         <thead>
                             <tr>
-                                <th>Item</th>
-                                <th style="text-align: center;">Qtd</th>
-                                <th style="text-align: right;">un.</th>
-                                <th style="text-align: right;">Subtotal</th>
+                                <th>Item / Especificação</th>
+                                <th style="text-align: center; width: 60px;">Qtd</th>
+                                <th style="text-align: right; width: 120px;">Vl. Unitário</th>
+                                <th style="text-align: right; width: 120px;">Subtotal</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -184,10 +366,12 @@ Obrigado pela preferência!`;
                                 const unitPrice = item.price - (item.discount || 0);
                                 return `
                                 <tr>
-                                    <td style="font-weight: 600;">${item.name}</td>
-                                    <td style="text-align: center;">${item.quantity}</td>
-                                    <td style="text-align: right;">R$ ${unitPrice.toFixed(2)}</td>
-                                    <td style="text-align: right; font-weight: 700;">R$ ${(unitPrice * item.quantity).toFixed(2)}</td>
+                                    <td>
+                                        <div class="item-name">${item.name}</div>
+                                    </td>
+                                    <td style="text-align: center; font-weight: 500;">${item.quantity}</td>
+                                    <td style="text-align: right; color: #475569;">R$ ${unitPrice.toFixed(2)}</td>
+                                    <td style="text-align: right; font-weight: 700; color: #0f172a;">R$ ${(unitPrice * item.quantity).toFixed(2)}</td>
                                 </tr>
                                 `;
                             }).join('')}
@@ -195,20 +379,16 @@ Obrigado pela preferência!`;
                     </table>
                 </div>
 
-                <div class="total-box">
-                    <div>
-                        <div class="total-label">Pagamento: ${sale.paymentMethod || 'Dinheiro'}</div>
-                        <div style="font-size: 8px; margin-top: 2px; color: #e2e8f0;">Não é documento fiscal</div>
-                    </div>
-                    <div style="text-align: right;">
-                        <div class="total-label">Total do Pedido</div>
-                        <div class="total-value">R$ ${sale.total.toFixed(2)}</div>
+                <div class="total-section">
+                    <div class="total-row-main">
+                        <span class="total-label-main">VALOR TOTAL DO PEDIDO:</span>
+                        <span class="total-val-main">R$ ${sale.total.toFixed(2)}</span>
                     </div>
                 </div>
             </div>
             
             <div class="footer">
-                Agradecemos a sua compra!
+                Agradecemos a preferência e confiança!
             </div>
         </body>
       </html>
@@ -262,7 +442,8 @@ Obrigado pela preferência!`;
               </div>
               <div>
                  <h2 className="text-xs font-black uppercase tracking-widest text-slate-800">Visualizar Pedido</h2>
-                 <p className="text-[10px] font-bold text-slate-400 uppercase">Ref: #{sale.id}</p>
+                 <p className="text-[10px] font-bold text-slate-400 uppercase">Pedido: {sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : '...'}</p>
+                 <p className="text-[7px] font-medium text-slate-300 uppercase">Ref: {sale.id}</p>
               </div>
            </div>
            <div className="flex gap-2">

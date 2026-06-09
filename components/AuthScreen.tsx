@@ -11,9 +11,12 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [identifier, setIdentifier] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -26,9 +29,12 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
       .replace(/\s+/g, '.')            
       .replace(/[^a-z0-9._]/g, '');    
 
-    return identifier.includes('@') 
-      ? identifier 
-      : `${normalizedIdentifier}@omnivenda.com`;
+    if (identifier.includes('@')) return identifier;
+    
+    // No cadastro, se o usuário digitou um e-mail separado, esse será o e-mail da conta
+    if (!isLogin && email.includes('@')) return email;
+
+    return `${normalizedIdentifier}@omnivenda.com`;
   };
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -42,24 +48,35 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
     setError(null);
     setSuccessMsg(null);
 
-    const loginEmail = getLoginEmail();
-    console.log("Iniciando processo de autenticação/recuperação para:", loginEmail);
+    // Na recuperação, enviamos para o que está no campo IDENTIFIER
+    const targetEmail = isForgotPassword ? identifier : getLoginEmail();
+    console.log("Iniciando processo para:", targetEmail);
 
     try {
       if (isForgotPassword) {
-        console.log("Tentando resetPasswordForEmail para:", loginEmail);
-        const { error } = await supabase.auth.resetPasswordForEmail(loginEmail, {
+        if (!targetEmail.includes('@')) {
+          throw new Error("Por favor, digite o seu E-mail Real completo para a recuperação.");
+        }
+        
+        console.log("Tentando resetPasswordForEmail para:", targetEmail);
+        const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
           redirectTo: window.location.origin
         });
         if (error) throw error;
-        setSuccessMsg(`Link de recuperação enviado para: ${loginEmail}. Verifique sua caixa de entrada e pasta de Spam.`);
+        setSuccessMsg(`Link de recuperação enviado para: ${targetEmail}. Verifique sua caixa de entrada e Spam.`);
         setIsForgotPassword(false);
       } else if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+        const { error } = await supabase.auth.signInWithPassword({ email: targetEmail, password });
         if (error) throw error;
       } else {
+        // CADASTRO
+        if (!agreeTerms) {
+          throw new Error("Você precisa aceitar os Termos de Uso para continuar.");
+        }
+        const signupEmail = email.includes('@') ? email : targetEmail;
+        
         const { error } = await supabase.auth.signUp({ 
-          email: loginEmail, 
+          email: signupEmail, 
           password,
           options: {
             data: { 
@@ -69,9 +86,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
           }
         });
         if (error) throw error;
-        alert('Conta criada com sucesso! Você já pode acessar o sistema.');
+        alert(`Conta criada com sucesso vinculada ao e-mail: ${signupEmail}. Você já pode acessar o sistema.`);
+        setIsLogin(true);
       }
-      if (!isForgotPassword) onAuthSuccess();
+      if (!isForgotPassword && isLogin) onAuthSuccess();
     } catch (err: any) {
       setError(err.message || 'Erro ao autenticar. Verifique seus dados.');
     } finally {
@@ -106,7 +124,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             <Store className="absolute left-4 top-4 text-slate-400" size={18} />
             <input 
               type="text" 
-              placeholder={isForgotPassword ? "Seu E-mail cadastrado" : "Nome da Empresa ou Usuário"} 
+              placeholder={isForgotPassword ? "Seu E-mail Real de Recuperação" : "Nome da Empresa ou Usuário"} 
               className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
               value={identifier}
               onChange={e => setIdentifier(e.target.value)}
@@ -114,6 +132,20 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
               autoComplete="off"
             />
           </div>
+
+          {!isLogin && !isForgotPassword && (
+            <div className="relative animate-in slide-in-from-top-2">
+              <Mail className="absolute left-4 top-4 text-slate-400" size={18} />
+              <input 
+                type="email" 
+                placeholder="Seu E-mail Real (Para recuperação)" 
+                className="w-full pl-12 pr-4 py-4 bg-blue-50 border border-blue-100 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold placeholder:text-blue-300"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+              />
+            </div>
+          )}
 
           {isForgotPassword && !identifier.includes('@') && identifier.trim().length > 0 && (
             <p className="text-[10px] text-amber-600 font-bold px-2 italic">
@@ -141,6 +173,21 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
+            </div>
+          )}
+
+          {!isLogin && !isForgotPassword && (
+            <div className="flex items-start gap-3 px-2 py-2 animate-in fade-in slide-in-from-left-2">
+              <input 
+                type="checkbox" 
+                id="agreeTerms"
+                className="mt-1 w-4 h-4 rounded border-slate-200 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                checked={agreeTerms}
+                onChange={e => setAgreeTerms(e.target.checked)}
+              />
+              <label htmlFor="agreeTerms" className="text-[10px] font-bold text-slate-500 uppercase tracking-wider leading-relaxed cursor-pointer group">
+                Eu li e concordo com os <button type="button" onClick={() => setShowTermsModal(true)} className="text-blue-500 hover:underline decoration-blue-300">Termos de Uso</button> e <button type="button" onClick={() => setShowTermsModal(true)} className="text-blue-500 hover:underline decoration-blue-300">Política de Privacidade</button> da OmniVenda.
+              </label>
             </div>
           )}
 
@@ -218,6 +265,64 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
            Sua distribuidora em qualquer lugar, a qualquer momento.
          </p>
       </div>
+
+      {showTermsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in transition-all">
+          <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl flex flex-col max-h-[85vh] border-b-8 border-blue-500 overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-blue-50/50">
+              <div>
+                <h2 className="text-xl font-black text-slate-800 uppercase italic tracking-tighter">Termos de Uso</h2>
+                <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mt-1">OmniVenda Cloud Service</p>
+              </div>
+              <button 
+                onClick={() => setShowTermsModal(false)}
+                className="w-10 h-10 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center text-slate-400 hover:text-red-500 transition-all active:scale-95"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-8 overflow-y-auto text-slate-600 space-y-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+              <section className="space-y-3">
+                <h3 className="font-black text-xs text-slate-800 uppercase tracking-widest">1. Aceitação dos Termos</h3>
+                <p className="text-xs leading-relaxed font-medium">Ao acessar e utilizar o OmniVenda Cloud, você concorda em cumprir estes termos. O sistema é fornecido "como está" para facilitar a gestão comercial de distribuidoras e empresas de vendas.</p>
+              </section>
+
+              <section className="space-y-3">
+                <h3 className="font-black text-xs text-slate-800 uppercase tracking-widest">2. Uso do Serviço</h3>
+                <p className="text-xs leading-relaxed font-medium">O usuário é integralmente responsável pela veracidade dos dados inseridos, incluindo preços, estoques e informações de clientes. A OmniVenda não se responsabiliza por erros operacionais cometidos pelos usuários.</p>
+              </section>
+
+              <section className="space-y-3">
+                <h3 className="font-black text-xs text-slate-800 uppercase tracking-widest">3. Privacidade e Dados</h3>
+                <p className="text-xs leading-relaxed font-medium">Seus dados são armazenados de forma segura em infraestrutura cloud (Supabase/PostgreSQL). Não compartilhamos suas informações comerciais com terceiros. Você tem total controle sobre seus produtos, clientes e histórico de vendas.</p>
+              </section>
+
+              <section className="space-y-3">
+                <h3 className="font-black text-xs text-slate-800 uppercase tracking-widest">4. Segurança da Conta</h3>
+                <p className="text-xs leading-relaxed font-medium">Você é responsável por manter a confidencialidade de sua senha e por todas as atividades que ocorrem em sua conta cloud.</p>
+              </section>
+
+              <section className="space-y-3">
+                <h3 className="font-black text-xs text-slate-800 uppercase tracking-widest">5. Modificações</h3>
+                <p className="text-xs leading-relaxed font-medium">Reservamo-nos o direito de atualizar estes termos e as funcionalidades do sistema para melhoria contínua da experiência do usuário.</p>
+              </section>
+            </div>
+
+            <div className="p-8 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button 
+                onClick={() => {
+                  setAgreeTerms(true);
+                  setShowTermsModal(false);
+                }}
+                className="bg-blue-500 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-100 hover:bg-blue-600 transition-all border-b-4 border-blue-700 active:scale-95"
+              >
+                Aceito os Termos
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

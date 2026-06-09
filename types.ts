@@ -73,6 +73,8 @@ export interface Sale {
   status: 'FINALIZADA' | 'ORCAMENTO'; // Novo
   isPaid: boolean; // Novo
   deliveryStatus: 'PENDENTE' | 'ENTREGUE'; // Novo
+  created_at?: string;
+  orderNumber?: number;
 }
 
 export interface SalesData {

@@ -53,6 +53,20 @@ import {
   X,
   DollarSign
 } from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell,
+  PieChart,
+  Pie
+} from 'recharts';
 import ProductModal from './components/ProductModal.tsx';
 import ClientForm from './components/ClientForm.tsx';
 import NewSaleModal from './components/NewSaleModal.tsx';
@@ -108,6 +122,21 @@ const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [salesHistory, setSalesHistory] = useState<Sale[]>([]);
+  const salesHistoryWithNumbers = useMemo(() => {
+    const sortedAsc = [...salesHistory].sort((a, b) => {
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      if (timeA !== timeB) return timeA - timeB;
+      const dateComp = (a.date || '').localeCompare(b.date || '');
+      if (dateComp !== 0) return dateComp;
+      return (a.time || '').localeCompare(b.time || '');
+    });
+
+    return sortedAsc.map((sale, index) => ({
+      ...sale,
+      orderNumber: index + 1
+    })).reverse();
+  }, [salesHistory]);
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(DEFAULT_PROFILE);
 
   const [newPassword, setNewPassword] = useState('');
@@ -222,8 +251,8 @@ const App: React.FC = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
-        // Verifica se é um redirecionamento de recuperação de senha pelo URL
-        if (window.location.hash.includes('type=recovery')) {
+        // Verifica se é um redirecionamento de recuperação de senha pelo URL (hash ou query)
+        if (window.location.hash.includes('type=recovery') || window.location.href.includes('type=recovery')) {
           setIsResettingPassword(true);
         }
         fetchAllData();
@@ -371,6 +400,346 @@ const App: React.FC = () => {
     }
   };
 
+  const printSale = (sale: Sale) => {
+    const logoUrl = convertDriveLink(businessProfile.logoUrl || '');
+    const companyName = businessProfile.companyName || 'OMNIVENDA';
+    const logoHtml = logoUrl ? `<img src="${logoUrl}" style="max-height: 80px; max-width: 180px; margin-bottom: 8px; object-fit: contain;">` : '';
+    const clientPhone = clients.find(c => c.id === sale.clientId)?.phone || '';
+    const clientAddress = clients.find(c => c.id === sale.clientId)?.address || '';
+
+    const printContent = `
+      <html>
+        <head>
+          <title>Pedido ${sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : sale.id}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+          <style>
+            @page { size: A4; margin: 12mm; }
+            body { 
+              font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+              color: #1e293b; 
+              margin: 0; 
+              padding: 0; 
+              background: #f8fafc;
+              -webkit-font-smoothing: antialiased;
+            }
+            .ticket {
+              max-width: 750px;
+              margin: 20px auto;
+              background: #ffffff;
+              border: 1px solid #e2e8f0;
+              border-radius: 16px;
+              box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+              overflow: hidden;
+              position: relative;
+            }
+            .brand-bar {
+              height: 6px;
+              background: linear-gradient(90deg, #0ea5e9, #0284c7);
+            }
+            .header { 
+              padding: 30px 40px; 
+              border-bottom: 1px solid #f1f5f9;
+              background: #fafafb;
+            }
+            .header-main {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              gap: 20px;
+            }
+            .header-company {
+              flex: 1;
+            }
+            .header-company h1 { 
+              margin: 0; 
+              font-size: 22px; 
+              font-weight: 800; 
+              color: #0f172a; 
+              letter-spacing: -0.5px;
+              text-transform: uppercase;
+            }
+            .company-doc { 
+              margin: 6px 0 2px 0; 
+              color: #64748b; 
+              font-size: 11px; 
+              font-weight: 500; 
+            }
+            .company-contact {
+              margin: 0;
+              color: #64748b;
+              font-size: 11px;
+              font-weight: 500;
+            }
+            .header-meta {
+              text-align: right;
+              display: flex;
+              flex-direction: column;
+              align-items: flex-end;
+              gap: 8px;
+            }
+            .badge {
+              padding: 6px 12px;
+              border-radius: 9999px;
+              font-size: 10px;
+              font-weight: 700;
+              letter-spacing: 0.5px;
+              text-transform: uppercase;
+              display: inline-block;
+            }
+            .badge-budget {
+              background-color: #fef3c7;
+              color: #d97706;
+            }
+            .badge-finalized {
+              background-color: #d1fae5;
+              color: #065f46;
+            }
+            .order-id {
+              font-size: 11px;
+              font-weight: 700;
+              color: #64748b;
+              letter-spacing: 0.5px;
+            }
+            .order-id span {
+              font-size: 18px;
+              color: #0f172a;
+              font-weight: 800;
+            }
+            .order-date {
+              font-size: 11px;
+              color: #94a3b8;
+              font-weight: 500;
+            }
+
+            .details-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 25px;
+              padding: 25px 40px;
+              border-bottom: 1px solid #f1f5f9;
+            }
+            .details-column {
+              display: flex;
+              flex-direction: column;
+            }
+            .section-title { 
+              font-size: 10px; 
+              font-weight: 800; 
+              color: #94a3b8; 
+              text-transform: uppercase; 
+              margin-bottom: 8px; 
+              letter-spacing: 0.5px;
+            }
+            .details-box {
+              background-color: #f8fafc;
+              padding: 16px;
+              border-radius: 12px;
+              border: 1px solid #f1f5f9;
+              flex: 1;
+            }
+            .client-name {
+              font-size: 14px;
+              font-weight: 700;
+              color: #0f172a;
+              margin: 0 0 6px 0;
+              text-transform: uppercase;
+            }
+            .client-detail {
+              font-size: 12px;
+              color: #475569;
+              margin: 4px 0;
+              line-height: 1.4;
+            }
+            .client-detail strong {
+              color: #64748b;
+              font-weight: 600;
+              font-size: 11px;
+            }
+
+            .table-section {
+              padding: 25px 40px;
+            }
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+            }
+            th { 
+              text-align: left; 
+              padding: 12px 10px; 
+              font-size: 10px; 
+              color: #64748b; 
+              text-transform: uppercase; 
+              border-bottom: 2px solid #f1f5f9; 
+              letter-spacing: 0.5px;
+              font-weight: 700;
+            }
+            td { 
+              padding: 14px 10px; 
+              border-bottom: 1px solid #f8fafc; 
+              font-size: 13px; 
+              color: #1e293b;
+            }
+            .item-name {
+              font-weight: 600;
+              color: #0f172a;
+            }
+
+            .total-section {
+              padding: 25px 40px;
+              background-color: #fafafb;
+              border-top: 1px solid #f1f5f9;
+              display: flex;
+              flex-direction: column;
+              align-items: flex-end;
+              gap: 8px;
+            }
+            .total-row {
+              display: flex;
+              justify-content: space-between;
+              width: 280px;
+              font-size: 12px;
+              color: #64748b;
+            }
+            .total-row-main {
+              display: flex;
+              justify-content: space-between;
+              align-items: baseline;
+              width: 320px;
+              padding-top: 10px;
+              border-top: 1px solid #e2e8f0;
+              margin-top: 5px;
+            }
+            .total-label-main {
+              font-size: 11px;
+              font-weight: 800;
+              color: #0f172a;
+              letter-spacing: 0.5px;
+            }
+            .total-val-main {
+              font-size: 24px;
+              font-weight: 800;
+              color: #0ea5e9;
+            }
+
+            .footer { 
+              text-align: center; 
+              padding: 25px; 
+              color: #94a3b8; 
+              font-size: 10px; 
+              font-weight: 600; 
+              text-transform: uppercase; 
+              letter-spacing: 1px; 
+            }
+
+            @media print {
+              body {
+                background: #ffffff;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              .ticket {
+                border: none;
+                box-shadow: none;
+                margin: 0;
+                max-width: 100%;
+              }
+            }
+          </style>
+        </head>
+        <body>
+            <div class="ticket">
+                <div class="brand-bar"></div>
+                <div class="header">
+                    <div class="header-main">
+                        <div class="header-company">
+                            ${logoHtml}
+                            <h1>${companyName}</h1>
+                            <p class="company-doc">${businessProfile.document || ''}</p>
+                            <p class="company-contact">${businessProfile.phone || ''}</p>
+                        </div>
+                        <div class="header-meta">
+                            <div class="badge ${sale.status === 'ORCAMENTO' ? 'badge-budget' : 'badge-finalized'}">
+                                ${sale.status === 'ORCAMENTO' ? 'ORÇAMENTO' : 'COMPROVANTE DE PEDIDO'}
+                            </div>
+                            <div class="order-id">PEDIDO NO. <span>${sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : sale.id}</span></div>
+                            <div class="order-date">${sale.date} às ${sale.time}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="details-grid">
+                    <div class="details-column">
+                        <div class="section-title">Cliente</div>
+                        <div class="details-box">
+                            <p class="client-name">${sale.clientName}</p>
+                            ${clientPhone ? `<p class="client-detail"><strong>WhatsApp / Tel:</strong> ${clientPhone}</p>` : ''}
+                            ${clientAddress ? `<p class="client-detail"><strong>Endereço:</strong> ${clientAddress}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="details-column">
+                        <div class="section-title">Informações de Venda</div>
+                        <div class="details-box">
+                            <p class="client-detail"><strong>Forma de Pagamento:</strong> ${sale.paymentMethod || 'Dinheiro'}</p>
+                            <p class="client-detail"><strong>Condição de Pagamento:</strong> ${sale.paymentTerms || 'À vista'}</p>
+                            <p class="client-detail"><strong>Validade / Tipo:</strong> Documento sem valor fiscal</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-section">
+                    <div class="section-title">Produtos do Pedido</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item / Especificação</th>
+                                <th style="text-align: center; width: 60px;">Qtd</th>
+                                <th style="text-align: right; width: 120px;">Vl. Unitário</th>
+                                <th style="text-align: right; width: 120px;">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${sale.items.map(item => {
+                                const unitPrice = item.price - (item.discount || 0);
+                                return `
+                                <tr>
+                                    <td>
+                                        <div class="item-name">${item.name}</div>
+                                    </td>
+                                    <td style="text-align: center; font-weight: 500;">${item.quantity}</td>
+                                    <td style="text-align: right; color: #475569;">R$ ${unitPrice.toFixed(2)}</td>
+                                    <td style="text-align: right; font-weight: 700; color: #0f172a;">R$ ${(unitPrice * item.quantity).toFixed(2)}</td>
+                                </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="total-section">
+                    <div class="total-row-main">
+                        <span class="total-label-main">VALOR TOTAL DO PEDIDO:</span>
+                        <span class="total-val-main">R$ ${sale.total.toFixed(2)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer">
+                Agradecemos a preferência e confiança!
+            </div>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 800);
+    }
+  };
+
   const handleFinishSale = async (data: Partial<Sale>) => {
     try {
       const isUpdate = !!data.id;
@@ -424,6 +793,12 @@ const App: React.FC = () => {
       
       setSaleModal(false);
       setEditingSale(null);
+      if (!isUpdate && savedSale) {
+        const nextOrderNumber = salesHistory.length + 1;
+        const saleWithNumber = { ...savedSale, orderNumber: nextOrderNumber };
+        setSelectedSale(saleWithNumber);
+        printSale(saleWithNumber);
+      }
       triggerNotify('Venda Salva!');
     } catch (e: any) {
       console.error(e);
@@ -630,6 +1005,7 @@ const App: React.FC = () => {
         clientsMap[groupKey] = { 
           name: rawName, 
           salesCount: 0, 
+          totalPotes: 0, 
           totalSold: 0, 
           totalProfit: 0, 
           totalPendingAmount: 0 
@@ -639,8 +1015,10 @@ const App: React.FC = () => {
       const total = safeNumber(sale.total);
       const profit = safeNumber(sale.profit || 0);
       const isPaid = sale.isPaid === true || String(sale.isPaid) === 'true' || Number(sale.isPaid) === 1;
+      const salePotes = (sale.items || []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
 
       clientsMap[groupKey].salesCount++;
+      clientsMap[groupKey].totalPotes += salePotes;
       clientsMap[groupKey].totalSold += total;
       clientsMap[groupKey].totalProfit += profit;
       if (!isPaid) clientsMap[groupKey].totalPendingAmount += total;
@@ -676,6 +1054,164 @@ const App: React.FC = () => {
       });
     });
     return Object.values(productsMap).sort((a, b) => b.salesCount - a.salesCount);
+  }, [salesHistory, currentDate, reportTab]);
+
+  const dashboardChartData = useMemo(() => {
+    const d = currentDate;
+    const dayStr = d.toLocaleDateString('pt-BR');
+    const monthStr = (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getFullYear();
+    const yearStr = d.getFullYear().toString();
+    
+    const safeNumber = (val: any) => {
+      if (typeof val === 'number') return isNaN(val) ? 0 : val;
+      if (typeof val === 'string') {
+        let cleaned = val.replace(/[R$\s]/g, '');
+        if (cleaned.includes(',') && cleaned.includes('.')) {
+          cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+        } else if (cleaned.includes(',')) {
+          cleaned = cleaned.replace(',', '.');
+        }
+        const num = Number(cleaned);
+        return isNaN(num) ? 0 : num;
+      }
+      return Number(val) || 0;
+    };
+
+    const filtered = salesHistory.filter(s => {
+      if (!s.date) return false;
+      if (!['FINALIZADA', 'PENDENTE'].includes(s.status)) return false;
+      if (reportTab === 'TOTAL') return true;
+      if (reportTab === 'DIARIO') return s.date === dayStr;
+      if (reportTab === 'MENSAL') return s.date.endsWith(monthStr);
+      if (reportTab === 'ANUAL') return s.date.endsWith(yearStr);
+      return false;
+    });
+
+    if (reportTab === 'MENSAL') {
+      const dailySums: Record<string, { label: string, total: number, profit: number }> = {};
+      const year = d.getFullYear();
+      const month = d.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      for (let i = 1; i <= daysInMonth; i++) {
+        const label = String(i).padStart(2, '0');
+        dailySums[label] = { label, total: 0, profit: 0 };
+      }
+      
+      filtered.forEach(s => {
+        const parts = s.date.split('/');
+        if (parts.length === 3) {
+          const day = parts[0];
+          if (dailySums[day]) {
+            dailySums[day].total += safeNumber(s.total);
+            dailySums[day].profit += safeNumber(s.profit || 0);
+          }
+        }
+      });
+      return Object.values(dailySums).sort((a, b) => Number(a.label) - Number(b.label));
+    } else if (reportTab === 'ANUAL') {
+      const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      const monthlySums = MONTH_LABELS.map((label, idx) => ({
+        label,
+        total: 0,
+        profit: 0
+      }));
+
+      filtered.forEach(s => {
+        const parts = s.date.split('/');
+        if (parts.length === 3) {
+          const m = Number(parts[1]);
+          if (m >= 1 && m <= 12) {
+            monthlySums[m - 1].total += safeNumber(s.total);
+            monthlySums[m - 1].profit += safeNumber(s.profit || 0);
+          }
+        }
+      });
+      return monthlySums;
+    } else if (reportTab === 'DIARIO') {
+      const hourlySums: Record<string, { label: string, total: number, profit: number }> = {};
+      for (let i = 0; i < 24; i += 3) {
+        const label = String(i).padStart(2, '0') + ':00';
+        hourlySums[label] = { label, total: 0, profit: 0 };
+      }
+
+      filtered.forEach(s => {
+        const time = s.time || "12:00";
+        const hour = Number(time.split(':')[0]) || 12;
+        const roundedHour = Math.floor(hour / 3) * 3;
+        const label = String(roundedHour).padStart(2, '0') + ':00';
+        if (hourlySums[label]) {
+          hourlySums[label].total += safeNumber(s.total);
+          hourlySums[label].profit += safeNumber(s.profit || 0);
+        }
+      });
+      return Object.values(hourlySums).sort((a, b) => a.label.localeCompare(b.label));
+    } else {
+      const groups: Record<string, { label: string, total: number, profit: number, sortKey: string }> = {};
+      filtered.forEach(s => {
+        const parts = s.date.split('/');
+        if (parts.length === 3) {
+          const groupKey = parts[1] + '/' + parts[2];
+          if (!groups[groupKey]) {
+            groups[groupKey] = {
+              label: groupKey,
+              total: 0,
+              profit: 0,
+              sortKey: parts[2] + parts[1]
+            };
+          }
+          groups[groupKey].total += safeNumber(s.total);
+          groups[groupKey].profit += safeNumber(s.profit || 0);
+        }
+      });
+      return Object.values(groups).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+    }
+  }, [salesHistory, reportTab, currentDate]);
+
+  const paymentMethodsBreakdown = useMemo(() => {
+    const d = currentDate;
+    const dayStr = d.toLocaleDateString('pt-BR');
+    const monthStr = (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getFullYear();
+    const yearStr = d.getFullYear().toString();
+    
+    const safeNumber = (val: any) => {
+      if (typeof val === 'number') return isNaN(val) ? 0 : val;
+      if (typeof val === 'string') {
+        let cleaned = val.replace(/[R$\s]/g, '');
+        if (cleaned.includes(',') && cleaned.includes('.')) {
+          cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+        } else if (cleaned.includes(',')) {
+          cleaned = cleaned.replace(',', '.');
+        }
+        const num = Number(cleaned);
+        return isNaN(num) ? 0 : num;
+      }
+      return Number(val) || 0;
+    };
+
+    const filtered = salesHistory.filter(s => {
+      if (!s.date) return false;
+      if (!['FINALIZADA', 'PENDENTE'].includes(s.status)) return false;
+      if (reportTab === 'TOTAL') return true;
+      if (reportTab === 'DIARIO') return s.date === dayStr;
+      if (reportTab === 'MENSAL') return s.date.endsWith(monthStr);
+      if (reportTab === 'ANUAL') return s.date.endsWith(yearStr);
+      return false;
+    });
+
+    const map: Record<string, number> = {};
+    let grandTotal = 0;
+    filtered.forEach(s => {
+      const val = safeNumber(s.total);
+      const m = s.paymentMethod || 'Não Definido';
+      map[m] = (map[m] || 0) + val;
+      grandTotal += val;
+    });
+
+    return Object.entries(map).map(([name, value]) => ({
+      name,
+      value,
+      percent: grandTotal > 0 ? (value / grandTotal) * 100 : 0
+    })).sort((a, b) => b.value - a.value);
   }, [salesHistory, currentDate, reportTab]);
 
   const changeDate = (delta: number) => {
@@ -994,7 +1530,7 @@ const App: React.FC = () => {
         <div className="min-h-screen">
           <Header title="Histórico" showBack />
           <div className="px-6 py-6 space-y-2">
-            {salesHistory.map(sale => (
+            {salesHistoryWithNumbers.map(sale => (
               <div key={sale.id} onClick={() => setSelectedSale(sale)} className="bg-white p-3 rounded-2xl shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all">
                  <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${sale.status === 'ORCAMENTO' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600'}`}>
@@ -1002,7 +1538,7 @@ const App: React.FC = () => {
                     </div>
                     <div>
                        <h4 className="font-black text-slate-800 text-xs uppercase italic leading-tight">{sale.clientName}</h4>
-                       <p className="text-[7px] font-black text-slate-400 uppercase">{sale.date} • {sale.status}</p>
+                       <p className="text-[7px] font-black text-slate-400 uppercase">Pedido {sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : '...'} • {sale.date} • {sale.status}</p>
                     </div>
                  </div>
                  <div className="text-right">
@@ -1033,20 +1569,247 @@ const App: React.FC = () => {
       )}
 
       {currentScreen === 'REPORTS' && (!isPureAdmin || isImpersonating) && (
-        <div className="min-h-screen bg-[#f3f4f6]">
+        <div className="min-h-screen bg-[#f8fafc] pb-32">
           <Header title="Relatórios" showBack />
           <div className="p-4 space-y-4">
-             <div className="bg-white p-5 rounded-2xl shadow-md border-b-4 border-slate-100 text-center">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Resumo do Mês</p>
-                <h3 className="text-2xl font-black text-slate-800 uppercase italic">R$ {currentSummary.vendasTotal.toFixed(2)}</h3>
-                <div className="flex justify-center gap-4 mt-1">
-                   <span className="text-[10px] font-black text-green-600 uppercase italic">Lucro: R$ {currentSummary.lucro.toFixed(2)}</span>
-                   <span className="text-[10px] font-black text-red-500 uppercase italic">A Receber: R$ {currentSummary.aReceberTotal.toFixed(2)}</span>
+             {/* Period Filter card */}
+             <div className="bg-gradient-to-br from-slate-900 to-slate-855 text-white rounded-[2rem] p-5 shadow-lg border-b-4 border-slate-955 space-y-4">
+                <div className="flex justify-between items-center bg-white/10 p-1 rounded-2xl">
+                   <button onClick={() => setReportTab('DIARIO')} className={`flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${reportTab === 'DIARIO' ? 'bg-white text-slate-900 shadow-sm font-black' : 'text-white/60 hover:text-white'}`}>Dia</button>
+                   <button onClick={() => setReportTab('MENSAL')} className={`flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${reportTab === 'MENSAL' ? 'bg-white text-slate-900 shadow-sm font-black' : 'text-white/60 hover:text-white'}`}>Mês</button>
+                   <button onClick={() => setReportTab('ANUAL')} className={`flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${reportTab === 'ANUAL' ? 'bg-white text-slate-900 shadow-sm font-black' : 'text-white/60 hover:text-white'}`}>Ano</button>
+                   <button onClick={() => setReportTab('TOTAL')} className={`flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${reportTab === 'TOTAL' ? 'bg-white text-slate-900 shadow-sm font-black' : 'text-white/60 hover:text-white'}`}>Tudo</button>
+                </div>
+                <div className="flex items-center justify-between px-2">
+                   <button onClick={() => changeDate(-1)} className="p-2 bg-white/5 rounded-xl text-white/80 active:scale-75 transition-transform disabled:opacity-20" disabled={reportTab === 'TOTAL'}><ChevronLeft size={18}/></button>
+                   <span className="text-xs font-black uppercase italic tracking-wider">
+                     {reportTab === 'DIARIO' ? currentDate.toLocaleDateString('pt-BR') : 
+                      reportTab === 'MENSAL' ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}` : 
+                      reportTab === 'ANUAL' ? currentDate.getFullYear() : "Todo o Período"}
+                   </span>
+                   <button onClick={() => changeDate(1)} className="p-2 bg-white/5 rounded-xl text-white/80 active:scale-75 transition-transform disabled:opacity-20" disabled={reportTab === 'TOTAL'}><ChevronRight size={18}/></button>
+                </div>
+             </div>
+
+             {/* Bento Grid - KPI stats */}
+             <div className="grid grid-cols-2 gap-3">
+                {/* 1. FATURAMENTO */}
+                <div className="col-span-2 bg-[#f0f9ff] p-5 rounded-[2rem] border border-sky-100 shadow-sm flex items-center justify-between">
+                   <div className="space-y-1">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-sky-600">FATURAMENTO TOTAL</p>
+                      <h3 className="text-2xl font-black text-slate-800 uppercase italic leading-none">R$ {currentSummary.vendasTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">{currentSummary.vendasCount} Vendas no período</p>
+                   </div>
+                   <div className="w-12 h-12 bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center">
+                      <TrendingUp size={22} className="stroke-[2.5]" />
+                   </div>
+                </div>
+
+                {/* 2. LUCRO REAL */}
+                <div className="bg-[#f0fdf4] p-4 rounded-[2rem] border border-green-100 shadow-sm flex flex-col justify-between h-28">
+                   <div className="flex items-start justify-between">
+                      <p className="text-[8px] font-black uppercase tracking-widest text-green-600 leading-none">LUCRO REAL</p>
+                      <div className="bg-green-100 text-green-700 font-bold text-[7px] px-1.5 py-0.5 rounded-full uppercase tracking-wider leading-none font-sans">
+                         {((currentSummary.lucro / (currentSummary.vendasTotal || 1)) * 100).toFixed(0)}% margem
+                      </div>
+                   </div>
+                   <div>
+                      <h4 className="text-base font-black text-slate-800 uppercase italic">R$ {currentSummary.lucro.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h4>
+                      <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider mt-0.5 font-sans">Rentabilidade</p>
+                   </div>
+                </div>
+
+                {/* 3. A RECEBER */}
+                <div className="bg-[#fef2f2] p-4 rounded-[2rem] border border-red-100 shadow-sm flex flex-col justify-between h-28">
+                   <div className="flex items-start justify-between">
+                      <p className="text-[8px] font-black uppercase tracking-widest text-red-500 leading-none">A RECEBER</p>
+                      <div className="bg-red-100 text-red-600 font-bold text-[7px] px-1.5 py-0.5 rounded-full uppercase tracking-wider leading-none font-sans">
+                         {currentSummary.aReceberCount} pendente(s)
+                      </div>
+                   </div>
+                   <div>
+                      <h4 className="text-base font-black text-red-500 uppercase italic">R$ {currentSummary.aReceberTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h4>
+                      <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider mt-0.5 font-sans">Contas em aberto</p>
+                   </div>
+                </div>
+
+                {/* 4. TOTAL POTES */}
+                <div className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between h-28">
+                   <div className="flex items-start justify-between">
+                      <p className="text-[8px] font-black uppercase tracking-widest text-[#0ea5e9] leading-none">POTES VENDIDOS</p>
+                      <div className="bg-sky-50 text-[#0ea5e9] font-bold text-[7px] px-1.5 py-0.5 rounded-full uppercase tracking-wider leading-none">
+                         Potes
+                      </div>
+                   </div>
+                   <div>
+                      <h4 className="text-base font-black text-slate-800 uppercase italic font-sans">
+                         {clientRanking.reduce((acc, curr) => acc + (curr.totalPotes || 0), 0)} Potes
+                      </h4>
+                      <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider mt-0.5 font-sans">Volume físico</p>
+                   </div>
+                </div>
+
+                {/* 5. TICKET MÉDIO */}
+                <div className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between h-28">
+                   <div className="flex items-start justify-between">
+                      <p className="text-[8px] font-black uppercase tracking-widest text-indigo-550 leading-none">TICKET MÉDIO</p>
+                      <div className="bg-indigo-50 text-indigo-600 font-bold text-[7px] px-1.5 py-0.5 rounded-full uppercase tracking-wider leading-none">
+                         Média
+                      </div>
+                   </div>
+                   <div>
+                      <h4 className="text-base font-black text-slate-800 uppercase italic font-sans">
+                         R$ {(currentSummary.vendasTotal / (currentSummary.vendasCount || 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </h4>
+                      <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider mt-0.5 font-sans">Por pedido</p>
+                   </div>
                 </div>
              </div>
              
              <div className="grid grid-cols-1 gap-3">
-               <button onClick={() => setCurrentScreen('CLIENT_REPORT')} className="bg-white p-6 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all">
+               {/* PREMIUM EXECUTIVE DASHBOARD */}
+               <div className="col-span-1 space-y-4">
+                 {/* Dynamic Recharts Chart Section */}
+                 <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 space-y-3 text-left">
+                    <div className="flex items-center justify-between">
+                       <div>
+                          <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 leading-none">Progressão de Vendas</h4>
+                          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Evolução de faturamento e lucro</p>
+                       </div>
+                       <div className="flex items-center gap-2">
+                          <span className="flex items-center gap-1 text-[8px] font-black text-sky-500 uppercase">
+                            <span className="w-1.5 h-1.5 rounded-full bg-sky-500 inline-block"></span> Faturamento
+                          </span>
+                          <span className="flex items-center gap-1 text-[8px] font-black text-green-500 uppercase">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span> Lucro
+                          </span>
+                       </div>
+                    </div>
+
+                    <div className="w-full h-44">
+                       {dashboardChartData.length === 0 || dashboardChartData.every(item => item.total === 0) ? (
+                          <div className="w-full h-full flex flex-col items-center justify-center border border-dashed border-slate-100 rounded-2xl bg-slate-50 text-center p-4">
+                             <BarChart3 className="text-slate-300 mb-2" size={24} />
+                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Sem movimentação no período</span>
+                          </div>
+                       ) : (
+                          <ResponsiveContainer width="100%" height="100%">
+                             <AreaChart data={dashboardChartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                                <defs>
+                                   <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.2}/>
+                                      <stop offset="95%" stopColor="#38bdf8" stopOpacity={0}/>
+                                   </linearGradient>
+                                   <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                   </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <XAxis 
+                                  dataKey="label" 
+                                  stroke="#94a3b8" 
+                                  fontSize={8} 
+                                  fontWeight={900}
+                                  tickLine={false} 
+                                  axisLine={false} 
+                                />
+                                <YAxis 
+                                  stroke="#94a3b8" 
+                                  fontSize={8} 
+                                  fontWeight={900}
+                                  tickLine={false} 
+                                  axisLine={false}
+                                  tickFormatter={(val) => `R$ ${val}`} 
+                                />
+                                <Tooltip 
+                                  contentStyle={{ background: '#0f172a', border: 'none', borderRadius: '1rem', padding: '10px' }}
+                                  labelStyle={{ fontSize: '9px', fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase' }}
+                                  itemStyle={{ fontSize: '10px', fontWeight: '900', padding: '2px 0' }}
+                                  formatter={(value: any, name: string) => [
+                                    `R$ ${Number(value).toFixed(2)}`, 
+                                    name === 'total' ? 'FATURAMENTO' : 'LUCRO'
+                                  ]}
+                                />
+                                <Area type="monotone" dataKey="total" name="total" stroke="#38bdf8" strokeWidth={2.5} fillOpacity={1} fill="url(#colorTotal)" />
+                                <Area type="monotone" dataKey="profit" name="profit" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorProfit)" />
+                             </AreaChart>
+                          </ResponsiveContainer>
+                       )}
+                    </div>
+                 </div>
+
+                 {/* Payment Methods breakdown */}
+                 <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 space-y-4 text-left">
+                    <div>
+                       <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 leading-none">Meios de Pagamento</h4>
+                       <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Receita distribuída por forma de pagamento</p>
+                    </div>
+                    
+                    {paymentMethodsBreakdown.length === 0 ? (
+                       <div className="text-center p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-100">
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Sem dados de pagamento</p>
+                       </div>
+                    ) : (
+                       <div className="space-y-3 font-sans">
+                          {paymentMethodsBreakdown.map((item, idx) => (
+                             <div key={idx} className="space-y-1">
+                                <div className="flex justify-between items-center text-[9px] font-black uppercase">
+                                   <span className="text-slate-600 italic tracking-wide">{item.name}</span>
+                                   <span className="text-slate-800">R$ {item.value.toFixed(2)} ({item.percent.toFixed(0)}%)</span>
+                                </div>
+                                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                   <div 
+                                     className="h-full bg-gradient-to-r from-sky-400 to-blue-500 rounded-full transition-all duration-500"
+                                     style={{ width: `${item.percent}%` }}
+                                   />
+                                </div>
+                             </div>
+                          ))}
+                       </div>
+                    )}
+                 </div>
+
+                 {/* Three Ranking Action Buttons */}
+                 <div className="space-y-3 text-left">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[#94a3b8] ml-1 block font-sans">Explorar Rankings</span>
+                    <div className="grid grid-cols-1 gap-3">
+                      <button onClick={() => setCurrentScreen('CLIENT_REPORT')} className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between active:scale-95 transition-all">
+                         <div className="flex items-center gap-4">
+                           <div className="w-12 h-12 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-500"><Users size={24} /></div>
+                           <div className="text-left font-sans">
+                             <p className="font-black text-slate-800 uppercase text-xs italic">Ranking Clientes</p>
+                             <p className="text-[7px] font-black text-[#94a3b8] uppercase tracking-widest leading-none mt-1">Quem mais compra no período</p>
+                           </div>
+                         </div>
+                         <ChevronRight size={20} className="text-slate-300" />
+                      </button>
+
+                      <button onClick={() => setCurrentScreen('PENDING_REPORT')} className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between active:scale-95 transition-all">
+                         <div className="flex items-center gap-4">
+                           <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500"><DollarSign size={24} /></div>
+                           <div className="text-left font-sans">
+                             <p className="font-black text-slate-800 uppercase text-xs italic font-sans">Contas Pendentes</p>
+                             <p className="text-[7px] font-black text-[#94a3b8] uppercase tracking-widest leading-none mt-1 font-sans">Total a receber por cliente</p>
+                           </div>
+                         </div>
+                         <ChevronRight size={20} className="text-slate-300" />
+                      </button>
+
+                      <button onClick={() => setCurrentScreen('PRODUCT_REPORT')} className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between active:scale-95 transition-all">
+                         <div className="flex items-center gap-4">
+                           <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-500"><Package size={24} /></div>
+                           <div className="text-left font-sans">
+                             <p className="font-black text-slate-800 uppercase text-xs italic">Ranking Produtos</p>
+                             <p className="text-[7px] font-black text-[#94a3b8] uppercase tracking-widest leading-none mt-1">Produtos mais vendidos no período</p>
+                           </div>
+                         </div>
+                         <ChevronRight size={20} className="text-slate-300" />
+                      </button>
+                    </div>
+                 </div>
+               </div>
+               <button onClick={() => setCurrentScreen('CLIENT_REPORT')} className="hidden bg-white p-6 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-500"><Users size={24} /></div>
                     <div className="text-left">
@@ -1057,7 +1820,7 @@ const App: React.FC = () => {
                   <ChevronRight size={20} className="text-slate-200" />
                </button>
 
-               <button onClick={() => setCurrentScreen('PENDING_REPORT')} className="bg-white p-6 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all">
+               <button onClick={() => setCurrentScreen('PENDING_REPORT')} className="hidden bg-white p-6 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500"><DollarSign size={24} /></div>
                     <div className="text-left">
@@ -1068,7 +1831,7 @@ const App: React.FC = () => {
                   <ChevronRight size={20} className="text-slate-200" />
                </button>
 
-               <button onClick={() => setCurrentScreen('PRODUCT_REPORT')} className="bg-white p-6 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all">
+               <button onClick={() => setCurrentScreen('PRODUCT_REPORT')} className="hidden bg-white p-6 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-500"><Package size={24} /></div>
                     <div className="text-left">
@@ -1095,46 +1858,103 @@ const App: React.FC = () => {
                   onClick={() => {
                     const data = currentScreen === 'CLIENT_REPORT' ? clientRanking : currentScreen === 'PRODUCT_REPORT' ? productRanking : [...clientRanking].filter(c => c.totalPendingAmount > 0).sort((a, b) => b.totalPendingAmount - a.totalPendingAmount);
                     const title = currentScreen === 'CLIENT_REPORT' ? 'RANKING DE CLIENTES' : currentScreen === 'PRODUCT_REPORT' ? 'RANKING DE PRODUTOS' : 'RELATÓRIO DE PENDÊNCIAS';
+                    
+                    const totalAmount = data.reduce((acc, curr) => acc + (currentScreen === 'PENDING_REPORT' ? curr.totalPendingAmount : curr.totalSold), 0);
+                    const totalProfit = data.reduce((acc, curr) => acc + (curr.totalProfit || 0), 0);
+                    const totalPotes = currentScreen === 'CLIENT_REPORT' ? data.reduce((acc, curr) => acc + (curr.totalPotes || 0), 0) : 0;
+                    const totalSalesCountSum = data.reduce((acc, curr) => acc + curr.salesCount, 0);
+                    const totalItems = data.length;
+
                     const printContent = `
                       <html>
                         <head>
                           <title>${title}</title>
                           <style>
                             body { font-family: sans-serif; padding: 40px; color: #334155; }
-                            h1 { font-style: italic; font-weight: 900; text-transform: uppercase; border-bottom: 4px solid #0ea5e9; padding-bottom: 10px; }
-                            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                            th { background: #f8fafc; text-align: left; padding: 12px; font-size: 10px; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
-                            td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
-                            .rank { font-weight: 900; color: #94a3b8; }
-                            .name { font-weight: 800; text-transform: uppercase; }
-                            .value { font-weight: 700; color: #0ea5e9; }
+                            h1 { font-style: italic; font-weight: 900; text-transform: uppercase; border-bottom: 4px solid #0ea5e9; padding-bottom: 10px; margin-bottom: 5px; }
+                            .date-header { font-size: 14px; font-weight: bold; color: #64748b; margin-bottom: 20px; }
+                            .summary-box { background: #f0f9ff; border: 2px solid #bae6fd; padding: 15px; border-radius: 12px; margin-bottom: 25px; display: flex; justify-content: space-between; }
+                            .summary-item { display: flex; flex-direction: column; }
+                            .summary-label { font-size: 10px; font-weight: 900; text-transform: uppercase; color: #0369a1; }
+                            .summary-value { font-size: 20px; font-weight: 900; color: #0c4a6e; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                            th, td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
+                            th { background: #f8fafc; font-size: 10px; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; font-weight: 950; }
+                            tfoot tr { font-weight: 900; background: #f8fafc; border-top: 2px solid #cbd5e1; }
+                            tfoot td { padding: 14px 12px; font-size: 12px; color: #1e293b; }
+
+                            /* Alignments */
+                            .col-rank { text-align: left; width: 40px; font-weight: 900; color: #94a3b8; }
+                            .col-name { text-align: left; font-weight: 800; text-transform: uppercase; }
+                            .col-potes { text-align: right; width: 100px; }
+                            .col-vendas { text-align: right; width: 100px; }
+                            .col-total { text-align: right; width: 150px; font-weight: 700; color: #0ea5e9; }
                             .pending { color: #f43f5e; }
-                            .footer { margin-top: 40px; font-size: 10px; color: #94a3b8; text-transform: uppercase; }
+                            .footer { margin-top: 40px; font-size: 10px; color: #94a3b8; text-transform: uppercase; border-top: 1px solid #e2e8f0; padding-top: 10px; }
                           </style>
                         </head>
                         <body>
-                          <h1>${title} - ${reportTab}</h1>
-                          <p>${reportTab === 'DIARIO' ? currentDate.toLocaleDateString('pt-BR') : reportTab === 'MENSAL' ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}` : currentDate.getFullYear()}</p>
+                          <h1>${title}</h1>
+                          <div class="date-header">
+                            ${reportTab === 'DIARIO' ? currentDate.toLocaleDateString('pt-BR') : 
+                              reportTab === 'MENSAL' ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}` : 
+                              reportTab === 'ANUAL' ? currentDate.getFullYear() : "Todo o Período"}
+                          </div>
+
+                          <div class="summary-box">
+                            <div class="summary-item">
+                              <span class="summary-label">Total Geral</span>
+                              <span class="summary-value">R$ ${totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div class="summary-item" style="text-align: center;">
+                              <span class="summary-label">Lucro Total</span>
+                              <span class="summary-value" style="color: #059669;">R$ ${totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div class="summary-item" style="text-align: right;">
+                              <span class="summary-label">${currentScreen === 'CLIENT_REPORT' ? 'Clientes' : currentScreen === 'PRODUCT_REPORT' ? 'Itens' : 'Pendentes'}</span>
+                              <span class="summary-value">${totalItems}</span>
+                            </div>
+                          </div>
+
                           <table>
                             <thead>
                               <tr>
-                                <th>#</th>
-                                <th>Nome</th>
-                                ${currentScreen === 'PENDING_REPORT' ? '<th>Dívida Total</th>' : '<th>Vendas</th><th>Total</th>'}
+                                <th class="col-rank">#</th>
+                                <th class="col-name">Nome</th>
+                                ${currentScreen === 'PENDING_REPORT' 
+                                  ? '<th class="col-total">Dívida Total</th>' 
+                                  : currentScreen === 'CLIENT_REPORT'
+                                  ? '<th class="col-potes">Potes</th><th class="col-vendas">Vendas</th><th class="col-total">Total</th>'
+                                  : '<th class="col-vendas">Vendas</th><th class="col-total">Total</th>'
+                                }
                               </tr>
                             </thead>
                             <tbody>
                               ${data.map((item, i) => `
                                 <tr>
-                                  <td class="rank">${i + 1}</td>
-                                  <td class="name">${item.name}</td>
+                                  <td class="col-rank">${i + 1}</td>
+                                  <td class="col-name">${item.name}</td>
                                   ${currentScreen === 'PENDING_REPORT' 
-                                    ? `<td class="value pending">R$ ${item.totalPendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>`
-                                    : `<td>${item.salesCount}</td><td class="value">R$ ${item.totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>`
+                                    ? `<td class="col-total pending">R$ ${item.totalPendingAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>`
+                                    : currentScreen === 'CLIENT_REPORT'
+                                    ? `<td class="col-potes font-bold" style="font-weight: 700;">${item.totalPotes || 0}</td><td class="col-vendas">${item.salesCount}</td><td class="col-total">R$ ${item.totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>`
+                                    : `<td class="col-vendas">${item.salesCount}</td><td class="col-total">R$ ${item.totalSold.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>`
                                   }
                                 </tr>
                               `).join('')}
                             </tbody>
+                            <tfoot>
+                              <tr>
+                                <td class="col-rank">-</td>
+                                <td class="col-name">Total / Soma</td>
+                                ${currentScreen === 'PENDING_REPORT' 
+                                  ? `<td class="col-total pending" style="font-weight: 900;">R$ ${totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>`
+                                  : currentScreen === 'CLIENT_REPORT'
+                                  ? `<td class="col-potes" style="font-weight: 900; color: #0369a1;">${totalPotes}</td><td class="col-vendas" style="font-weight: 900; color: #475569;">${totalSalesCountSum}</td><td class="col-total" style="font-weight: 900;">R$ ${totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>`
+                                  : `<td class="col-vendas" style="font-weight: 900; color: #475569;">${totalSalesCountSum}</td><td class="col-total" style="font-weight: 900;">R$ ${totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>`
+                                }
+                              </tr>
+                            </tfoot>
                           </table>
                           <div class="footer">Gerado em ${new Date().toLocaleString('pt-BR')} via OmniVenda</div>
                         </body>
@@ -1170,6 +1990,45 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-3 pb-24">
+            {(currentScreen === 'CLIENT_REPORT' || currentScreen === 'PRODUCT_REPORT') && (
+               <div className="bg-blue-600 p-5 rounded-[2rem] shadow-lg border-b-4 border-blue-800 text-white flex flex-col gap-4 mb-4 animate-in fade-in slide-in-from-top-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-widest opacity-70 leading-none mb-1 text-blue-100">Total no Ranking</p>
+                      <h3 className="text-xl font-black italic">
+                          R$ {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking)
+                            .reduce((acc, curr) => acc + curr.totalSold, 0)
+                            .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </h3>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[9px] font-black uppercase tracking-widest opacity-70 leading-none mb-1 text-blue-100">
+                          {currentScreen === 'CLIENT_REPORT' ? 'Clientes' : 'Itens'}
+                      </p>
+                      <h3 className="text-xl font-black italic">
+                          {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking).length}
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="bg-white/10 rounded-2xl p-3 flex items-center justify-between border border-white/10">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-100">Lucro Total do Ranking:</p>
+                    <p className="text-sm font-black italic">
+                      R$ {(currentScreen === 'CLIENT_REPORT' ? clientRanking : productRanking)
+                        .reduce((acc, curr) => acc + (curr.totalProfit || 0), 0)
+                        .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                  {currentScreen === 'CLIENT_REPORT' && (
+                    <div className="bg-white/10 rounded-2xl p-3 flex items-center justify-between border border-white/10">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-blue-100">Total de Potes:</p>
+                      <p className="text-sm font-black italic">
+                        {clientRanking.reduce((acc, curr) => acc + (curr.totalPotes || 0), 0)} Potes
+                      </p>
+                    </div>
+                  )}
+               </div>
+            )}
+
             {(currentScreen === 'CLIENT_REPORT' 
                ? clientRanking 
                : currentScreen === 'PRODUCT_REPORT' 
@@ -1178,34 +2037,71 @@ const App: React.FC = () => {
             ).length === 0 ? (
               <EmptyState message="Sem dados no período" icon={BarChart3} />
             ) : (
-              (currentScreen === 'CLIENT_REPORT' 
-                ? clientRanking 
-                : currentScreen === 'PRODUCT_REPORT' 
-                ? productRanking 
-                : [...clientRanking].filter(c => c.totalPendingAmount > 0).sort((a, b) => b.totalPendingAmount - a.totalPendingAmount)
-              ).map((item, index) => (
-                <div key={index} className="bg-white p-4 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black italic text-xs">
-                      {index + 1}
+              <>
+                {(currentScreen === 'CLIENT_REPORT' 
+                  ? clientRanking 
+                  : currentScreen === 'PRODUCT_REPORT' 
+                  ? productRanking 
+                  : [...clientRanking].filter(c => c.totalPendingAmount > 0).sort((a, b) => b.totalPendingAmount - a.totalPendingAmount)
+                ).map((item, index) => (
+                  <div key={index} className="bg-white p-4 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black italic text-xs">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <h4 className="font-black text-slate-800 text-xs uppercase italic truncate max-w-[150px]">{item.name}</h4>
+                        <p className="text-[8px] font-black text-slate-400 uppercase">
+                          {item.salesCount} Vendas{currentScreen === 'CLIENT_REPORT' ? ` • ${item.totalPotes || 0} Potes` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {currentScreen === 'PENDING_REPORT' ? (
+                         <p className="text-sm font-black text-red-500">R$ {item.totalPendingAmount.toFixed(2)}</p>
+                      ) : (
+                        <>
+                          <p className="text-sm font-black text-blue-600">R$ {item.totalSold.toFixed(2)}</p>
+                          <p className="text-[7px] font-black text-green-500 uppercase tracking-widest">Lucro: R$ {item.totalProfit.toFixed(2)}</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Bottom Sum Box */}
+                <div className="bg-slate-900 text-white p-5 rounded-[2rem] shadow-lg border-b-4 border-slate-950 flex flex-col gap-3 mt-4 animate-in fade-in slide-in-from-bottom-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total / Soma das Colunas</span>
+                    <span className="text-[8px] font-black bg-white/10 px-2.5 py-1 rounded-full uppercase tracking-wider text-slate-300">Resumo</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center border-t border-white/5 pt-3">
+                    <div>
+                      <p className="text-[8px] font-black uppercase text-slate-400">Total Potes</p>
+                      <p className="text-sm font-black text-[#38bdf8] mt-0.5">
+                        {currentScreen === 'CLIENT_REPORT' 
+                          ? clientRanking.reduce((acc, curr) => acc + (curr.totalPotes || 0), 0)
+                          : '-'}
+                      </p>
                     </div>
                     <div>
-                      <h4 className="font-black text-slate-800 text-xs uppercase italic truncate max-w-[150px]">{item.name}</h4>
-                      <p className="text-[8px] font-black text-slate-400 uppercase">{item.salesCount} Vendas</p>
+                      <p className="text-[8px] font-black uppercase text-slate-400">Total Vendas</p>
+                      <p className="text-sm font-black text-slate-200 mt-0.5">
+                        {(currentScreen === 'CLIENT_REPORT' ? clientRanking : currentScreen === 'PRODUCT_REPORT' ? productRanking : clientRanking)
+                          .reduce((acc, curr) => acc + curr.salesCount, 0)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[8px] font-black uppercase text-slate-400">Valor Total</p>
+                      <p className="text-sm font-black text-emerald-400 mt-0.5">
+                        R$ {(currentScreen === 'CLIENT_REPORT' ? clientRanking : currentScreen === 'PRODUCT_REPORT' ? productRanking : clientRanking)
+                          .reduce((acc, curr) => acc + (currentScreen === 'PENDING_REPORT' ? curr.totalPendingAmount : curr.totalSold), 0)
+                          .toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    {currentScreen === 'PENDING_REPORT' ? (
-                       <p className="text-sm font-black text-red-500">R$ {item.totalPendingAmount.toFixed(2)}</p>
-                    ) : (
-                      <>
-                        <p className="text-sm font-black text-blue-600">R$ {item.totalSold.toFixed(2)}</p>
-                        <p className="text-[7px] font-black text-green-500 uppercase tracking-widest">Lucro: R$ {item.totalProfit.toFixed(2)}</p>
-                      </>
-                    )}
-                  </div>
                 </div>
-              ))
+              </>
             )}
           </div>
         </div>
