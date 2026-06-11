@@ -216,6 +216,7 @@ const App: React.FC = () => {
     "MENSAL",
   );
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   const [productModal, setProductModal] = useState<{
     type: ModalType;
@@ -2180,6 +2181,473 @@ Obrigado pela preferência!`;
     setCurrentDate(next);
   };
 
+  const dashboardPrintData = useMemo(() => {
+    const formattedPeriodStr = (() => {
+      const d = currentDate;
+      if (reportTab === "DIARIO") {
+        return d.toLocaleDateString("pt-BR", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+      } else if (reportTab === "MENSAL") {
+        return d
+          .toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
+          .toUpperCase();
+      } else {
+        return `ANO DE ${d.getFullYear()}`;
+      }
+    })();
+
+    const currentMarginVal =
+      flavorAndIntelligenceData.currTotalRevenue > 0
+        ? (flavorAndIntelligenceData.currTotalProfit /
+            flavorAndIntelligenceData.currTotalRevenue) *
+          100
+        : 0;
+    const prevMarginVal =
+      flavorAndIntelligenceData.prevTotalRevenue > 0
+        ? (flavorAndIntelligenceData.prevTotalProfit /
+            flavorAndIntelligenceData.prevTotalRevenue) *
+          100
+        : 0;
+    const marginChangeVal = currentMarginVal - prevMarginVal;
+
+    return {
+      formattedPeriodStr,
+      currentMarginVal,
+      prevMarginVal,
+      marginChangeVal,
+    };
+  }, [currentDate, reportTab, flavorAndIntelligenceData]);
+
+  const handlePrintDashboard = () => {
+    setIsPrintModalOpen(true);
+  };
+
+  const handleCopyReportText = () => {
+    const { formattedPeriodStr, currentMarginVal, marginChangeVal } = dashboardPrintData;
+    const { currTotalRevenue, currTotalProfit, currClientCount, revChangePercent, profitChangePercent, clientChangePercent, insights, flavorList } = flavorAndIntelligenceData;
+
+    let text = `📊 RESUMO EXECUTIVO - ${businessProfile.companyName || "OmniVenda"}\n`;
+    text += `📅 Período: ${formattedPeriodStr}\n`;
+    text += `-------------------------------------------\n\n`;
+    text += `💰 Faturamento Geral: R$ ${currTotalRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} (${revChangePercent >= 0 ? "+" : ""}${revChangePercent.toFixed(0)}% vs anterior)\n`;
+    text += `📈 Lucro Estimado: R$ ${currTotalProfit.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} (${profitChangePercent >= 0 ? "+" : ""}${profitChangePercent.toFixed(0)}% vs anterior)\n`;
+    text += `🎯 Margem Geral: ${currentMarginVal.toFixed(1)}% (${marginChangeVal >= 0 ? "+" : ""}${marginChangeVal.toFixed(0)}% vs anterior)\n`;
+    text += `👥 Clientes Compradores: ${currClientCount} (${clientChangePercent >= 0 ? "+" : ""}${clientChangePercent.toFixed(0)}% vs anterior)\n\n`;
+
+    if (flavorList.length > 0) {
+      text += `🥥 DESEMPENHO POR SABOR:\n`;
+      flavorList.forEach(item => {
+        const percentOfTotal = (item.currRevenue / (currTotalRevenue || 1)) * 100;
+        text += `- ${item.flavor}: ${item.currQuantity} unid. | Fat: R$ ${item.currRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} | Lucro: R$ ${item.currProfit.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} | Margem: ${item.margin.toFixed(0)}% | Share: ${percentOfTotal.toFixed(1)}%\n`;
+      });
+      text += `\n`;
+    }
+
+    if (insights.length > 0) {
+      text += `💡 PLANO DE AÇÃO PARA AUMENTO DE VENDAS:\n`;
+      insights.forEach(insight => {
+        text += `• ${insight.title.toUpperCase()}\n`;
+        text += `  Diagnóstico: ${insight.desc}\n`;
+        text += `  👉 Ação Recomendada: ${insight.action}\n\n`;
+      });
+    }
+
+    text += `Relatório gerado em ${new Date().toLocaleString("pt-BR")} pelo Painel OmniVenda.`;
+
+    try {
+      navigator.clipboard.writeText(text);
+      triggerNotify("Relatório copiado!");
+    } catch (err) {
+      console.error("Falha ao copiar", err);
+      triggerNotify("Erro ao copiar para clipboard.");
+    }
+  };
+
+  const handleTriggerSystemPrint = () => {
+    const { formattedPeriodStr, currentMarginVal, marginChangeVal } = dashboardPrintData;
+    const {
+      currTotalRevenue,
+      currTotalProfit,
+      currClientCount,
+      revChangePercent,
+      profitChangePercent,
+      clientChangePercent,
+      flavorList,
+      insights,
+    } = flavorAndIntelligenceData;
+
+    const companyName = businessProfile.companyName || "OmniVenda";
+    const timestampStr = new Date().toLocaleString("pt-BR");
+
+    const flavorRowsHtml = flavorList
+      .map((item) => {
+        const percentOfTotal = (item.currRevenue / (currTotalRevenue || 1)) * 100;
+        const trendBadge =
+          item.revChange > 0
+            ? `<span style="background-color:#dcfce7;color:#15803d;padding:2px 6px;border-radius:4px;font-weight:bold;font-size:10px;">+${item.revChange.toFixed(0)}% ▲</span>`
+            : item.revChange < 0
+              ? `<span style="background-color:#fee2e2;color:#b91c1c;padding:2px 6px;border-radius:4px;font-weight:bold;font-size:10px;">${item.revChange.toFixed(0)}% ▼</span>`
+              : `<span style="background-color:#f1f5f9;color:#475569;padding:2px 6px;border-radius:4px;font-weight:bold;font-size:10px;">0% •</span>`;
+        return `
+          <tr>
+            <td style="padding:10px;border-bottom:1px solid #e2e8f0;font-weight:bold;color:#0f172a;font-family:sans-serif;">${item.flavor}</td>
+            <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;font-family:sans-serif;">${item.currQuantity} ud</td>
+            <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;font-family:sans-serif;font-weight:600;">R$ ${item.currRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+            <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;color:#10b981;font-weight:bold;font-family:sans-serif;">R$ ${item.currProfit.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+            <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;font-family:sans-serif;font-weight:500;">${item.margin.toFixed(0)}%</td>
+            <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:right;color:#64748b;font-family:sans-serif;font-weight:600;">${percentOfTotal.toFixed(1)}%</td>
+            <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center;font-family:sans-serif;">${trendBadge}</td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    const flavorBarsHtml = flavorList
+      .map((item) => {
+        const isPositive = item.revChange > 0;
+        const isNegative = item.revChange < 0;
+        const changeAbs = Math.min(Math.abs(item.revChange), 100);
+        const percentOfTotal = (item.currRevenue / (currTotalRevenue || 1)) * 100;
+        const changeSign = item.revChange > 0 ? "+" : "";
+        const badgeColor = isPositive ? "#16a34a" : isNegative ? "#dc2626" : "#64748b";
+        const trendSymbol = isPositive ? "▲" : isNegative ? "▼" : "•";
+
+        return `
+          <div style="margin-bottom: 15px; font-family: sans-serif;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-bottom: 4px; font-weight: bold; color: #1e293b;">
+              <span style="font-weight: 800;">${item.flavor}</span>
+              <span>
+                <span style="color: #64748b; font-weight: normal; margin-right: 8px;">${item.currQuantity} uds (${percentOfTotal.toFixed(1)}% share)</span>
+                <span style="color: ${badgeColor}; font-weight: 900;">${trendSymbol} ${changeSign}${item.revChange.toFixed(0)}%</span>
+              </span>
+            </div>
+            <div style="position: relative; height: 10px; width: 100%; background: #f1f5f9; border-radius: 9999px; overflow: hidden; display: flex;">
+              ${isNegative ? `
+                <div style="width: 50%; display: flex; justify-content: flex-end; background-color: #f1f5f9;">
+                  <div style="width: ${changeAbs}%; background-color: #ef4444; height: 100%; border-radius: 9999px 0 0 9999px;"></div>
+                </div>
+              ` : `
+                <div style="width: 50%; background-color: #f1f5f9;"></div>
+              `}
+              
+              <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background-color: #64748b; z-index: 10;"></div>
+              
+              ${isPositive ? `
+                <div style="width: 50%; display: flex; justify-content: flex-start; background-color: #f1f5f9;">
+                  <div style="width: ${changeAbs}%; background-color: #22c55e; height: 100%; border-radius: 0 9999px 9999px 0;"></div>
+                </div>
+              ` : `
+                <div style="width: 50%; background-color: #f1f5f9;"></div>
+              `}
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+
+    const insightsHtml = insights
+      .map((id, idx) => {
+        const isPositive = id.type === "positive";
+        const isNegative = id.type === "negative";
+        const colorStyle = isPositive
+          ? "border-left:4px solid #10b981;background-color:#f0fdf4;"
+          : isNegative
+            ? "border-left:4px solid #ef4444;background-color:#fef2f2;"
+            : "border-left:4px solid #3b82f6;background-color:#eff6ff;";
+        return `
+          <div style="padding:16px;border-radius:12px;margin-bottom:16px;border:1px solid #e2e8f0;${colorStyle}page-break-inside:avoid;text-align:left;">
+            <h4 style="margin:0;font-size:14px;font-weight:bold;color:#1e293b;text-transform:uppercase;font-family:sans-serif;">${idx + 1}. ${id.title}</h4>
+            <p style="margin:8px 0 12px 0;font-size:12px;color:#475569;line-height:1.5;font-family:sans-serif;font-weight:500;">${id.desc}</p>
+            <div style="background-color:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px;color:#78350f;text-align:left;">
+              <span style="font-size:10px;font-weight:bold;text-transform:uppercase;color:#b45309;display:block;margin-bottom:4px;font-family:sans-serif;">👉 Ação de Vendas Recomendada:</span>
+              <span style="font-size:12.5px;font-weight:bold;line-height:1.4;font-family:sans-serif;">${id.action}</span>
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+
+    const reportHtml = `
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8">
+        <title>Resumo Executivo - ${companyName}</title>
+        <style>
+          * { box-sizing: border-box; }
+          body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            color: #1e293b;
+            line-height: 1.5;
+            margin: 0;
+            padding: 30px;
+            background-color: #ffffff;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .header {
+            border-bottom: 3px solid #0f172a;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+          }
+          .header-title h1 {
+            margin: 0;
+            font-size: 26px;
+            font-weight: 850;
+            letter-spacing: -0.025em;
+            text-transform: uppercase;
+            color: #0d1117;
+          }
+          .header-title p {
+            margin: 4px 0 0 0;
+            font-size: 11px;
+            font-weight: bold;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+          }
+          .header-meta {
+            text-align: right;
+          }
+          .header-meta h2 {
+            margin: 0;
+            font-size: 11px;
+            color: #d97706;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 900;
+          }
+          .header-meta .period {
+            margin: 4px 0 0 0;
+            font-size: 15px;
+            font-weight: 900;
+            color: #0f172a;
+          }
+          .header-meta .timestamp {
+            margin: 2px 0 0 0;
+            font-size: 9px;
+            color: #94a3b8;
+            font-weight: bold;
+          }
+          .metrics-grid {
+            display: grid;
+            grid-template-cols: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 30px;
+          }
+          .metric-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            background-color: #f8fafc;
+            text-align: left;
+          }
+          .metric-card.fat { border-left: 4px solid #0ea5e9; }
+          .metric-card.luc { border-left: 4px solid #10b981; }
+          .metric-card.marg { border-left: 4px solid #8b5cf6; }
+          .metric-card.cli { border-left: 4px solid #f59e0b; }
+          .metric-label {
+            font-size: 9px;
+            font-weight: bold;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+          }
+          .metric-val {
+            font-size: 17px;
+            font-weight: 900;
+            color: #0f172a;
+            margin: 6px 0 4px 0;
+          }
+          .metric-change {
+            font-size: 10px;
+            font-weight: bold;
+          }
+          .text-pos { color: #16a34a; }
+          .text-neg { color: #dc2626; }
+          .section-title {
+            font-size: 13px;
+            font-weight: 950;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid #cbd5e1;
+            padding-bottom: 6px;
+            margin: 30px 0 15px 0;
+            text-align: left;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-top: 10px;
+          }
+          th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 0.05em;
+            padding: 10px;
+            border-bottom: 2px solid #cbd5e1;
+            text-align: left;
+          }
+          @media print {
+            body {
+              padding: 0;
+            }
+            .no-print {
+              display: none !important;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div style="text-align: center; margin-bottom: 25px; padding: 15px; background: #fffbeb; border: 1px dashed #fde68a; border-radius: 12px;" class="no-print">
+          <button onclick="window.print()" style="background-color: #d97706; color: white; border: none; padding: 12px 28px; font-weight: 900; border-radius: 10px; cursor: pointer; font-size: 13px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.15); font-family: sans-serif; text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.2s;">
+            🖨️ CONFIRMAR IMPRESSÃO / SALVAR EM PDF
+          </button>
+          <div style="font-size: 11px; color: #78350f; margin-top: 10px; font-weight: bold; font-family: sans-serif; line-height: 1.4;">
+            Caso a caixa de diálogo de impressão do navegador não tenha aberto automaticamente, clique no botão acima.<br>
+            Você pode salvar o arquivo como um documento <b>PDF</b> ou mandá-lo diretamente para a sua impressora física.
+          </div>
+        </div>
+
+        <div class="header">
+          <div class="header-title">
+            <h1>${companyName}</h1>
+            <p>Relatório Comercial & Inteligência de Vendas</p>
+          </div>
+          <div class="header-meta">
+            <h2>RESUMO COMERCIAL EXECUTIVO</h2>
+            <div class="period">${formattedPeriodStr}</div>
+            <div class="timestamp">Gerado em: ${timestampStr}</div>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card fat">
+            <div class="metric-label">Faturamento Geral</div>
+            <div class="metric-val">R$ ${currTotalRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+            <div class="metric-change ${revChangePercent >= 0 ? "text-pos" : "text-neg"}">
+              ${revChangePercent >= 0 ? "▲ +" : "▼ "}${revChangePercent.toFixed(0)}% vs anterior
+            </div>
+          </div>
+          <div class="metric-card luc">
+            <div class="metric-label">Lucro Estimado</div>
+            <div class="metric-val">R$ ${currTotalProfit.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
+            <div class="metric-change ${profitChangePercent >= 0 ? "text-pos" : "text-neg"}">
+              ${profitChangePercent >= 0 ? "▲ +" : "▼ "}${profitChangePercent.toFixed(0)}% vs anterior
+            </div>
+          </div>
+          <div class="metric-card marg">
+            <div class="metric-label">Margem Média</div>
+            <div class="metric-val">${currentMarginVal.toFixed(1)}%</div>
+            <div class="metric-change ${marginChangeVal >= 0 ? "text-pos" : "text-neg"}">
+              ${marginChangeVal >= 0 ? "▲ +" : "▼ "}${marginChangeVal.toFixed(1)}% vs anterior
+            </div>
+          </div>
+          <div class="metric-card cli">
+            <div class="metric-label">Clientes Compradores</div>
+            <div class="metric-val">${currClientCount}</div>
+            <div class="metric-change ${clientChangePercent >= 0 ? "text-pos" : "text-neg"}">
+              ${clientChangePercent >= 0 ? "▲ +" : "▼ "}${clientChangePercent.toFixed(0)}% vs anterior
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">📊 Gráfico de Oscilação de Vendas por Sabor (% Crescimento / Queda)</div>
+        ${
+          flavorList.length === 0
+            ? '<p style="text-align: center; color: #94a3b8; font-weight: bold; font-family: sans-serif;">Nenhum gráfico disponível.</p>'
+            : `
+              <div style="border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; background-color: #f8fafc; margin-bottom: 25px; page-break-inside: avoid; text-align: left;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 10px; font-weight: 955; color: #64748b; text-transform: uppercase; font-family: sans-serif;">
+                  <span>📉 Queda nas Vendas (vs anterior)</span>
+                  <span style="text-align: center; width: 2px; background: #94a3b8; height: 12px;"></span>
+                  <span>📈 Crescimento nas Vendas (vs anterior)</span>
+                </div>
+                ${flavorBarsHtml}
+                <div style="margin-top: 10px; font-size: 9px; text-align: center; color: #64748b; font-weight: bold; font-family: sans-serif; text-transform: uppercase;">
+                  * O gráfico mostra a variação percentual de vendas em relação ao período anterior (Eixo central = 0% de oscilação).
+                </div>
+              </div>
+            `
+        }
+
+        <div class="section-title">Desempenho por Sabor (Volume & Faturamento)</div>
+        ${
+          flavorList.length === 0
+            ? '<p style="text-align: center; color: #94a3b8; font-weight: bold; margin-top: 20px; font-family: sans-serif;">Nenhuma movimentação registrada.</p>'
+            : `
+              <table>
+                <thead>
+                  <tr>
+                    <th>Sabor de Cocada</th>
+                    <th style="text-align: right;">Volume</th>
+                    <th style="text-align: right;">Faturamento</th>
+                    <th style="text-align: right;">Est. Lucro</th>
+                    <th style="text-align: right;">Margem %</th>
+                    <th style="text-align: right;">Share %</th>
+                    <th style="text-align: center;">Oscilação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${flavorRowsHtml}
+                </tbody>
+              </table>
+            `
+        }
+
+        <div class="section-title" style="margin-top: 40px;">Planos Inteligentes de Vendas</div>
+        ${
+          insights.length === 0
+            ? '<p style="text-align: center; color: #94a3b8; font-weight: bold; font-family: sans-serif;">Nenhuma ação cadastrada para este ciclo.</p>'
+            : `<div>${insightsHtml}</div>`
+        }
+
+        <div style="margin-top: 60px; border-top: 1px solid #cbd5e1; padding-top: 18px; text-align: center; font-size: 10px; color: #64748b; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; font-family: sans-serif;">
+          Relatório de Performance Comercial • Gerado pelo Sistema OmniVenda
+        </div>
+
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+            }, 350);
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    try {
+      const printWindow = window.open("", "_blank");
+      if (printWindow) {
+        printWindow.document.open();
+        printWindow.document.write(reportHtml);
+        printWindow.document.close();
+        triggerNotify("Visualizador aberto em nova janela!");
+      } else {
+        // Fallback inside same window
+        triggerNotify("Popups bloqueados! Usando impressão local...");
+        window.print();
+      }
+    } catch (err) {
+      console.error(err);
+      triggerNotify("Usando impressão interna do sistema...");
+      window.print();
+    }
+  };
+
+
   const handleUpdateSubscription = async (
     bizId: string,
     status: string,
@@ -2416,9 +2884,10 @@ Obrigado pela preferência!`;
   }
 
   return (
-    <div
-      className={`min-h-screen bg-[#fffbeb] flex flex-col ${currentScreen === "HOME" ? "h-screen overflow-hidden" : "pb-32"}`}
-    >
+    <>
+      <div
+        className={`min-h-screen bg-[#fffbeb] flex flex-col print:hidden ${currentScreen === "HOME" ? "h-screen overflow-hidden" : "pb-32"}`}
+      >
       {saveNotify.show && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-green-500 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-in slide-in-from-top-10 font-black uppercase italic text-[10px] border-2 border-white">
           <CheckCircle2 size={16} /> {saveNotify.msg}
@@ -3375,11 +3844,40 @@ Obrigado pela preferência!`;
               <h3 className="text-lg font-black uppercase italic tracking-tighter text-center flex-1">
                 Dashboard Executivo
               </h3>
-              <div className="w-10 h-10" />
+              <button
+                onClick={handlePrintDashboard}
+                className="bg-white/10 p-2.5 rounded-2xl active:scale-90 hover:bg-white/20 transition-all text-white flex items-center justify-center"
+                title="Imprimir Relatório"
+              >
+                <Printer size={20} />
+              </button>
             </div>
           </div>
 
           <div className="p-4 space-y-4">
+            {/* Banner de Impressão Rápida / Resumo Executivo */}
+            <div
+              onClick={handlePrintDashboard}
+              className="bg-gradient-to-r from-amber-500 to-amber-600 p-4 rounded-[2rem] shadow-sm flex items-center justify-between text-white active:scale-[0.98] transition-all cursor-pointer hover:shadow-md border border-amber-400"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-white shrink-0">
+                  <Printer size={20} className="stroke-[2.5]" />
+                </div>
+                <div className="text-left">
+                  <h4 className="text-[11px] font-black uppercase tracking-wider leading-none">
+                    Imprimir Resumo Executivo
+                  </h4>
+                  <p className="text-[8.5px] font-bold text-amber-100 uppercase tracking-widest mt-1">
+                    Gerar PDF com indicadores e plano de ações de vendas
+                  </p>
+                </div>
+              </div>
+              <div className="bg-white text-amber-700 text-[9px] font-black uppercase tracking-wider px-3.5 py-2 rounded-xl shrink-0 active:scale-95 transition-all shadow-sm">
+                Imprimir
+              </div>
+            </div>
+
             {/* 1. Progressão de Vendas (AreaChart) */}
             <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 space-y-3 text-left">
               <div className="flex items-center justify-between">
@@ -4503,6 +5001,565 @@ Obrigado pela preferência!`;
         © {new Date().getFullYear()} JABASSO
       </footer>
     </div>
+
+      {/* 2. MODAL DE PRÉ-VISUALIZAÇÃO & IMPRESSÃO NA TELA */}
+      {isPrintModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/85 backdrop-blur-md z-[200] flex flex-col justify-between p-4 md:p-6 print:hidden overflow-hidden">
+          <div className="bg-slate-50 rounded-[2.5rem] shadow-2xl max-w-4xl w-full mx-auto flex flex-col flex-1 border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* Header do Painel de Impressão */}
+            <div className="bg-slate-900 text-white px-6 py-5 flex items-center justify-between border-b border-slate-800">
+              <div className="text-left">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+                  <h3 className="text-sm font-black uppercase italic tracking-wider">
+                    Impressão de Resumo Executivo
+                  </h3>
+                </div>
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                  Design limpo, de fácil leitura e focado em aumento de faturamento
+                </p>
+              </div>
+              <button
+                onClick={() => setIsPrintModalOpen(false)}
+                className="bg-white/15 hover:bg-white/20 p-2 rounded-2xl active:scale-90 transition-all font-sans"
+                title="Fechar"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Alerta de Dica de Impressão */}
+            <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-3 text-left">
+              <p className="text-[9px] font-black text-amber-750 uppercase tracking-wider leading-relaxed">
+                👉 DICA DE REDIRECIONAMENTO: Se o diálogo do sistema de impressão do navegador não abrir de imediato, clique no botão de "Nova Aba" no canto superior direito do OmniVenda para abrir diretamente fora do simulador e realizar a impressão!
+              </p>
+            </div>
+
+            {/* Folha A4 de Pré-visualização Scrollable */}
+            <div className="p-4 md:p-8 overflow-y-auto flex-1 bg-slate-100 flex justify-center">
+              <div className="bg-white shadow-lg border border-slate-200 p-8 md:p-12 text-left rounded-3xl max-w-3xl w-full font-sans text-slate-800 space-y-8">
+                {/* Cabeçalho do Relatório */}
+                <div className="border-b-2 border-slate-100 pb-5 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                  <div>
+                    <h1 className="font-sans font-black text-2xl uppercase tracking-tight text-slate-900 leading-none">
+                      {businessProfile.companyName || "OmniVenda"}
+                    </h1>
+                    <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mt-1">
+                      Relatório de Gestão Inteligente de Vendas
+                    </p>
+                  </div>
+                  <div className="sm:text-right">
+                    <p className="text-[9px] font-black text-amber-600 uppercase tracking-wider">
+                      Resumo Comercial Executivo
+                    </p>
+                    <p className="text-sm font-black text-slate-900 mt-1">
+                      {dashboardPrintData.formattedPeriodStr}
+                    </p>
+                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                      Gerado em: {new Date().toLocaleString("pt-BR")}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Grid de Indicadores Chave */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* Faturamento */}
+                  <div className="border-l-4 border-sky-500 bg-slate-50/50 p-4 rounded-xl space-y-1">
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Faturamento Geral</span>
+                    <span className="text-base font-black text-slate-900 block leading-none">
+                      R$ {flavorAndIntelligenceData.currTotalRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </span>
+                    <span className={`text-[9.5px] font-black block ${flavorAndIntelligenceData.revChangePercent >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      {flavorAndIntelligenceData.revChangePercent >= 0 ? "▲" : "▼"} {flavorAndIntelligenceData.revChangePercent >= 0 ? "+" : ""}{flavorAndIntelligenceData.revChangePercent.toFixed(0)}%
+                    </span>
+                  </div>
+
+                  {/* Lucro */}
+                  <div className="border-l-4 border-emerald-500 bg-slate-50/50 p-4 rounded-xl space-y-1">
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Lucro Estimado</span>
+                    <span className="text-base font-black text-slate-900 block leading-none">
+                      R$ {flavorAndIntelligenceData.currTotalProfit.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </span>
+                    <span className={`text-[9.5px] font-black block ${flavorAndIntelligenceData.profitChangePercent >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      {flavorAndIntelligenceData.profitChangePercent >= 0 ? "▲" : "▼"} {flavorAndIntelligenceData.profitChangePercent >= 0 ? "+" : ""}{flavorAndIntelligenceData.profitChangePercent.toFixed(0)}%
+                    </span>
+                  </div>
+
+                  {/* Margem */}
+                  <div className="border-l-4 border-purple-500 bg-slate-50/50 p-4 rounded-xl space-y-1">
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Margem Geral</span>
+                    <span className="text-base font-black text-slate-900 block leading-none">
+                      {dashboardPrintData.currentMarginVal.toFixed(1)}%
+                    </span>
+                    <span className={`text-[9.5px] font-black block ${dashboardPrintData.marginChangeVal >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      {dashboardPrintData.marginChangeVal >= 0 ? "▲" : "▼"} {dashboardPrintData.marginChangeVal >= 0 ? "+" : ""}{dashboardPrintData.marginChangeVal.toFixed(1)}%
+                    </span>
+                  </div>
+
+                  {/* Clientes */}
+                  <div className="border-l-4 border-amber-500 bg-slate-50/50 p-4 rounded-xl space-y-1">
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Atendimentos</span>
+                    <span className="text-base font-black text-slate-900 block leading-none">
+                      {flavorAndIntelligenceData.currClientCount}
+                    </span>
+                    <span className={`text-[9.5px] font-black block ${flavorAndIntelligenceData.clientChangePercent >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      {flavorAndIntelligenceData.clientChangePercent >= 0 ? "▲" : "▼"} {flavorAndIntelligenceData.clientChangePercent >= 0 ? "+" : ""}{flavorAndIntelligenceData.clientChangePercent.toFixed(0)}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Gráfico de Oscilação de Sabores */}
+                <div>
+                  <h3 className="text-[10px] font-black text-slate-950 uppercase tracking-wider border-b-2 border-slate-100 pb-2 mb-4 flex items-center gap-1.5">
+                    <span>📊</span> Gráfico de Oscilação &amp; Desempenho de Sabores (% Crescimento)
+                  </h3>
+                  {flavorAndIntelligenceData.flavorList.length === 0 ? (
+                    <p className="text-center py-6 text-xs text-slate-400 font-bold uppercase tracking-widest">
+                      Nenhum dado disponível para exibir oscilações.
+                    </p>
+                  ) : (
+                    <div className="border border-slate-200 rounded-2xl p-5 bg-slate-50/50 space-y-4 shadow-sm mb-6">
+                      <div className="flex justify-between text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">
+                        <span>📉 Desaceleração de Vendas</span>
+                        <span className="w-0.5 bg-slate-200 h-2.5" />
+                        <span>📈 Aceleração de Vendas</span>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        {flavorAndIntelligenceData.flavorList.map((item, idx) => {
+                          const isPositive = item.revChange > 0;
+                          const isNegative = item.revChange < 0;
+                          const changeAbs = Math.min(Math.abs(item.revChange), 100);
+                          const percentOfTotal = (item.currRevenue / (flavorAndIntelligenceData.currTotalRevenue || 1)) * 100;
+                          
+                          return (
+                            <div key={idx} className="space-y-1.5">
+                              <div className="flex justify-between items-center text-xs font-bold">
+                                <span className="font-extrabold text-slate-800">{item.flavor}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[9px] text-slate-450 font-semibold">{item.currQuantity} uds (${percentOfTotal.toFixed(1)}% share)</span>
+                                  <span className={`text-[10px] font-extrabold flex items-center gap-0.5 ${isPositive ? "text-emerald-600" : isNegative ? "text-rose-600" : "text-slate-400"}`}>
+                                    {isPositive ? "▲" : isNegative ? "▼" : "•"} {isPositive ? "+" : ""}{item.revChange.toFixed(0)}%
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              <div className="relative h-3 w-full bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
+                                {isNegative ? (
+                                  <div className="w-1/2 flex justify-end bg-slate-100">
+                                    <div 
+                                      className="bg-gradient-to-l from-rose-450 to-rose-600 h-full rounded-l-full transition-all duration-550 ease-out"
+                                      style={{ width: `${changeAbs}%` }}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="w-1/2 bg-slate-100" />
+                                )}
+                                
+                                <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-slate-300 z-10" />
+                                
+                                {isPositive ? (
+                                  <div className="w-1/2 flex justify-start bg-slate-100">
+                                    <div 
+                                      className="bg-gradient-to-r from-emerald-450 to-emerald-600 h-full rounded-r-full transition-all duration-550 ease-out" 
+                                      style={{ width: `${changeAbs}%` }}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="w-1/2 bg-slate-100" />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      <p className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider text-center pt-2">
+                        * O gráfico representa a oscilação percentual das vendas de cada sabor comparada ao período anterior (eixo central = 0%).
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Desempenho dos Sabores */}
+                <div>
+                  <h3 className="text-[10px] font-black text-slate-950 uppercase tracking-wider border-b-2 border-slate-100 pb-2 mb-4">
+                    Desempenho por Sabor (Oscilações &amp; Faturamento)
+                  </h3>
+                  {flavorAndIntelligenceData.flavorList.length === 0 ? (
+                    <p className="text-center py-6 text-xs text-slate-400 font-bold uppercase tracking-widest">
+                      Nenhuma cocada cadastrada / vendida.
+                    </p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50/50 border-b border-slate-100 text-slate-500 font-bold">
+                            <th className="py-2.5 px-3 font-semibold text-[9px] uppercase tracking-wider">Sabor</th>
+                            <th className="py-2.5 px-3 font-semibold text-[9px] uppercase tracking-wider text-right">Volume</th>
+                            <th className="py-2.5 px-3 font-semibold text-[9px] uppercase tracking-wider text-right">Faturamento</th>
+                            <th className="py-2.5 px-3 font-semibold text-[9px] uppercase tracking-wider text-right">Est. Lucro</th>
+                            <th className="py-2.5 px-3 font-semibold text-[9px] uppercase tracking-wider text-right">Margem %</th>
+                            <th className="py-2.5 px-3 font-semibold text-[9px] uppercase tracking-wider text-right">Share %</th>
+                            <th className="py-2.5 px-3 font-semibold text-[9px] uppercase tracking-wider text-center">Filtro Período</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-slate-700">
+                          {flavorAndIntelligenceData.flavorList.map((item, idx) => {
+                            const percentOfTotal = (item.currRevenue / (flavorAndIntelligenceData.currTotalRevenue || 1)) * 100;
+                            return (
+                              <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="py-2 px-3 font-black text-slate-900">{item.flavor}</td>
+                                <td className="py-2 px-3 text-right font-medium">{item.currQuantity} ud</td>
+                                <td className="py-2 px-3 text-right font-semibold">R$ {item.currRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                                <td className="py-2 px-3 text-right text-emerald-600 font-bold">R$ {item.currProfit.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                                <td className="py-2 px-3 text-right font-medium">{item.margin.toFixed(0)}%</td>
+                                <td className="py-2 px-3 text-right font-bold text-slate-400">{percentOfTotal.toFixed(1)}%</td>
+                                <td className="py-2 px-3 text-center">
+                                  {item.revChange > 0 ? (
+                                    <span className="inline-block px-2 py-0.5 rounded text-[8px] font-black bg-green-50 text-green-700">+{item.revChange.toFixed(0)}% ▲</span>
+                                  ) : item.revChange < 0 ? (
+                                    <span className="inline-block px-2 py-0.5 rounded text-[8px] font-black bg-red-50 text-red-700">{item.revChange.toFixed(0)}% ▼</span>
+                                  ) : (
+                                    <span className="inline-block px-2 py-0.5 rounded text-[8px] font-black bg-slate-50 text-slate-500">0% •</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Plano de Ação Personalizado para Aumento das Vendas */}
+                <div className="space-y-4">
+                  <h3 className="text-[10px] font-black text-slate-950 uppercase tracking-wider border-b-2 border-slate-100 pb-2">
+                    Ações Inteligentes Necessárias para Alavancar Vendas
+                  </h3>
+                  
+                  {flavorAndIntelligenceData.insights.length === 0 ? (
+                    <div className="p-6 bg-slate-50 border border-slate-150 border-dashed rounded-2xl text-center">
+                      <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                        Nenhuma ação comercial cadastrada ou recomendada neste ciclo.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {flavorAndIntelligenceData.insights.map((id, index) => {
+                        const isPositive = id.type === "positive";
+                        const isNegative = id.type === "negative";
+                        return (
+                          <div
+                            key={index}
+                            className={`p-5 rounded-2xl border text-slate-700 flex flex-col text-left ${
+                              isPositive
+                                ? "bg-emerald-50/35 border-emerald-100 border-l-4 border-l-emerald-500"
+                                : isNegative
+                                  ? "bg-rose-50/35 border-rose-100 border-l-4 border-l-rose-500"
+                                  : "bg-blue-50/35 border-blue-100 border-l-4 border-l-blue-500"
+                            }`}
+                          >
+                            <h4 className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wide leading-none">
+                              {id.title}
+                            </h4>
+                            <p className="text-xs text-slate-600 font-medium leading-relaxed mt-1.5 pl-1">
+                              {id.desc}
+                            </p>
+                            
+                            {/* Bloco de Ação Comercial - Destacado e Prático */}
+                            <div className="bg-amber-50 border border-amber-100 rounded-xl p-3.5 mt-3 text-amber-900">
+                              <span className="text-[8px] font-black uppercase tracking-wider text-amber-700 block mb-0.5">
+                                👉 Plano Dinâmico de Vendas (Implementar Imediatamente)
+                              </span>
+                              <span className="text-[11px] font-black leading-tight block">
+                                {id.action}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer do PDF */}
+                <div className="border-t border-slate-100 pt-5 text-center">
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                    Relatório Emitido pelo Painel de Inteligência Comercial OmniVenda. Todos os direitos reservados.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Rodapé de Controles e Exportação */}
+            <div className="bg-white border-t border-slate-200 px-6 py-4 flex flex-col sm:flex-row items-center gap-3 justify-end shrink-0">
+              <button
+                onClick={() => setIsPrintModalOpen(false)}
+                className="w-full sm:w-auto px-5 py-3 border border-slate-100 hover:bg-slate-50 rounded-2xl text-slate-500 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all text-center"
+              >
+                Voltar ao Dashboard
+              </button>
+              
+              <button
+                onClick={handleCopyReportText}
+                className="w-full sm:w-auto px-5 py-3 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 text-indigo-700 rounded-2xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <ClipboardList size={14} /> Copiar Resumo (WhatsApp)
+              </button>
+
+              <button
+                onClick={handleTriggerSystemPrint}
+                className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 border-b-2 border-amber-700"
+              >
+                <Printer size={14} /> Imprimir / Salvar PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. RESUMO EXECUTIVO EXCLUSIVO PARA IMPRESSORA/PDF (Aparece somente ao apertar Ctrl+P ou clicar em Imprimir) */}
+      <div className="hidden print:block bg-white text-slate-900 p-12 font-sans w-full max-w-4xl mx-auto space-y-10 text-left">
+        {/* Cabeçalho do Relatório Impresso */}
+        <div className="border-b-4 border-slate-900 pb-5 flex justify-between items-end">
+          <div>
+            <h1 className="font-sans font-black text-3xl uppercase tracking-tight text-slate-950 leading-none">
+              {businessProfile.companyName || "OmniVenda"}
+            </h1>
+            <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mt-1.5">
+              PAINEL DE GESTÃO E INTELIGÊNCIA DE VENDAS
+            </p>
+          </div>
+          <div className="text-right">
+            <h2 className="text-[10px] font-black text-amber-600 uppercase tracking-widest">
+              RESUMO COMERCIAL EXECUTIVO
+            </h2>
+            <p className="text-base font-black text-slate-950 mt-1">
+              {dashboardPrintData.formattedPeriodStr}
+            </p>
+            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+              Gerado em: {new Date().toLocaleString("pt-BR")}
+            </p>
+          </div>
+        </div>
+
+        {/* Grid de Indicadores no Papel */}
+        <div className="grid grid-cols-4 gap-6">
+          {/* Faturamento */}
+          <div className="border-l-4 border-slate-950 bg-slate-50 p-4 rounded-xl space-y-1">
+            <span className="text-[8px] font-black text-slate-500 uppercase tracking-wider block">Faturamento Geral</span>
+            <span className="text-lg font-black text-slate-950 block leading-none">
+              R$ {flavorAndIntelligenceData.currTotalRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            </span>
+            <span className="text-[9.5px] font-extrabold text-slate-950 block">
+              {flavorAndIntelligenceData.revChangePercent >= 0 ? "▲" : "▼"} {flavorAndIntelligenceData.revChangePercent >= 0 ? "+" : ""}{flavorAndIntelligenceData.revChangePercent.toFixed(0)}% vs período ant.
+            </span>
+          </div>
+
+          {/* Lucro */}
+          <div className="border-l-4 border-slate-950 bg-slate-50 p-4 rounded-xl space-y-1">
+            <span className="text-[8px] font-black text-slate-500 uppercase tracking-wider block">Lucro Estimado</span>
+            <span className="text-lg font-black text-slate-950 block leading-none">
+              R$ {flavorAndIntelligenceData.currTotalProfit.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            </span>
+            <span className="text-[9.5px] font-extrabold text-slate-950 block">
+              {flavorAndIntelligenceData.profitChangePercent >= 0 ? "▲" : "▼"} {flavorAndIntelligenceData.profitChangePercent >= 0 ? "+" : ""}{flavorAndIntelligenceData.profitChangePercent.toFixed(0)}% vs período ant.
+            </span>
+          </div>
+
+          {/* Margem */}
+          <div className="border-l-4 border-slate-950 bg-slate-50 p-4 rounded-xl space-y-1">
+            <span className="text-[8px] font-black text-slate-500 uppercase tracking-wider block">Margem Média</span>
+            <span className="text-lg font-black text-slate-950 block leading-none">
+              {dashboardPrintData.currentMarginVal.toFixed(1)}%
+            </span>
+            <span className="text-[9.5px] font-extrabold text-slate-950 block">
+              {dashboardPrintData.marginChangeVal >= 0 ? "▲" : "▼"} {dashboardPrintData.marginChangeVal >= 0 ? "+" : ""}{dashboardPrintData.marginChangeVal.toFixed(1)}% vs período ant.
+            </span>
+          </div>
+
+          {/* Clientes */}
+          <div className="border-l-4 border-slate-950 bg-slate-50 p-4 rounded-xl space-y-1">
+            <span className="text-[8px] font-black text-slate-500 uppercase tracking-wider block">Atendimentos</span>
+            <span className="text-lg font-black text-slate-950 block leading-none">
+              {flavorAndIntelligenceData.currClientCount}
+            </span>
+            <span className="text-[9.5px] font-extrabold text-slate-950 block">
+              {flavorAndIntelligenceData.clientChangePercent >= 0 ? "▲" : "▼"} {flavorAndIntelligenceData.clientChangePercent >= 0 ? "+" : ""}{flavorAndIntelligenceData.clientChangePercent.toFixed(0)}% vs período ant.
+            </span>
+          </div>
+        </div>
+
+        {/* Gráfico de Oscilação de Sabores para Impressão Nativa */}
+        <div className="page-break-inside-avoid">
+          <h3 className="text-xs font-black text-slate-955 uppercase tracking-wider border-b-2 border-slate-900 pb-2 mb-4 flex items-center gap-1.5">
+            <span>📊</span> Gráfico de Oscilação &amp; Desempenho de Sabores (% Crescimento)
+          </h3>
+          {flavorAndIntelligenceData.flavorList.length === 0 ? (
+            <p className="text-slate-400 font-bold uppercase text-xs py-4 text-center">Nenhum dado disponível.</p>
+          ) : (
+            <div className="border border-slate-350 rounded-xl p-5 bg-slate-50 space-y-4 mb-6">
+              <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                <span>📉 Desaceleração de Vendas</span>
+                <span className="w-0.5 bg-slate-400 h-2.5" />
+                <span>📈 Aceleração de Vendas</span>
+              </div>
+              
+              <div className="space-y-4">
+                {flavorAndIntelligenceData.flavorList.map((item, idx) => {
+                  const isPositive = item.revChange > 0;
+                  const isNegative = item.revChange < 0;
+                  const changeAbs = Math.min(Math.abs(item.revChange), 100);
+                  const percentOfTotal = (item.currRevenue / (flavorAndIntelligenceData.currTotalRevenue || 1)) * 100;
+                  
+                  return (
+                    <div key={idx} className="space-y-1.5">
+                      <div className="flex justify-between items-center text-xs font-bold text-slate-800">
+                        <span className="font-extrabold">{item.flavor}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] text-slate-500 font-semibold">{item.currQuantity} uds (${percentOfTotal.toFixed(1)}% share)</span>
+                          <span className={`text-[10px] font-black flex items-center gap-0.5 ${isPositive ? "text-emerald-700" : isNegative ? "text-rose-700" : "text-slate-500"}`}>
+                            {isPositive ? "▲" : isNegative ? "▼" : "•"} {isPositive ? "+" : ""}{item.revChange.toFixed(0)}%
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="relative h-2.5 w-full bg-slate-200 rounded-full overflow-hidden flex">
+                        {isNegative ? (
+                          <div className="w-1/2 flex justify-end bg-slate-200">
+                            <div 
+                              className="bg-red-500 h-full rounded-l-full transition-all duration-500 ease-out"
+                              style={{ width: `${changeAbs}%` }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-1/2 bg-slate-200" />
+                        )}
+                        
+                        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-slate-400 z-10" />
+                        
+                        {isPositive ? (
+                          <div className="w-1/2 flex justify-start bg-slate-200">
+                            <div 
+                              className="bg-green-600 h-full rounded-r-full transition-all duration-500 ease-out" 
+                              style={{ width: `${changeAbs}%` }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-1/2 bg-slate-200" />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              <p className="text-[8px] font-bold text-slate-500 uppercase tracking-wider text-center pt-2">
+                * O gráfico representa a oscilação percentual das vendas de cada sabor comparada ao período anterior (eixo central = 0%).
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Performance dos Sabores */}
+        <div>
+          <h3 className="text-xs font-black text-slate-950 uppercase tracking-wider border-b-2 border-slate-900 pb-2 mb-4">
+            Desempenho por Sabor (Oscilações &amp; Faturamento)
+          </h3>
+          {flavorAndIntelligenceData.flavorList.length === 0 ? (
+            <p className="text-slate-400 font-bold uppercase text-xs py-4 text-center">Nenhum produto registrado no período.</p>
+          ) : (
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-300 text-slate-750 font-bold">
+                  <th className="py-2 px-3 font-bold text-[9px] uppercase tracking-wider">Sabor de Cocada</th>
+                  <th className="py-2 px-3 font-bold text-[9px] uppercase tracking-wider text-right">Volume</th>
+                  <th className="py-2 px-3 font-bold text-[9px] uppercase tracking-wider text-right">Faturamento</th>
+                  <th className="py-2 px-3 font-bold text-[9px] uppercase tracking-wider text-right">Est. Lucro</th>
+                  <th className="py-2 px-3 font-bold text-[9px] uppercase tracking-wider text-right">Margem %</th>
+                  <th className="py-2 px-3 font-bold text-[9px] uppercase tracking-wider text-right">Share %</th>
+                  <th className="py-2 px-3 font-bold text-[9px] uppercase tracking-wider text-center">Filtro Período</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-150 text-slate-800">
+                {flavorAndIntelligenceData.flavorList.map((item, idx) => {
+                  const percentOfTotal = (item.currRevenue / (flavorAndIntelligenceData.currTotalRevenue || 1)) * 100;
+                  return (
+                    <tr key={idx}>
+                      <td className="py-2 px-3 font-black text-slate-955">{item.flavor}</td>
+                      <td className="py-2 px-3 text-right font-semibold">{item.currQuantity} unidades</td>
+                      <td className="py-2 px-3 text-right font-extrabold">R$ {item.currRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                      <td className="py-2 px-3 text-right font-extrabold text-slate-950">R$ {item.currProfit.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                      <td className="py-2 px-3 text-right font-black">{item.margin.toFixed(0)}%</td>
+                      <td className="py-2 px-3 text-right font-bold text-slate-500">{percentOfTotal.toFixed(1)}%</td>
+                      <td className="py-2 px-3 text-center">
+                        {item.revChange > 0 ? (
+                          <span className="font-extrabold text-slate-950">+{item.revChange.toFixed(0)}% ▲</span>
+                        ) : item.revChange < 0 ? (
+                          <span className="font-extrabold text-slate-950">{item.revChange.toFixed(0)}% ▼</span>
+                        ) : (
+                          <span className="font-bold text-slate-500">0% •</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Plano de Ação Personalizado para Aumento das Vendas */}
+        <div className="space-y-4">
+          <h3 className="text-xs font-black text-slate-950 uppercase tracking-wider border-b-2 border-slate-900 pb-2">
+            Ações Inteligentes Necessárias para Alavancar Vendas
+          </h3>
+          
+          {flavorAndIntelligenceData.insights.length === 0 ? (
+            <p className="text-slate-400 font-bold uppercase text-xs py-4 text-center">Nenhuma ação necessária registrada.</p>
+          ) : (
+            <div className="space-y-4">
+              {flavorAndIntelligenceData.insights.map((id, index) => {
+                const isPositive = id.type === "positive";
+                const isNegative = id.type === "negative";
+                return (
+                  <div
+                    key={index}
+                    className="p-4 rounded-xl border border-slate-300 text-slate-800 flex flex-col text-left page-break-inside-avoid"
+                  >
+                    <h4 className="text-[11px] font-black text-slate-950 uppercase tracking-widest leading-none">
+                      {index + 1}. {id.title}
+                    </h4>
+                    <p className="text-xs text-slate-700 font-medium leading-relaxed mt-2 pl-1">
+                      <strong>Diagnóstico:</strong> {id.desc}
+                    </p>
+                    
+                    {/* Bloco de Ação Impresso */}
+                    <div className="bg-slate-50 border border-slate-400 rounded-lg p-3 mt-2">
+                      <span className="text-[8px] font-black uppercase tracking-wider text-slate-600 block">
+                        Ação Comercial Recomendada para Alavancar Vendas:
+                      </span>
+                      <span className="text-[11px] font-extrabold leading-tight block mt-0.5 text-slate-900">
+                        {id.action}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Rodapé impresso */}
+        <div className="border-t border-slate-300 pt-5 text-center mt-12">
+          <p className="text-[8px] font-black text-slate-404 uppercase tracking-widest">
+            Relatório de Performance Comercial • Sistema de Gestão OmniVenda
+          </p>
+        </div>
+      </div>
+    </>
   );
 };
 
