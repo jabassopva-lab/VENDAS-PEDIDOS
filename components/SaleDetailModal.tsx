@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { X, Printer, Package, Building2, Calendar, Clock, CreditCard, User, Palmtree, Sun, ShoppingBag, MessageSquare, Share2, Edit3, Trash2 } from 'lucide-react';
+import { X, Printer, Package, Building2, Calendar, Clock, CreditCard, User, Palmtree, Sun, ShoppingBag, MessageSquare, Share2, Edit3, Trash2, ChevronLeft, ChevronRight, Sliders } from 'lucide-react';
 import { Sale, BusinessProfile, Client } from '../types';
 import { convertDriveLink } from '../App.tsx';
 
@@ -20,6 +19,14 @@ const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sale
   const clientData = clients.find(c => c.id === sale.clientId);
 
   const [showConfirmDelete, setShowConfirmDelete] = React.useState(false);
+  const [viewMode, setViewMode] = React.useState<'VIEW' | 'ACTIONS'>('VIEW');
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setViewMode('VIEW');
+      setShowConfirmDelete(false);
+    }
+  }, [isOpen, sale]);
 
   const handleDelete = () => {
     console.log("SaleDetailModal - Clique no botão excluir - solicitando confirmação");
@@ -434,121 +441,236 @@ Obrigado pela preferência!`;
           </div>
         )}
         
-        {/* Header Minimalist */}
-        <div className="bg-white px-6 py-5 flex justify-between items-center border-b border-slate-100">
-           <div className="flex items-center gap-3">
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                 <ShoppingBag className="text-slate-400" size={20} />
-              </div>
-              <div>
-                 <h2 className="text-xs font-black uppercase tracking-widest text-slate-800">Visualizar Pedido</h2>
-                 <p className="text-[10px] font-bold text-slate-400 uppercase">Pedido: {sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : '...'}</p>
-                 <p className="text-[7px] font-medium text-slate-300 uppercase">Ref: {sale.id}</p>
-              </div>
-           </div>
-           <div className="flex gap-2">
-              <button onClick={handleDelete} className="bg-red-50 p-2 rounded-xl hover:bg-red-100 transition-colors text-red-600" title="Excluir Pedido">
-                <Trash2 size={20} />
-              </button>
-              <button onClick={() => onEdit(sale)} className="bg-blue-50 p-2 rounded-xl hover:bg-blue-100 transition-colors text-blue-600" title="Editar Pedido">
-                <Edit3 size={20} />
-              </button>
-              <button onClick={onClose} className="bg-slate-50 p-2 rounded-xl hover:bg-slate-100 transition-colors text-slate-400">
-                <X size={20} />
-              </button>
-           </div>
-        </div>
-
-        <div className="overflow-y-auto p-6 space-y-6 bg-white">
-          
-          {/* Company Section */}
-          <div className="flex flex-col items-center text-center pb-2">
-             <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center overflow-hidden mb-3 border border-slate-100">
-                {(profile.logoUrl) ? (
-                  <img src={currentLogo} className="w-full h-full object-cover" alt="Logo" />
-                ) : (
-                  <Sun size={24} className="text-yellow-400" />
-                )}
-             </div>
-             <h3 className="text-base font-black text-slate-800 uppercase italic tracking-tighter leading-none">{profile.companyName || 'OMNIVENDA'}</h3>
-             <p className="text-[8px] text-slate-300 font-black uppercase tracking-widest mt-1">{profile.document}</p>
-          </div>
-
-          {/* Client Details Minimalist */}
-          <div className="p-5 rounded-2xl border border-slate-100 space-y-4">
-             <div className="flex items-center gap-2">
-                <User size={14} className="text-slate-300" />
-                <span className="font-black text-slate-800 text-xs uppercase italic">{sale.clientName}</span>
-             </div>
-             <div className="grid grid-cols-2 gap-4">
-                <div>
-                   <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Meio de Pagamento</p>
-                   <p className="text-[10px] font-bold text-slate-600">{sale.paymentMethod}</p>
+        {/* Header Conditional */}
+        {viewMode === 'VIEW' ? (
+          <div className="bg-white px-6 py-5 flex justify-between items-center border-b border-slate-100">
+             <div className="flex items-center gap-3">
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                   <ShoppingBag className="text-slate-400" size={20} />
                 </div>
                 <div>
-                   <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Condições</p>
-                   <p className="text-[10px] font-bold text-slate-600">{sale.paymentTerms}</p>
+                   <h2 className="text-xs font-black uppercase tracking-widest text-slate-800">Visualizar Pedido</h2>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase">Pedido: {sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : '...'}</p>
+                   <p className="text-[7px] font-medium text-slate-300 uppercase">Ref: {sale.id}</p>
                 </div>
              </div>
+             <div className="flex gap-2">
+                <button 
+                  onClick={() => setViewMode('ACTIONS')} 
+                  className="bg-blue-50 hover:bg-blue-100 p-2 rounded-xl text-blue-600 transition-colors flex items-center gap-1.5 px-3" 
+                  title="Ações do Pedido"
+                >
+                  <Sliders size={16} />
+                  <span className="text-[9px] font-black uppercase tracking-widest">Opções</span>
+                </button>
+                <button onClick={onClose} className="bg-slate-50 p-2 rounded-xl hover:bg-slate-100 transition-colors text-slate-400">
+                   <X size={20} />
+                </button>
+             </div>
           </div>
+        ) : (
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white px-6 py-5 flex justify-between items-center shadow-md">
+             <div className="flex items-center gap-3">
+                <div className="bg-white/10 p-2.5 rounded-xl">
+                   <Sliders className="text-white" size={20} />
+                </div>
+                <div>
+                   <h2 className="text-xs font-black uppercase tracking-widest text-white">Gerenciar Pedido</h2>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase">Pedido: {sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : '...'}</p>
+                </div>
+             </div>
+             <div className="flex gap-2">
+                <button 
+                  onClick={() => setViewMode('VIEW')} 
+                  className="bg-white/10 hover:bg-white/20 p-2 rounded-xl text-white transition-colors flex items-center gap-1.5 px-3" 
+                  title="Voltar para o Pedido"
+                >
+                  <ChevronLeft size={16} />
+                  <span className="text-[9px] font-black uppercase tracking-widest">Ver Pedido</span>
+                </button>
+                <button onClick={onClose} className="bg-white/10 hover:bg-white/20 p-2 rounded-xl text-white/80 transition-colors">
+                   <X size={20} />
+                </button>
+             </div>
+          </div>
+        )}
 
-          {/* Items List */}
-          <div className="space-y-2">
-            <h3 className="text-[9px] font-black text-slate-200 uppercase tracking-widest ml-1">Itens Adicionados</h3>
-            <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden">
-              {sale.items.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center p-3.5 border-b last:border-0 border-slate-50">
-                  <div className="flex items-center gap-3">
-                      <div className="text-[10px] font-black text-slate-300 w-6">
-                         {item.quantity}x
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-slate-700 text-xs uppercase italic">{item.name}</span>
-                        {item.discount > 0 && (
-                          <span className="text-[8px] font-black text-red-500 uppercase">Desc. R$ {item.discount.toFixed(2)} un.</span>
-                        )}
-                      </div>
+        {viewMode === 'VIEW' ? (
+          <div className="overflow-y-auto p-6 space-y-6 bg-white flex-1">
+            
+            {/* Company Section */}
+            <div className="flex flex-col items-center text-center pb-2">
+               <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center overflow-hidden mb-3 border border-slate-100">
+                  {(profile.logoUrl) ? (
+                    <img src={currentLogo} className="w-full h-full object-cover" alt="Logo" referrerPolicy="no-referrer" />
+                  ) : (
+                    <Sun size={24} className="text-yellow-400" />
+                  )}
+               </div>
+               <h3 className="text-base font-black text-slate-800 uppercase italic tracking-tighter leading-none">{profile.companyName || 'OMNIVENDA'}</h3>
+               <p className="text-[8px] text-slate-300 font-black uppercase tracking-widest mt-1">{profile.document}</p>
+            </div>
+
+            {/* Client Details Minimalist */}
+            <div className="p-5 rounded-2xl border border-slate-100 space-y-4">
+               <div className="flex items-center gap-2">
+                  <User size={14} className="text-slate-300" />
+                  <span className="font-black text-slate-800 text-xs uppercase italic">{sale.clientName}</span>
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                  <div>
+                     <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Meio de Pagamento</p>
+                     <p className="text-[10px] font-bold text-slate-600">{sale.paymentMethod}</p>
                   </div>
-                  <span className="font-black text-slate-900 text-xs">R$ {((item.price - (item.discount || 0)) * item.quantity).toFixed(2)}</span>
+                  <div>
+                     <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Condições</p>
+                     <p className="text-[10px] font-bold text-slate-600">{sale.paymentTerms}</p>
+                  </div>
+               </div>
+            </div>
+
+            {/* Items List */}
+            <div className="space-y-2">
+              <h3 className="text-[9px] font-black text-slate-200 uppercase tracking-widest ml-1">Itens Adicionados</h3>
+              <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden">
+                {sale.items.map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center p-3.5 border-b last:border-0 border-slate-50">
+                    <div className="flex items-center gap-3">
+                        <div className="text-[10px] font-black text-slate-300 w-6">
+                           {item.quantity}x
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-slate-700 text-xs uppercase italic">{item.name}</span>
+                          {item.discount > 0 && (
+                            <span className="text-[8px] font-black text-red-500 uppercase">Desc. R$ {item.discount.toFixed(2)} un.</span>
+                          )}
+                        </div>
+                    </div>
+                    <span className="font-black text-slate-900 text-xs">R$ {((item.price - (item.discount || 0)) * item.quantity).toFixed(2)}</span>
+                  </div>
+                ))}
+                
+                {/* Total Box Minimalist */}
+                <div className="p-5 flex justify-between items-center border-t border-slate-100">
+                   <div>
+                      <span className="text-[8px] font-black uppercase text-slate-300 tracking-widest">Valor do Pedido</span>
+                      {sale.installments && sale.installments > 1 && (
+                        <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">{sale.installments}x de R$ {(sale.total/sale.installments).toFixed(2)}</p>
+                      )}
+                   </div>
+                   <div className="text-right">
+                      <span className="text-2xl font-black text-slate-800 italic leading-none">R$ {sale.total.toFixed(2)}</span>
+                   </div>
                 </div>
-              ))}
-              
-              {/* Total Box Minimalist */}
-              <div className="p-5 flex justify-between items-center border-t border-slate-100">
-                 <div>
-                    <span className="text-[8px] font-black uppercase text-slate-300 tracking-widest">Valor do Pedido</span>
-                    {sale.installments && sale.installments > 1 && (
-                      <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">{sale.installments}x de R$ {(sale.total/sale.installments).toFixed(2)}</p>
-                    )}
-                 </div>
-                 <div className="text-right">
-                    <span className="text-2xl font-black text-slate-800 italic leading-none">R$ {sale.total.toFixed(2)}</span>
-                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="text-center">
-             <p className="text-[8px] text-slate-200 font-bold uppercase tracking-widest">Registrado em {sale.date} às {sale.time}</p>
+            <div className="text-center">
+               <p className="text-[8px] text-slate-200 font-bold uppercase tracking-widest">Registrado em {sale.date} às {sale.time}</p>
+            </div>
           </div>
+        ) : (
+          <div className="overflow-y-auto p-6 space-y-4 bg-slate-50 flex-1">
+            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Opções disponíveis para o pedido:</p>
+            
+            <div className="grid grid-cols-1 gap-3">
+              {/* Imprimir */}
+              <button 
+                onClick={handlePrint}
+                className="bg-white p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between active:scale-95 transition-all group hover:border-sky-300"
+              >
+                 <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-500 group-hover:scale-110 transition-transform">
+                     <Printer size={24} />
+                   </div>
+                   <div className="text-left font-sans">
+                     <p className="font-black text-slate-800 uppercase text-xs italic leading-tight">Imprimir Comprovante</p>
+                     <p className="text-[8px] font-bold text-[#94a3b8] uppercase tracking-widest mt-1">Imprimir pedido ou gerar PDF de via</p>
+                   </div>
+                 </div>
+                 <ChevronRight size={20} className="text-slate-300" />
+              </button>
 
-        </div>
+              {/* WhatsApp */}
+              <button 
+                onClick={handleShareWhatsApp}
+                className="bg-white p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between active:scale-95 transition-all group hover:border-emerald-300"
+              >
+                 <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
+                     <MessageSquare size={24} />
+                   </div>
+                   <div className="text-left font-sans">
+                     <p className="font-black text-slate-800 uppercase text-xs italic leading-tight">Enviar por WhatsApp</p>
+                     <p className="text-[8px] font-bold text-[#94a3b8] uppercase tracking-widest mt-1">Compartilhar recibo formatado com o cliente</p>
+                   </div>
+                 </div>
+                 <ChevronRight size={20} className="text-slate-300" />
+              </button>
+
+              {/* Editar */}
+              <button 
+                onClick={() => {
+                  onEdit(sale);
+                  onClose();
+                }}
+                className="bg-white p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between active:scale-95 transition-all group hover:border-blue-300"
+              >
+                 <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+                     <Edit3 size={24} />
+                   </div>
+                   <div className="text-left font-sans">
+                     <p className="font-black text-slate-800 uppercase text-xs italic leading-tight">Editar Pedido</p>
+                     <p className="text-[8px] font-bold text-[#94a3b8] uppercase tracking-widest mt-1">Modificar itens, preços, cliente ou pagamento</p>
+                   </div>
+                 </div>
+                 <ChevronRight size={20} className="text-slate-300" />
+              </button>
+
+              {/* Excluir */}
+              <button 
+                onClick={handleDelete}
+                className="bg-white p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between active:scale-95 transition-all group hover:border-red-300 hover:bg-red-50/10"
+              >
+                 <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform">
+                     <Trash2 size={24} />
+                   </div>
+                   <div className="text-left font-sans">
+                     <p className="font-black text-red-600 uppercase text-xs italic leading-tight">Excluir Registro</p>
+                     <p className="text-[8px] font-bold text-red-400 uppercase tracking-widest mt-1">Apagar pedido permanentemente e devolver estoque</p>
+                   </div>
+                 </div>
+                 <ChevronRight size={20} className="text-slate-300" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Footer Minimalist Buttons */}
-        <div className="p-6 bg-white border-t border-slate-50 flex gap-3">
-          <button 
-            onClick={handleShareWhatsApp}
-            className="flex-1 bg-white border border-emerald-100 text-emerald-600 py-4 rounded-2xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest hover:bg-emerald-50 active:scale-95 transition-all"
-          >
-            <MessageSquare size={16} /> WhatsApp
-          </button>
-          <button 
-            onClick={handlePrint}
-            className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest hover:bg-slate-200 active:scale-95 transition-all"
-          >
-            <Printer size={16} /> Imprimir
-          </button>
-        </div>
+        {viewMode === 'VIEW' ? (
+          <div className="p-6 bg-white border-t border-slate-50">
+            <button 
+              onClick={() => setViewMode('ACTIONS')}
+              className="w-full bg-slate-900 text-white py-4 rounded-2xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest hover:bg-slate-800 active:scale-95 transition-all text-center group font-sans"
+            >
+              <Sliders size={16} className="group-hover:rotate-12 transition-transform" />
+              <span>Gerenciar / Opções do Pedido</span>
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        ) : (
+          <div className="p-6 bg-slate-50 border-t border-slate-100">
+            <button 
+              onClick={() => setViewMode('VIEW')}
+              className="w-full bg-white border border-slate-200 text-slate-600 py-4 rounded-2xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest hover:bg-slate-100 active:scale-95 transition-all text-center font-sans"
+            >
+              <ChevronLeft size={16} />
+              <span>Voltar para o Pedido</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

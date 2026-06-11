@@ -52,7 +52,9 @@ import {
   LogIn,
   X,
   DollarSign,
-  LayoutDashboard
+  LayoutDashboard,
+  Edit3,
+  MessageSquare
 } from 'lucide-react';
 import {
   AreaChart,
@@ -855,6 +857,377 @@ const App: React.FC = () => {
     }
   };
 
+  const handlePrintSaleDirect = (sale: Sale) => {
+    const profile = businessProfile;
+    const clientData = clients.find(c => c.id === sale.clientId);
+    const logoUrl = convertDriveLink(profile.logoUrl || '');
+    const companyName = profile.companyName || 'OMNIVENDA';
+    const logoHtml = logoUrl ? `<img src="${logoUrl}" style="max-height: 80px; max-width: 180px; margin-bottom: 8px; object-fit: contain;">` : '';
+    const clientPhone = clientData?.phone || '';
+    const clientAddress = clientData?.address || '';
+
+    const printContent = `
+      <html>
+        <head>
+          <title>Pedido ${sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : sale.id}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+          <style>
+            @page { size: A4; margin: 12mm; }
+            body { 
+              font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+              color: #1e293b; 
+              margin: 0; 
+              padding: 0; 
+              background: #f8fafc;
+              -webkit-font-smoothing: antialiased;
+            }
+            .ticket {
+              max-width: 750px;
+              margin: 20px auto;
+              background: #ffffff;
+              border: 1px solid #e2e8f0;
+              border-radius: 16px;
+              box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+              overflow: hidden;
+              position: relative;
+            }
+            .brand-bar {
+              height: 6px;
+              background: linear-gradient(90deg, #0ea5e9, #0284c7);
+            }
+            .header { 
+              padding: 30px 40px; 
+              border-bottom: 1px solid #f1f5f9;
+              background: #fafafb;
+            }
+            .header-main {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              gap: 20px;
+            }
+            .header-company {
+              flex: 1;
+            }
+            .header-company h1 { 
+              margin: 0; 
+              font-size: 22px; 
+              font-weight: 800; 
+              color: #0f172a; 
+              letter-spacing: -0.5px;
+              text-transform: uppercase;
+            }
+            .company-doc { 
+              margin: 6px 0 2px 0; 
+              color: #64748b; 
+              font-size: 11px; 
+              font-weight: 500; 
+            }
+            .company-contact {
+              margin: 0;
+              color: #64748b;
+              font-size: 11px;
+              font-weight: 500;
+            }
+            .header-meta {
+              text-align: right;
+              display: flex;
+              flex-direction: column;
+              align-items: flex-end;
+              gap: 8px;
+            }
+            .badge {
+              padding: 6px 12px;
+              border-radius: 9999px;
+              font-size: 10px;
+              font-weight: 700;
+              letter-spacing: 0.5px;
+              text-transform: uppercase;
+              display: inline-block;
+            }
+            .badge-budget {
+              background-color: #fef3c7;
+              color: #d97706;
+            }
+            .badge-finalized {
+              background-color: #d1fae5;
+              color: #065f46;
+            }
+            .order-id {
+              font-size: 11px;
+              font-weight: 700;
+              color: #64748b;
+              letter-spacing: 0.5px;
+            }
+            .order-id span {
+              font-size: 18px;
+              color: #0f172a;
+              font-weight: 800;
+            }
+            .order-date {
+              font-size: 11px;
+              color: #94a3b8;
+              font-weight: 500;
+            }
+            .details-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 25px;
+              padding: 25px 40px;
+              border-bottom: 1px solid #f1f5f9;
+            }
+            .details-column {
+              display: flex;
+              flex-direction: column;
+            }
+            .section-title { 
+              font-size: 10px; 
+              font-weight: 800; 
+              color: #94a3b8; 
+              text-transform: uppercase; 
+              margin-bottom: 8px; 
+              letter-spacing: 0.5px;
+            }
+            .details-box {
+              background-color: #f8fafc;
+              padding: 16px;
+              border-radius: 12px;
+              border: 1px solid #f1f5f9;
+              flex: 1;
+            }
+            .client-name {
+              font-size: 14px;
+              font-weight: 700;
+              color: #0f172a;
+              margin: 0 0 6px 0;
+              text-transform: uppercase;
+            }
+            .client-detail {
+              font-size: 12px;
+              color: #475569;
+              margin: 4px 0;
+              line-height: 1.4;
+            }
+            .client-detail strong {
+              color: #64748b;
+              font-weight: 600;
+              font-size: 11px;
+            }
+            .table-section {
+              padding: 25px 40px;
+            }
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+            }
+            th { 
+              text-align: left; 
+              padding: 12px 10px; 
+              font-size: 10px; 
+              color: #64748b; 
+              text-transform: uppercase; 
+              border-bottom: 2px solid #f1f5f9; 
+              letter-spacing: 0.5px;
+              font-weight: 700;
+            }
+            td { 
+              padding: 14px 10px; 
+              border-bottom: 1px solid #f8fafc; 
+              font-size: 13px; 
+              color: #1e293b;
+            }
+            .item-name {
+              font-weight: 600;
+              color: #0f172a;
+            }
+            .total-section {
+              padding: 25px 40px;
+              background-color: #fafafb;
+              border-top: 1px solid #f1f5f9;
+              display: flex;
+              flex-direction: column;
+              align-items: flex-end;
+              gap: 8px;
+            }
+            .total-row {
+              display: flex;
+              justify-content: space-between;
+              width: 280px;
+              font-size: 12px;
+              color: #64748b;
+            }
+            .total-row-main {
+              display: flex;
+              justify-content: space-between;
+              align-items: baseline;
+              width: 320px;
+              padding-top: 10px;
+              border-top: 1px solid #e2e8f0;
+              margin-top: 5px;
+            }
+            .total-label-main {
+              font-size: 11px;
+              font-weight: 800;
+              color: #0f172a;
+              letter-spacing: 0.5px;
+            }
+            .total-val-main {
+              font-size: 24px;
+              font-weight: 800;
+              color: #0ea5e9;
+            }
+            .footer { 
+              text-align: center; 
+              padding: 25px; 
+              color: #94a3b8; 
+              font-size: 10px; 
+              font-weight: 600; 
+              text-transform: uppercase; 
+              letter-spacing: 1px; 
+            }
+            @media print {
+              body {
+                background: #ffffff;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              .ticket {
+                border: none;
+                box-shadow: none;
+                margin: 0;
+                max-width: 100%;
+              }
+            }
+          </style>
+        </head>
+        <body>
+            <div class="ticket">
+                <div class="brand-bar"></div>
+                <div class="header">
+                    <div class="header-main">
+                        <div class="header-company">
+                            ${logoHtml}
+                            <h1>${companyName}</h1>
+                            <p class="company-doc">${profile.document || ''}</p>
+                            <p class="company-contact">${profile.phone || ''}</p>
+                        </div>
+                        <div class="header-meta">
+                            <div class="badge ${sale.status === 'ORCAMENTO' ? 'badge-budget' : 'badge-finalized'}">
+                                ${sale.status === 'ORCAMENTO' ? 'ORÇAMENTO' : 'COMPROVANTE DE PEDIDO'}
+                            </div>
+                            <div class="order-id">PEDIDO NO. <span>${sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : sale.id}</span></div>
+                            <div class="order-date">${sale.date} às ${sale.time}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="details-grid">
+                    <div class="details-column">
+                        <div class="section-title">Cliente</div>
+                        <div class="details-box">
+                            <p class="client-name">${sale.clientName}</p>
+                            ${clientPhone ? `<p class="client-detail"><strong>WhatsApp / Tel:</strong> ${clientPhone}</p>` : ''}
+                            ${clientAddress ? `<p class="client-detail"><strong>Endereço:</strong> ${clientAddress}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="details-column">
+                        <div class="section-title">Informações de Venda</div>
+                        <div class="details-box">
+                            <p class="client-detail"><strong>Forma de Pagamento:</strong> ${sale.paymentMethod || 'Dinheiro'}</p>
+                            <p class="client-detail"><strong>Condição de Pagamento:</strong> ${sale.paymentTerms || 'À vista'}</p>
+                            <p class="client-detail"><strong>Validade / Tipo:</strong> Documento sem valor fiscal</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-section">
+                    <div class="section-title">Produtos do Pedido</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item / Especificação</th>
+                                <th style="text-align: center; width: 60px;">Qtd</th>
+                                <th style="text-align: right; width: 120px;">Vl. Unitário</th>
+                                <th style="text-align: right; width: 120px;">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(sale.items || []).map(item => {
+                                const unitPrice = item.price - (item.discount || 0);
+                                return `
+                                <tr>
+                                    <td>
+                                        <div class="item-name">${item.name}</div>
+                                    </td>
+                                    <td style="text-align: center; font-weight: 500;">${item.quantity}</td>
+                                    <td style="text-align: right; color: #475569;">R$ ${unitPrice.toFixed(2)}</td>
+                                    <td style="text-align: right; font-weight: 700; color: #0f172a;">R$ ${(unitPrice * item.quantity).toFixed(2)}</td>
+                                </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="total-section">
+                    <div class="total-row-main">
+                        <span class="total-label-main">VALOR TOTAL DO PEDIDO:</span>
+                        <span class="total-val-main">R$ ${sale.total.toFixed(2)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer">
+                Agradecemos a preferência e confiança!
+            </div>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 800);
+    }
+  };
+
+  const handleShareWhatsAppDirect = (sale: Sale) => {
+    const profile = businessProfile;
+    const clientData = clients.find(c => c.id === sale.clientId);
+    const companyName = profile.companyName || 'OMNIVENDA';
+    const itemsText = (sale.items || []).map(item => {
+      const unitPrice = item.price - (item.discount || 0);
+      return `• ${item.quantity}x ${item.name} - R$ ${(unitPrice * item.quantity).toFixed(2)}`;
+    }).join('\n');
+    
+    const message = `*${companyName} - Pedido ${sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : sale.id}*
+---------------------------
+👤 *Cliente:* ${sale.clientName}
+📅 *Data:* ${sale.date} às ${sale.time}
+
+📦 *Itens:*
+${itemsText}
+
+💰 *Total: R$ ${sale.total.toFixed(2)}*
+💳 *Pagamento:* ${sale.paymentMethod || 'Não informado'}
+🗓️ *Condição:* ${sale.paymentTerms || 'À vista'}
+
+Obrigado pela preferência!`;
+
+    const encodedText = encodeURIComponent(message);
+    const cleanPhone = clientData?.phone ? clientData.phone.replace(/\D/g, '') : '';
+    const finalPhone = cleanPhone.length >= 10 ? `55${cleanPhone}` : cleanPhone;
+    
+    const whatsappUrl = finalPhone 
+      ? `https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodedText}`
+      : `https://api.whatsapp.com/send?text=${encodedText}`;
+
+    window.open(whatsappUrl, '_blank');
+  };
+
   const handleDeleteClient = async (clientId: string) => {
     if (!clientId) {
       alert("ID do cliente não encontrado.");
@@ -1532,24 +1905,93 @@ const App: React.FC = () => {
       {currentScreen === 'MONTHLY_SALES' && (!isPureAdmin || isImpersonating) && (
         <div className="min-h-screen">
           <Header title="Histórico" showBack />
-          <div className="px-6 py-6 space-y-2">
-            {salesHistoryWithNumbers.map(sale => (
-              <div key={sale.id} onClick={() => setSelectedSale(sale)} className="bg-white p-3 rounded-2xl shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all">
-                 <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${sale.status === 'ORCAMENTO' ? 'bg-yellow-50 text-yellow-600' : 'bg-green-50 text-green-600'}`}>
-                      {sale.status === 'ORCAMENTO' ? <FileText size={20}/> : <ShoppingBag size={20} />}
-                    </div>
-                    <div>
-                       <h4 className="font-black text-slate-800 text-xs uppercase italic leading-tight">{sale.clientName}</h4>
-                       <p className="text-[7px] font-black text-slate-400 uppercase">Pedido {sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : '...'} • {sale.date} • {sale.status}</p>
-                    </div>
-                 </div>
-                 <div className="text-right">
-                    <p className="text-base font-black text-[#0ea5e9]">R$ {Number(sale.total).toFixed(2)}</p>
-                    <p className={`text-[7px] font-black uppercase italic ${sale.isPaid ? 'text-green-500' : 'text-red-400'}`}>{sale.isPaid ? 'Pago' : 'Pendente'}</p>
-                 </div>
-              </div>
-            ))}
+          <div className="px-6 py-6 space-y-4">
+            {salesHistoryWithNumbers.map(sale => {
+              return (
+                <div 
+                  key={sale.id} 
+                  onClick={() => setSelectedSale(sale)}
+                  className="bg-white rounded-[2rem] shadow-md border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 gap-4 hover:shadow-lg transition-all cursor-pointer animate-in fade-in duration-200"
+                >
+                  {/* Left: Client Info */}
+                  <div className="flex items-center gap-3 min-w-0">
+                     <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${sale.status === 'ORCAMENTO' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                       {sale.status === 'ORCAMENTO' ? <FileText size={20}/> : <ShoppingBag size={20} />}
+                     </div>
+                     <div className="min-w-0">
+                        <h4 className="font-black text-slate-800 text-xs sm:text-sm uppercase italic leading-tight truncate">{sale.clientName}</h4>
+                        <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase mt-1">
+                           PEDIDO {sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : '...'} • {sale.date}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                           <span className={`text-[7px] font-black uppercase px-2 py-0.5 rounded-md ${sale.status === 'ORCAMENTO' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                              {sale.status === 'ORCAMENTO' ? 'Orçamento' : 'Finalizada'}
+                           </span>
+                           <span className={`text-[7px] font-black uppercase px-2 py-0.5 rounded-md ${sale.isPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                              {sale.isPaid ? 'Pago' : 'Pendente'}
+                           </span>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Center: Inline Actions */}
+                  <div 
+                    className="flex flex-wrap items-center gap-2 justify-start sm:justify-center flex-1 min-w-[200px]" 
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                     <button 
+                       onClick={() => handlePrintSaleDirect(sale)} 
+                       className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 text-slate-700 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
+                       title="Visualizar Pedido"
+                     >
+                       <Eye size={15} className="text-slate-500" />
+                       <span className="hidden md:inline">Visualizar</span>
+                     </button>
+
+                     <button 
+                       onClick={() => handleOpenEditSale(sale)} 
+                       className="flex items-center gap-1.5 bg-blue-50/40 hover:bg-blue-50 border border-blue-100/50 text-blue-600 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
+                       title="Editar Pedido"
+                     >
+                       <Edit3 size={15} className="text-blue-500" />
+                       <span className="hidden md:inline">Editar</span>
+                     </button>
+
+                     <button 
+                       onClick={() => handlePrintSaleDirect(sale)} 
+                       className="flex items-center gap-1.5 bg-sky-50/40 hover:bg-sky-50 border border-sky-100/50 text-sky-600 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
+                       title="Imprimir Comprovante"
+                     >
+                       <Printer size={15} className="text-sky-500" />
+                       <span className="hidden md:inline">Imprimir</span>
+                     </button>
+
+                     <button 
+                       onClick={() => handleShareWhatsAppDirect(sale)} 
+                       className="flex items-center gap-1.5 bg-emerald-50/40 hover:bg-emerald-50 border border-emerald-100/50 text-emerald-600 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
+                       title="Enviar WhatsApp"
+                     >
+                       <MessageSquare size={15} className="text-emerald-500" />
+                       <span className="hidden md:inline">WhatsApp</span>
+                     </button>
+
+                     <button 
+                       onClick={() => handleDeleteSale(sale.id)} 
+                       className="flex items-center gap-1.5 bg-red-50/40 hover:bg-red-50 border border-red-100/50 text-red-650 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
+                       title="Excluir Pedido"
+                     >
+                       <Trash2 size={15} className="text-red-500" />
+                       <span className="hidden md:inline">Excluir</span>
+                     </button>
+                  </div>
+
+                  {/* Right: Total Value */}
+                  <div className="text-right shrink-0 min-w-[90px]">
+                     <p className="text-lg font-black text-[#0ea5e9]">R$ {Number(sale.total).toFixed(2)}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
