@@ -163,9 +163,35 @@ const App: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [salesHistory, setSalesHistory] = useState<Sale[]>([]);
   const salesHistoryWithNumbers = useMemo(() => {
+    const getTimestamp = (s: Sale) => {
+      if (s.created_at) {
+        const t = new Date(s.created_at).getTime();
+        if (!isNaN(t)) return t;
+      }
+      if (s.date) {
+        const parts = s.date.split("/");
+        if (parts.length === 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          const year = parseInt(parts[2], 10);
+          let h = 0, m = 0;
+          if (s.time) {
+            const tParts = s.time.split(":");
+            if (tParts.length >= 2) {
+              h = parseInt(tParts[0], 10);
+              m = parseInt(tParts[1], 10);
+            }
+          }
+          const parsedMs = new Date(year, month, day, h, m).getTime();
+          if (!isNaN(parsedMs)) return parsedMs;
+        }
+      }
+      return 0;
+    };
+
     const sortedAsc = [...salesHistory].sort((a, b) => {
-      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      const timeA = getTimestamp(a);
+      const timeB = getTimestamp(b);
       if (timeA !== timeB) return timeA - timeB;
       const dateComp = (a.date || "").localeCompare(b.date || "");
       if (dateComp !== 0) return dateComp;

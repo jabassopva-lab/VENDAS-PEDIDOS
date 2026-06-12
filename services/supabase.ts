@@ -358,9 +358,9 @@ export const db = {
               toRemove.forEach(k => delete minimalPayload[k]);
               const { data: fData2, error: fError2 } = await supabase.from('sales').insert(minimalPayload).select('id').single();
               if (fError2) throw fError2;
-              return { ...sale, id: fData2.id, isPaid: !!sale.isPaid };
+              return { ...sale, id: fData2.id, created_at: new Date().toISOString(), isPaid: !!sale.isPaid };
             }
-            return { ...sale, id: fData.id, isPaid: !!sale.isPaid };
+            return { ...sale, id: fData.id, created_at: new Date().toISOString(), isPaid: !!sale.isPaid };
           }
         }
 
@@ -368,6 +368,7 @@ export const db = {
         return {
           ...sale,
           id: saved.id,
+          created_at: saved.created_at || new Date().toISOString(),
           isPaid: s_isPaid(saved) ?? !!sale.isPaid
         };
       } catch (err) {
