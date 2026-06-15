@@ -2762,7 +2762,7 @@ Obrigado pela preferência!`;
     rightAction?: React.ReactNode;
   }) => (
     <div className="sticky top-0 z-40 bg-[#fffbeb]">
-      <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-4 pb-3 px-6 shadow-xl rounded-b-[1.8rem] relative overflow-hidden border-b-4 border-yellow-400">
+      <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-2 pb-2 sm:pt-4 sm:pb-3 px-4 sm:px-6 shadow-xl rounded-b-[1.5rem] sm:rounded-b-[1.8rem] relative overflow-hidden border-b-4 border-yellow-400">
         <div className="absolute top-2 right-0 p-4 opacity-10 rotate-12 pointer-events-none">
           <Palmtree size={50} />
         </div>
@@ -3181,109 +3181,115 @@ Obrigado pela preferência!`;
         (!isPureAdmin || isImpersonating) && (
           <div className="min-h-screen">
             <Header title="Histórico" showBack />
-            <div className="px-6 py-6 space-y-4">
+            <div className="px-3 sm:px-6 py-3 sm:py-6 space-y-3 sm:space-y-4">
               {salesHistoryWithNumbers.map((sale) => {
+                const dateMatch = sale.paymentTerms?.match(/\d{2}\/\d{2}\/\d{4}/);
+                const dueDateExtracted = dateMatch ? dateMatch[0] : null;
+
                 return (
                   <div
                     key={sale.id}
                     onClick={() => setSelectedSale(sale)}
-                    className="bg-white rounded-[2rem] shadow-md border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 gap-4 hover:shadow-lg transition-all cursor-pointer animate-in fade-in duration-200"
+                    className="bg-white rounded-[1.5rem] sm:rounded-[2rem] shadow-md border border-slate-100 flex flex-col p-3 sm:p-5 gap-2.5 sm:gap-4 hover:shadow-lg transition-all cursor-pointer animate-in fade-in duration-200"
                   >
-                    {/* Left: Client Info */}
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${sale.status === "ORCAMENTO" ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"}`}
-                      >
-                        {sale.status === "ORCAMENTO" ? (
-                          <FileText size={20} />
-                        ) : (
-                          <ShoppingBag size={20} />
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <h4 className="font-black text-slate-800 text-xs sm:text-sm uppercase italic leading-tight truncate">
-                          {sale.clientName}
-                        </h4>
-                        <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase mt-1">
-                          PEDIDO{" "}
-                          {sale.orderNumber
-                            ? String(sale.orderNumber).padStart(4, "0")
-                            : "..."}{" "}
-                          • {sale.date}
-                        </p>
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                          <span
-                            className={`text-[7px] font-black uppercase px-2 py-0.5 rounded-md ${sale.status === "ORCAMENTO" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
-                          >
-                            {sale.status === "ORCAMENTO"
-                              ? "Orçamento"
-                              : "Finalizada"}
-                          </span>
-                          <span
-                            className={`text-[7px] font-black uppercase px-2 py-0.5 rounded-md ${sale.isPaid ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
-                          >
-                            {sale.isPaid ? "Pago" : "Pendente"}
-                          </span>
+                    {/* Top Row: Client Info + Total Price */}
+                    <div className="flex justify-between items-start gap-2.5 w-full">
+                      {/* Left side: Avatar + Client Name & Badges */}
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div
+                          className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 ${sale.status === "ORCAMENTO" ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"}`}
+                        >
+                          {sale.status === "ORCAMENTO" ? (
+                            <FileText size={16} className="sm:w-[20px] sm:h-[20px]" />
+                          ) : (
+                            <ShoppingBag size={16} className="sm:w-[20px] sm:h-[20px]" />
+                          )}
                         </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-black text-slate-800 text-[11px] sm:text-sm uppercase italic leading-tight truncate">
+                            {sale.clientName}
+                          </h4>
+                          <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase mt-0.5 sm:mt-1">
+                            PEDIDO{" "}
+                            {sale.orderNumber
+                              ? String(sale.orderNumber).padStart(4, "0")
+                              : "..."}{" "}
+                            • {sale.date}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1 sm:mt-1.5">
+                            <span
+                              className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded-md ${sale.status === "ORCAMENTO" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
+                            >
+                              {sale.status === "ORCAMENTO"
+                                ? "Orçamento"
+                                : "Finalizada"}
+                            </span>
+                            <span
+                              className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded-md ${sale.isPaid ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                            >
+                              {sale.isPaid ? "Pago" : `Pendente ${dueDateExtracted ? `• Venc: ${dueDateExtracted}` : ""}`}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right side: Total Price */}
+                      <div className="text-right shrink-0 mt-0.5">
+                        <p className="text-sm sm:text-lg font-black text-[#0ea5e9]">
+                          R$ {Number(sale.total).toFixed(2)}
+                        </p>
                       </div>
                     </div>
 
-                    {/* Center: Inline Actions */}
+                    {/* Bottom Row: Inline Actions Menu */}
                     <div
-                      className="flex flex-wrap items-center gap-2 justify-start sm:justify-center flex-1 min-w-[200px]"
+                      className="flex flex-wrap items-center gap-1.5 sm:gap-2 justify-start sm:justify-start flex-1 min-w-0 border-t border-slate-50 pt-1.5 sm:pt-2"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
                         onClick={() => handlePrintSaleDirect(sale)}
-                        className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 text-slate-700 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
+                        className="flex items-center gap-1 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 text-slate-700 p-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
                         title="Visualizar Pedido"
                       >
-                        <Eye size={15} className="text-slate-500" />
-                        <span className="hidden md:inline">Visualizar</span>
+                        <Eye size={13} className="text-slate-500 sm:w-[15px] sm:h-[15px]" />
+                        <span className="hidden sm:inline">Visualizar</span>
                       </button>
 
                       <button
                         onClick={() => handleOpenEditSale(sale)}
-                        className="flex items-center gap-1.5 bg-blue-50/40 hover:bg-blue-50 border border-blue-100/50 text-blue-600 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
+                        className="flex items-center gap-1 bg-blue-50/40 hover:bg-blue-50 border border-blue-100/50 text-blue-600 p-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
                         title="Editar Pedido"
                       >
-                        <Edit3 size={15} className="text-blue-500" />
-                        <span className="hidden md:inline">Editar</span>
+                        <Edit3 size={13} className="text-blue-500 sm:w-[15px] sm:h-[15px]" />
+                        <span className="hidden sm:inline">Editar</span>
                       </button>
 
                       <button
                         onClick={() => handlePrintSaleDirect(sale)}
-                        className="flex items-center gap-1.5 bg-sky-50/40 hover:bg-sky-50 border border-sky-100/50 text-sky-600 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
+                        className="flex items-center gap-1 bg-sky-50/40 hover:bg-sky-50 border border-sky-100/50 text-sky-600 p-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
                         title="Imprimir Comprovante"
                       >
-                        <Printer size={15} className="text-sky-500" />
-                        <span className="hidden md:inline">Imprimir</span>
+                        <Printer size={13} className="text-sky-500 sm:w-[15px] sm:h-[15px]" />
+                        <span className="hidden sm:inline">Imprimir</span>
                       </button>
 
                       <button
                         onClick={() => handleShareWhatsAppDirect(sale)}
-                        className="flex items-center gap-1.5 bg-emerald-50/40 hover:bg-emerald-50 border border-emerald-100/50 text-emerald-600 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
+                        className="flex items-center gap-1 bg-emerald-50/40 hover:bg-emerald-50 border border-emerald-100/50 text-emerald-600 p-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
                         title="Enviar WhatsApp"
                       >
-                        <MessageSquare size={15} className="text-emerald-500" />
-                        <span className="hidden md:inline">WhatsApp</span>
+                        <MessageSquare size={13} className="text-emerald-500 sm:w-[15px] sm:h-[15px]" />
+                        <span className="hidden sm:inline">WhatsApp</span>
                       </button>
 
                       <button
                         onClick={() => handleDeleteSale(sale.id)}
-                        className="flex items-center gap-1.5 bg-red-50/40 hover:bg-red-50 border border-red-100/50 text-red-650 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
+                        className="flex items-center gap-1 bg-red-50/40 hover:bg-red-50 border border-red-100/50 text-red-650 p-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
                         title="Excluir Pedido"
                       >
-                        <Trash2 size={15} className="text-red-500" />
-                        <span className="hidden md:inline">Excluir</span>
+                        <Trash2 size={13} className="text-red-500 sm:w-[15px] sm:h-[15px]" />
+                        <span className="hidden sm:inline">Excluir</span>
                       </button>
-                    </div>
-
-                    {/* Right: Total Value */}
-                    <div className="text-right shrink-0 min-w-[90px]">
-                      <p className="text-lg font-black text-[#0ea5e9]">
-                        R$ {Number(sale.total).toFixed(2)}
-                      </p>
                     </div>
                   </div>
                 );
