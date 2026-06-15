@@ -3335,30 +3335,30 @@ Obrigado pela preferência!`;
           <Header title="Relatórios" showBack />
           <div className="p-4 space-y-4">
             {/* Period Filter card */}
-            <div className="bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-white rounded-[2rem] p-6 shadow-xl border-b-4 border-[#0369a1] space-y-5 relative overflow-hidden shadow-sky-100/40">
+            <div className="bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-white rounded-[2rem] p-4.5 sm:p-5 shadow-xl border-b-4 border-[#0369a1] space-y-4 relative overflow-hidden shadow-sky-100/40">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none"></div>
-              <div className="flex justify-between items-center bg-sky-950/25 p-1 rounded-[1.4rem] border border-white/5 relative z-10">
+              <div className="flex justify-between items-center bg-sky-950/25 p-1 rounded-[1.3rem] border border-white/5 relative z-10">
                 <button
                   onClick={() => setReportTab("DIARIO")}
-                  className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "DIARIO" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                  className={`flex-1 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "DIARIO" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                 >
                   Dia
                 </button>
                 <button
                   onClick={() => setReportTab("MENSAL")}
-                  className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "MENSAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                  className={`flex-1 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "MENSAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                 >
                   Mês
                 </button>
                 <button
                   onClick={() => setReportTab("ANUAL")}
-                  className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "ANUAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                  className={`flex-1 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "ANUAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                 >
                   Ano
                 </button>
                 <button
                   onClick={() => setReportTab("TOTAL")}
-                  className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "TOTAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                  className={`flex-1 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "TOTAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                 >
                   Tudo
                 </button>
@@ -4573,43 +4573,43 @@ Obrigado pela preferência!`;
                 <Printer size={20} />
               </button>
             </div>
-            <div className="px-6 pb-4 mt-2 relative z-10">
-              <div className="flex justify-between items-center bg-sky-950/25 p-1 rounded-[1.4rem] border border-white/5">
+            <div className="px-6 pb-2.5 mt-1.5 relative z-10">
+              <div className="flex justify-between items-center bg-sky-950/25 p-1 rounded-[1.2rem] border border-white/5">
                 <button
                   onClick={() => setReportTab("DIARIO")}
-                  className={`flex-1 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "DIARIO" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                  className={`flex-1 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "DIARIO" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                 >
                   Dia
                 </button>
                 <button
                   onClick={() => setReportTab("MENSAL")}
-                  className={`flex-1 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "MENSAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                  className={`flex-1 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "MENSAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                 >
                   Mês
                 </button>
                 <button
                   onClick={() => setReportTab("ANUAL")}
-                  className={`flex-1 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "ANUAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                  className={`flex-1 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "ANUAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                 >
                   Ano
                 </button>
                 <button
                   onClick={() => setReportTab("TOTAL")}
-                  className={`flex-1 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "TOTAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                  className={`flex-1 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "TOTAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                 >
                   Tudo
                 </button>
               </div>
             </div>
-            <div className="bg-sky-950/20 backdrop-blur-sm border-t border-white/5 flex items-center justify-between px-10 py-3.5 relative z-10">
+            <div className="bg-sky-950/20 backdrop-blur-sm border-t border-white/5 flex items-center justify-between px-8 py-2 relative z-10">
               <button
                 onClick={() => changeDate(-1)}
                 className="p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg active:scale-75 transition-all disabled:opacity-25"
                 disabled={reportTab === "TOTAL"}
               >
-                <ChevronLeft size={20} className="stroke-[2.5]" />
+                <ChevronLeft size={18} className="stroke-[2.5]" />
               </button>
-              <span className="text-sm sm:text-base font-extrabold uppercase tracking-wide text-white drop-shadow-sm">
+              <span className="text-sm font-extrabold uppercase tracking-wide text-white drop-shadow-sm">
                 {reportTab === "DIARIO"
                   ? currentDate.toLocaleDateString("pt-BR")
                   : reportTab === "MENSAL"
