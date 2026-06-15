@@ -1018,6 +1018,35 @@ const App: React.FC = () => {
     }
   };
 
+  const handleTogglePaid = async (saleId: string, isPaid: boolean) => {
+    try {
+      const saleToUpdate = salesHistory.find((s) => String(s.id) === String(saleId));
+      if (!saleToUpdate) {
+        console.warn("Venda não encontrada para alteração de status de pagamento:", saleId);
+        return;
+      }
+
+      const updatedSale = { ...saleToUpdate, isPaid };
+      await db.sales.update(updatedSale);
+
+      setSalesHistory((prev) =>
+        prev.map((s) => (String(s.id) === String(saleId) ? updatedSale : s))
+      );
+
+      setSelectedSale((prev) => {
+        if (prev && String(prev.id) === String(saleId)) {
+          return { ...prev, isPaid };
+        }
+        return prev;
+      });
+
+      triggerNotify(isPaid ? "Baixa realizada! Pedido Pago." : "Status alterado para Pendente.");
+    } catch (e: any) {
+      console.error("Erro ao alterar status de pagamento da venda:", e);
+      alert(`Erro ao atualizar pagamento: ${e.message || "Verifique sua conexão."}`);
+    }
+  };
+
   const handlePrintSaleDirect = (sale: Sale) => {
     const profile = businessProfile;
     const clientData = clients.find((c) => c.id === sale.clientId);
@@ -3257,6 +3286,28 @@ Obrigado pela preferência!`;
                       </button>
 
                       <button
+                        onClick={() => handleTogglePaid(sale.id, !sale.isPaid)}
+                        className={`flex items-center gap-1 p-2 sm:px-3 sm:py-1.5 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs border ${
+                          sale.isPaid
+                            ? "bg-amber-50/40 hover:bg-amber-50 border-amber-100/50 text-amber-700"
+                            : "bg-green-50/40 hover:bg-green-50 border-green-100/50 text-green-700"
+                        }`}
+                        title={sale.isPaid ? "Estornar Pagamento (Marcar como Pendente)" : "Dar Baixa no Pedido (Marcar como Pago)"}
+                      >
+                        {sale.isPaid ? (
+                          <>
+                            <AlertCircle size={16} className="text-amber-500 sm:w-[17px] sm:h-[17px]" />
+                            <span className="hidden sm:inline">Estornar</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 size={16} className="text-green-500 sm:w-[17px] sm:h-[17px]" />
+                            <span className="hidden sm:inline">Dar Baixa</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
                         onClick={() => handleOpenEditSale(sale)}
                         className="flex items-center gap-1 bg-blue-50/40 hover:bg-blue-50 border border-blue-100/50 text-blue-600 p-2 sm:px-3 sm:py-1.5 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
                         title="Editar Pedido"
@@ -4855,6 +4906,7 @@ Obrigado pela preferência!`;
         clients={clients}
         onEdit={handleOpenEditSale}
         onDelete={handleDeleteSale}
+        onTogglePaid={handleTogglePaid}
       />
 
       {subscriptionModal.isOpen && subscriptionModal.business && (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Printer, Package, Building2, Calendar, Clock, CreditCard, User, Palmtree, Sun, ShoppingBag, MessageSquare, Share2, Edit3, Trash2, ChevronLeft, ChevronRight, Sliders } from 'lucide-react';
+import { X, Printer, Package, Building2, Calendar, Clock, CreditCard, User, Palmtree, Sun, ShoppingBag, MessageSquare, Share2, Edit3, Trash2, ChevronLeft, ChevronRight, Sliders, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Sale, BusinessProfile, Client } from '../types';
 import { convertDriveLink } from '../App.tsx';
 
@@ -11,9 +11,19 @@ interface SaleDetailModalProps {
   clients: Client[];
   onEdit: (sale: Sale) => void;
   onDelete: (saleId: string) => void;
+  onTogglePaid?: (saleId: string, isPaid: boolean) => void;
 }
 
-const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ isOpen, onClose, sale, profile, clients, onEdit, onDelete }) => {
+const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  sale, 
+  profile, 
+  clients, 
+  onEdit, 
+  onDelete,
+  onTogglePaid
+}) => {
   if (!isOpen || !sale) return null;
 
   const clientData = clients.find(c => c.id === sale.clientId);
@@ -684,6 +694,40 @@ Obrigado pela preferência!`;
                    <p className="text-xs text-slate-500 mt-1.5 leading-snug">Modificar itens do pedido, alterar quantidades, pagamentos ou descontos.</p>
                  </div>
               </button>
+
+              {/* Dar baixa / Estornar Pagamento */}
+              {onTogglePaid && (
+                <button 
+                  onClick={() => onTogglePaid(sale.id, !sale.isPaid)}
+                  className={`bg-white p-5 rounded-[2rem] border border-slate-150 flex flex-col justify-between items-stretch text-left active:scale-98 transition-all group hover:shadow-lg shadow-sm ${
+                    sale.isPaid 
+                      ? 'hover:border-amber-500 hover:shadow-amber-50 hover:bg-amber-50/10' 
+                      : 'hover:border-green-500 hover:shadow-green-50 hover:bg-green-50/10'
+                  }`}
+                >
+                   <div className={`w-11 h-11 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform mb-4 border ${
+                     sale.isPaid 
+                       ? 'bg-amber-50 text-amber-550 border-amber-100' 
+                       : 'bg-green-50 text-green-500 border-green-100'
+                   }`}>
+                     {sale.isPaid ? (
+                       <AlertCircle size={22} className="stroke-[2.5]" />
+                     ) : (
+                       <CheckCircle2 size={22} className="stroke-[2.5]" />
+                     )}
+                   </div>
+                   <div className="text-left font-sans">
+                     <p className={`font-extrabold text-sm sm:text-base leading-tight ${sale.isPaid ? 'text-amber-750' : 'text-green-600'}`}>
+                       {sale.isPaid ? 'Estornar Pagamento' : 'Dar Baixa (Pago)'}
+                     </p>
+                     <p className="text-xs text-slate-500 mt-1.5 leading-snug">
+                       {sale.isPaid 
+                         ? 'Definir o status deste pedido de volta para PENDENTE de pagamento.' 
+                         : 'Registrar o recebimento deste pedido, marcando-o como Pago.'}
+                     </p>
+                   </div>
+                </button>
+              )}
 
               {/* Excluir */}
               <button 
