@@ -73,6 +73,7 @@ import ProductModal from "./components/ProductModal.tsx";
 import ClientForm from "./components/ClientForm.tsx";
 import NewSaleModal from "./components/NewSaleModal.tsx";
 import SaleDetailModal from "./components/SaleDetailModal.tsx";
+import ClientReportModal from "./components/ClientReportModal.tsx";
 import SettingsForm from "./components/SettingsForm.tsx";
 import CostCorrectionTool from "./components/CostCorrectionTool.tsx";
 import AuthScreen from "./components/AuthScreen.tsx";
@@ -255,6 +256,10 @@ const App: React.FC = () => {
   const [saleModal, setSaleModal] = useState<boolean>(false);
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [selectedClientReport, setSelectedClientReport] = useState<{
+    client: Client | { id: string; name: string; phone?: string; email?: string; address?: string; document?: string };
+    sales: Sale[];
+  } | null>(null);
   const [catalogSearch, setCatalogSearch] = useState("");
   const [filterClientId, setFilterClientId] = useState<string>("ALL");
   const [filterProductId, setFilterProductId] = useState<string>("ALL");
@@ -1040,11 +1045,56 @@ const App: React.FC = () => {
         return prev;
       });
 
+      setSelectedClientReport((prev) => {
+        if (prev) {
+          const updatedSales = prev.sales.map((s) =>
+            String(s.id) === String(saleId) ? { ...s, isPaid } : s
+          );
+          return { ...prev, sales: updatedSales };
+        }
+        return prev;
+      });
+
       triggerNotify(isPaid ? "Baixa realizada! Pedido Pago." : "Status alterado para Pendente.");
     } catch (e: any) {
       console.error("Erro ao alterar status de pagamento da venda:", e);
       alert(`Erro ao atualizar pagamento: ${e.message || "Verifique sua conexão."}`);
     }
+  };
+
+  const handleOpenClientReport = (clientName: string, clientId?: string) => {
+    let matchedClient = clients.find(
+      (c) =>
+        c.id === clientId ||
+        c.name.trim().toUpperCase() === clientName.trim().toUpperCase()
+    );
+
+    if (!matchedClient) {
+      matchedClient = {
+        id: clientId || `fallback_${Date.now()}`,
+        name: clientName,
+        phone: "",
+        email: "",
+        address: "",
+        document: "",
+      };
+    }
+
+    const clientSales = salesHistory.filter((s) => {
+      const nameMatch =
+        s.clientName &&
+        s.clientName.trim().toUpperCase() === clientName.trim().toUpperCase();
+      const idMatch = s.clientId && s.clientId === matchedClient?.id;
+      return (
+        (idMatch || nameMatch) &&
+        (s.status === "FINALIZADA" || s.status === "PENDENTE" || s.status === "ORCAMENTO")
+      );
+    });
+
+    setSelectedClientReport({
+      client: matchedClient,
+      sales: clientSales,
+    });
   };
 
   const handlePrintSaleDirect = (sale: Sale) => {
@@ -1620,12 +1670,15 @@ Obrigado pela preferência!`;
       if (!clientsMap[groupKey]) {
         clientsMap[groupKey] = {
           name: rawName,
+          clientId: sale.clientId || "",
           salesCount: 0,
           totalPotes: 0,
           totalSold: 0,
           totalProfit: 0,
           totalPendingAmount: 0,
         };
+      } else if (sale.clientId && !clientsMap[groupKey].clientId) {
+        clientsMap[groupKey].clientId = sale.clientId;
       }
 
       const total = safeNumber(sale.total);
@@ -3236,10 +3289,10 @@ Obrigado pela preferência!`;
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h4 className="font-black text-slate-800 text-[11px] sm:text-sm uppercase italic leading-tight truncate">
+                          <h4 className="font-black text-slate-800 text-[13px] sm:text-base uppercase italic leading-tight truncate">
                             {sale.clientName}
                           </h4>
-                          <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase mt-0.5 sm:mt-1">
+                          <p className="text-[10px] sm:text-xs font-black text-slate-400 uppercase mt-0.5 sm:mt-1">
                             PEDIDO{" "}
                             {sale.orderNumber
                               ? String(sale.orderNumber).padStart(4, "0")
@@ -3248,14 +3301,14 @@ Obrigado pela preferência!`;
                           </p>
                           <div className="flex flex-wrap items-center gap-1.5 mt-1 sm:mt-1.5">
                             <span
-                              className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded-md ${sale.status === "ORCAMENTO" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
+                              className={`text-[9px] sm:text-xs font-black uppercase px-2 py-0.5 rounded-md ${sale.status === "ORCAMENTO" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
                             >
                               {sale.status === "ORCAMENTO"
                                 ? "Orçamento"
                                 : "Finalizada"}
                             </span>
                             <span
-                              className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded-md ${sale.isPaid ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                              className={`text-[9px] sm:text-xs font-black uppercase px-2 py-0.5 rounded-md ${sale.isPaid ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
                             >
                               {sale.isPaid ? "Pago" : `Pendente ${dueDateExtracted ? `• Venc: ${dueDateExtracted}` : ""}`}
                             </span>
@@ -3265,7 +3318,7 @@ Obrigado pela preferência!`;
 
                       {/* Right side: Total Price */}
                       <div className="text-right shrink-0 mt-0.5">
-                        <p className="text-sm sm:text-lg font-black text-[#0ea5e9]">
+                        <p className="text-base sm:text-xl font-black text-[#0ea5e9]">
                           R$ {Number(sale.total).toFixed(2)}
                         </p>
                       </div>
@@ -3391,25 +3444,25 @@ Obrigado pela preferência!`;
               <div className="flex justify-between items-center bg-sky-950/25 p-1 rounded-[1.3rem] border border-white/5 relative z-10">
                 <button
                   onClick={() => setReportTab("DIARIO")}
-                  className={`flex-1 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "DIARIO" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                  className={`flex-1 py-1 sm:py-1.5 rounded-xl text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "DIARIO" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                 >
                   Dia
                 </button>
                 <button
                   onClick={() => setReportTab("MENSAL")}
-                  className={`flex-1 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "MENSAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                  className={`flex-1 py-1 sm:py-1.5 rounded-xl text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "MENSAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                 >
                   Mês
                 </button>
                 <button
                   onClick={() => setReportTab("ANUAL")}
-                  className={`flex-1 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "ANUAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                  className={`flex-1 py-1 sm:py-1.5 rounded-xl text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "ANUAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                 >
                   Ano
                 </button>
                 <button
                   onClick={() => setReportTab("TOTAL")}
-                  className={`flex-1 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "TOTAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                  className={`flex-1 py-1 sm:py-1.5 rounded-xl text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "TOTAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                 >
                   Tudo
                 </button>
@@ -4628,25 +4681,25 @@ Obrigado pela preferência!`;
               <div className="flex justify-between items-center bg-sky-950/25 p-1 rounded-[1.2rem] border border-white/5">
                 <button
                   onClick={() => setReportTab("DIARIO")}
-                  className={`flex-1 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "DIARIO" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                  className={`flex-1 py-1 sm:py-1 rounded-lg text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "DIARIO" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                 >
                   Dia
                 </button>
                 <button
                   onClick={() => setReportTab("MENSAL")}
-                  className={`flex-1 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "MENSAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                  className={`flex-1 py-1 sm:py-1 rounded-lg text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "MENSAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                 >
                   Mês
                 </button>
                 <button
                   onClick={() => setReportTab("ANUAL")}
-                  className={`flex-1 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "ANUAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                  className={`flex-1 py-1 sm:py-1 rounded-lg text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "ANUAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                 >
                   Ano
                 </button>
                 <button
                   onClick={() => setReportTab("TOTAL")}
-                  className={`flex-1 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-extrabold uppercase tracking-wide transition-all ${reportTab === "TOTAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                  className={`flex-1 py-1 sm:py-1 rounded-lg text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "TOTAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                 >
                   Tudo
                 </button>
@@ -4766,7 +4819,16 @@ Obrigado pela preferência!`;
                 ).map((item, index) => (
                   <div
                     key={index}
-                    className="bg-white p-4 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between"
+                    onClick={() => {
+                      if (currentScreen !== "PRODUCT_REPORT") {
+                        handleOpenClientReport(item.name, item.clientId);
+                      }
+                    }}
+                    className={`bg-white p-4 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between ${
+                      currentScreen !== "PRODUCT_REPORT"
+                        ? "cursor-pointer hover:bg-slate-50/75 active:scale-[0.98] transition-all hover:border-slate-200"
+                        : ""
+                    }`}
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black italic text-xs">
@@ -4907,6 +4969,18 @@ Obrigado pela preferência!`;
         onEdit={handleOpenEditSale}
         onDelete={handleDeleteSale}
         onTogglePaid={handleTogglePaid}
+      />
+
+      <ClientReportModal
+        isOpen={!!selectedClientReport}
+        onClose={() => setSelectedClientReport(null)}
+        client={selectedClientReport?.client || null}
+        sales={selectedClientReport?.sales || []}
+        profile={businessProfile}
+        onTogglePaid={handleTogglePaid}
+        onViewSale={(sale) => {
+          setSelectedSale(sale);
+        }}
       />
 
       {subscriptionModal.isOpen && subscriptionModal.business && (
