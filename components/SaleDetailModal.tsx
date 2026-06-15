@@ -411,11 +411,20 @@ Obrigado pela preferência!`;
     }
   };
 
+  React.useEffect(() => {
+    if (isOpen && sale) {
+      const timer = setTimeout(() => {
+        handlePrint();
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, sale?.id]);
+
   const currentLogo = convertDriveLink(profile.logoUrl || '');
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 animate-in zoom-in-95 relative">
+    <div className="fixed inset-0 bg-black/65 sm:backdrop-blur-sm z-[100] flex items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300">
+      <div className="bg-white w-full h-full sm:h-auto sm:max-h-[90vh] sm:rounded-[2rem] sm:max-w-2xl shadow-2xl overflow-hidden flex flex-col border-0 sm:border border-slate-200 animate-in zoom-in-95 relative">
         {/* Confirmação de Exclusão Overlay */}
         {showConfirmDelete && (
           <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-200">
@@ -496,78 +505,130 @@ Obrigado pela preferência!`;
         )}
 
         {viewMode === 'VIEW' ? (
-          <div className="overflow-y-auto p-6 space-y-6 bg-white flex-1">
+          <div className="overflow-y-auto p-3 sm:p-5 bg-slate-50 flex-1 space-y-4">
             
-            {/* Company Section */}
-            <div className="flex flex-col items-center text-center pb-2">
-               <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center overflow-hidden mb-3 border border-slate-100">
-                  {(profile.logoUrl) ? (
-                    <img src={currentLogo} className="w-full h-full object-cover" alt="Logo" referrerPolicy="no-referrer" />
-                  ) : (
-                    <Sun size={24} className="text-yellow-400" />
+            {/* The Document Sheet */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-md overflow-hidden flex flex-col relative">
+              {/* Brand Top bar */}
+              <div className="h-1.5 bg-gradient-to-r from-[#0ea5e9] to-[#0284c7]"></div>
+              
+              {/* Receipt Header */}
+              <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start gap-4">
+                <div className="flex flex-col items-start mt-1">
+                  {profile.logoUrl && (
+                    <img 
+                      src={currentLogo} 
+                      className="max-h-12 max-w-[140px] mb-2 object-contain" 
+                      alt="Logo" 
+                      referrerPolicy="no-referrer" 
+                    />
                   )}
-               </div>
-               <h3 className="text-base font-black text-slate-800 uppercase italic tracking-tighter leading-none">{profile.companyName || 'OMNIVENDA'}</h3>
-               <p className="text-[8px] text-slate-300 font-black uppercase tracking-widest mt-1">{profile.document}</p>
-            </div>
-
-            {/* Client Details Minimalist */}
-            <div className="p-5 rounded-2xl border border-slate-100 space-y-4">
-               <div className="flex items-center gap-2">
-                  <User size={14} className="text-slate-300" />
-                  <span className="font-black text-slate-800 text-xs uppercase italic">{sale.clientName}</span>
-               </div>
-               <div className="grid grid-cols-2 gap-4">
-                  <div>
-                     <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Meio de Pagamento</p>
-                     <p className="text-[10px] font-bold text-slate-600">{sale.paymentMethod}</p>
-                  </div>
-                  <div>
-                     <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Condições</p>
-                     <p className="text-[10px] font-bold text-slate-600">{sale.paymentTerms}</p>
-                  </div>
-               </div>
-            </div>
-
-            {/* Items List */}
-            <div className="space-y-2">
-              <h3 className="text-[9px] font-black text-slate-200 uppercase tracking-widest ml-1">Itens Adicionados</h3>
-              <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden">
-                {sale.items.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center p-3.5 border-b last:border-0 border-slate-50">
-                    <div className="flex items-center gap-3">
-                        <div className="text-[10px] font-black text-slate-300 w-6">
-                           {item.quantity}x
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-slate-700 text-xs uppercase italic">{item.name}</span>
-                          {item.discount > 0 && (
-                            <span className="text-[8px] font-black text-red-500 uppercase">Desc. R$ {item.discount.toFixed(2)} un.</span>
-                          )}
-                        </div>
-                    </div>
-                    <span className="font-black text-slate-900 text-xs">R$ {((item.price - (item.discount || 0)) * item.quantity).toFixed(2)}</span>
-                  </div>
-                ))}
+                  <h3 className="text-sm font-black text-slate-800 uppercase italic tracking-tighter leading-none">{profile.companyName || 'OMNIVENDA'}</h3>
+                  {profile.document && <p className="text-[8px] text-slate-400 font-bold mt-1.5 leading-none">CNPJ/CPF: {profile.document}</p>}
+                  {profile.phone && <p className="text-[8px] text-slate-400 font-bold mt-1 leading-none">TEL: {profile.phone}</p>}
+                </div>
                 
-                {/* Total Box Minimalist */}
-                <div className="p-5 flex justify-between items-center border-t border-slate-100">
-                   <div>
-                      <span className="text-[8px] font-black uppercase text-slate-300 tracking-widest">Valor do Pedido</span>
-                      {sale.installments && sale.installments > 1 && (
-                        <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">{sale.installments}x de R$ {(sale.total/sale.installments).toFixed(2)}</p>
-                      )}
-                   </div>
-                   <div className="text-right">
-                      <span className="text-2xl font-black text-slate-800 italic leading-none">R$ {sale.total.toFixed(2)}</span>
-                   </div>
+                <div className="flex flex-col items-end text-right self-stretch sm:self-auto justify-between sm:justify-start gap-1">
+                  <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${sale.status === 'ORCAMENTO' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+                    {sale.status === 'ORCAMENTO' ? 'ORÇAMENTO' : 'COMPROVANTE DE PEDIDO'}
+                  </span>
+                  <div className="mt-1">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase leading-none">PEDIDO NO.</p>
+                    <p className="text-lg font-black text-slate-800 leading-none mt-1">
+                      {sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : '...'}
+                    </p>
+                  </div>
+                  <p className="text-[9px] text-slate-400 font-bold mt-1">
+                    {sale.date} às {sale.time}
+                  </p>
                 </div>
               </div>
+
+              {/* Grid: Cliente & Informações de Venda */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 p-4 sm:p-5 border-b border-slate-100 bg-[#fafafb]">
+                {/* Column: Cliente */}
+                <div className="flex flex-col">
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">CLIENTE</span>
+                  <div className="bg-white rounded-xl border border-slate-100 p-3 flex-1">
+                    <p className="font-black text-slate-800 text-xs uppercase italic">{sale.clientName}</p>
+                    {clientData?.phone && (
+                      <p className="text-[10px] text-slate-500 mt-1">
+                        <strong className="text-slate-400 font-bold">WhatsApp / Tel:</strong> {clientData.phone}
+                      </p>
+                    )}
+                    {clientData?.address && (
+                      <p className="text-[10px] text-slate-500 mt-0.5">
+                        <strong className="text-slate-400 font-bold">Endereço:</strong> {clientData.address}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Column: Info Venda */}
+                <div className="flex flex-col">
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">INFORMAÇÕES DE VENDAS</span>
+                  <div className="bg-white rounded-xl border border-slate-100 p-3 flex-1 space-y-1">
+                    <p className="text-[10px] text-slate-500">
+                      <strong className="text-slate-400 font-bold">Forma de Pagamento:</strong> {sale.paymentMethod || 'Dinheiro'}
+                    </p>
+                    <p className="text-[10px] text-slate-500">
+                      <strong className="text-slate-400 font-bold">Condição de Pagamento:</strong> {sale.paymentTerms || 'À vista'}
+                    </p>
+                    <p className="text-[9px] text-slate-400 italic">
+                      Documento sem valor fiscal
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Table of items */}
+              <div className="p-4 sm:p-5 border-b border-slate-100">
+                <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider mb-2.5 block">PRODUTOS DO PEDIDO</span>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[320px]">
+                    <thead>
+                      <tr className="border-b border-slate-100">
+                        <th className="pb-1.5 font-black text-[8px] text-slate-400 uppercase tracking-widest">ITEM / ESPECIFICAÇÃO</th>
+                        <th className="pb-1.5 text-center font-black text-[8px] text-slate-400 uppercase tracking-widest w-12">QTD</th>
+                        <th className="pb-1.5 text-right font-black text-[8px] text-slate-400 uppercase tracking-widest w-20">VL. UNITÁRIO</th>
+                        <th className="pb-1.5 text-right font-black text-[8px] text-slate-400 uppercase tracking-widest w-20">SUBTOTAL</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {sale.items.map((item, idx) => {
+                        const unitPrice = item.price - (item.discount || 0);
+                        return (
+                          <tr key={idx} className="text-slate-700 text-[11px]">
+                            <td className="py-2.5 font-bold uppercase text-slate-800">
+                              {item.name}
+                              {item.discount > 0 && (
+                                <span className="block text-[8px] font-black text-red-500 uppercase mt-0.5">Desc. R$ {item.discount.toFixed(2)} un.</span>
+                              )}
+                            </td>
+                            <td className="py-2.5 text-center font-bold text-slate-500">{item.quantity}</td>
+                            <td className="py-2.5 text-right text-slate-500">R$ {unitPrice.toFixed(2)}</td>
+                            <td className="py-2.5 text-right font-black text-slate-800">R$ {(unitPrice * item.quantity).toFixed(2)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Total Row */}
+              <div className="p-4 sm:p-5 bg-[#fafafb] flex justify-end items-center">
+                <div className="flex items-baseline gap-2 text-right">
+                  <span className="text-[9px] font-black uppercase text-[#475569] tracking-wider">VALOR TOTAL DO PEDIDO:</span>
+                  <span className="text-xl sm:text-2xl font-black text-[#0ea5e9]">R$ {sale.total.toFixed(2)}</span>
+                </div>
+              </div>
+
             </div>
 
-            <div className="text-center">
-               <p className="text-[8px] text-slate-200 font-bold uppercase tracking-widest">Registrado em {sale.date} às {sale.time}</p>
-            </div>
+            <p className="text-center text-[8px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+              Agradecemos a preferência e confiança!
+            </p>
           </div>
         ) : (
           <div className="overflow-y-auto p-6 space-y-4 bg-slate-50 flex-1">
