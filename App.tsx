@@ -243,6 +243,19 @@ const App: React.FC = () => {
     "MENSAL",
   );
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [rankingFilterType, setRankingFilterType] = useState<"MENSAL" | "PERIODO">("MENSAL");
+  const [rankingMonth, setRankingMonth] = useState<string>(() => {
+    const today = new Date();
+    return `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, "0")}`;
+  });
+  const [rankingStartDate, setRankingStartDate] = useState<string>(() => {
+    const today = new Date();
+    return `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, "0")}-01`;
+  });
+  const [rankingEndDate, setRankingEndDate] = useState<string>(() => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  });
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   const [productModal, setProductModal] = useState<{
@@ -1080,15 +1093,31 @@ const App: React.FC = () => {
       };
     }
 
-    const clientSales = salesHistory.filter((s) => {
+    const clientSales = salesHistoryWithNumbers.filter((s) => {
       const nameMatch =
         s.clientName &&
         s.clientName.trim().toUpperCase() === clientName.trim().toUpperCase();
       const idMatch = s.clientId && s.clientId === matchedClient?.id;
-      return (
-        (idMatch || nameMatch) &&
-        (s.status === "FINALIZADA" || s.status === "PENDENTE" || s.status === "ORCAMENTO")
-      );
+      
+      if (!(idMatch || nameMatch)) return false;
+      if (!["FINALIZADA", "PENDENTE"].includes(s.status) || !s.date) return false;
+
+      if (rankingFilterType === "MENSAL") {
+        if (!rankingMonth) return true;
+        const [year, month] = rankingMonth.split("-");
+        const monthYearStr = `${month}/${year}`;
+        return s.date.endsWith(monthYearStr);
+      } else {
+        // PERIODO
+        const parts = s.date.split("/");
+        if (parts.length === 3) {
+          const saleIsoDate = `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+          const start = rankingStartDate || "2000-01-01";
+          const end = rankingEndDate || "9999-12-31";
+          return saleIsoDate >= start && saleIsoDate <= end;
+        }
+        return false;
+      }
     });
 
     setSelectedClientReport({
@@ -1628,12 +1657,6 @@ Obrigado pela preferência!`;
   }, [salesHistory, reportTab, currentDate]);
 
   const clientRanking = useMemo(() => {
-    const d = currentDate;
-    const dayStr = d.toLocaleDateString("pt-BR");
-    const monthStr =
-      (d.getMonth() + 1).toString().padStart(2, "0") + "/" + d.getFullYear();
-    const yearStr = d.getFullYear().toString();
-
     const safeNumber = (val: any) => {
       if (typeof val === "number") return isNaN(val) ? 0 : val;
       if (typeof val === "string") {
@@ -1653,11 +1676,23 @@ Obrigado pela preferência!`;
       // Incluímos FINALIZADA e PENDENTE no ranking
       if (!["FINALIZADA", "PENDENTE"].includes(s.status) || !s.date)
         return false;
-      if (reportTab === "TOTAL") return true;
-      if (reportTab === "DIARIO") return s.date === dayStr;
-      if (reportTab === "MENSAL") return s.date.endsWith(monthStr);
-      if (reportTab === "ANUAL") return s.date.endsWith(yearStr);
-      return false;
+
+      if (rankingFilterType === "MENSAL") {
+        if (!rankingMonth) return true;
+        const [year, month] = rankingMonth.split("-");
+        const monthYearStr = `${month}/${year}`;
+        return s.date.endsWith(monthYearStr);
+      } else {
+        // PERIODO
+        const parts = s.date.split("/");
+        if (parts.length === 3) {
+          const saleIsoDate = `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+          const start = rankingStartDate || "2000-01-01";
+          const end = rankingEndDate || "9999-12-31";
+          return saleIsoDate >= start && saleIsoDate <= end;
+        }
+        return false;
+      }
     });
 
     const clientsMap: Record<string, any> = {};
@@ -1700,7 +1735,7 @@ Obrigado pela preferência!`;
     });
 
     return Object.values(clientsMap).sort((a, b) => b.totalSold - a.totalSold);
-  }, [salesHistory, currentDate, reportTab]);
+  }, [salesHistory, rankingFilterType, rankingMonth, rankingStartDate, rankingEndDate]);
 
   const productRanking = useMemo(() => {
     const d = currentDate;
@@ -4589,13 +4624,25 @@ Obrigado pela preferência!`;
                           <h1>${title}</h1>
                           <div class="date-header">
                             ${
-                              reportTab === "DIARIO"
-                                ? currentDate.toLocaleDateString("pt-BR")
-                                : reportTab === "MENSAL"
-                                  ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`
-                                  : reportTab === "ANUAL"
-                                    ? currentDate.getFullYear()
-                                    : "Todo o Período"
+                              currentScreen === "CLIENT_REPORT"
+                                ? (() => {
+                                    if (rankingFilterType === "MENSAL") {
+                                      const [yr, mn] = rankingMonth.split("-");
+                                      const lastDay = new Date(Number(yr), Number(mn), 0).getDate();
+                                      return `Período: 01/${mn}/${yr} até ${String(lastDay).padStart(2, "0")}/${mn}/${yr}`;
+                                    } else {
+                                      const [sy, sm, sd] = rankingStartDate.split("-");
+                                      const [ey, em, ed] = rankingEndDate.split("-");
+                                      return `Período: ${sd}/${sm}/${sy} até ${ed}/${em}/${ey}`;
+                                    }
+                                  })()
+                                : reportTab === "DIARIO"
+                                  ? currentDate.toLocaleDateString("pt-BR")
+                                  : reportTab === "MENSAL"
+                                    ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`
+                                    : reportTab === "ANUAL"
+                                      ? currentDate.getFullYear()
+                                      : "Todo o Período"
                             }
                           </div>
 
@@ -4677,59 +4724,119 @@ Obrigado pela preferência!`;
                 <Printer size={20} />
               </button>
             </div>
-            <div className="px-6 pb-2.5 mt-1.5 relative z-10">
-              <div className="flex justify-between items-center bg-sky-950/25 p-1 rounded-[1.2rem] border border-white/5">
-                <button
-                  onClick={() => setReportTab("DIARIO")}
-                  className={`flex-1 py-1 sm:py-1 rounded-lg text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "DIARIO" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
-                >
-                  Dia
-                </button>
-                <button
-                  onClick={() => setReportTab("MENSAL")}
-                  className={`flex-1 py-1 sm:py-1 rounded-lg text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "MENSAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
-                >
-                  Mês
-                </button>
-                <button
-                  onClick={() => setReportTab("ANUAL")}
-                  className={`flex-1 py-1 sm:py-1 rounded-lg text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "ANUAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
-                >
-                  Ano
-                </button>
-                <button
-                  onClick={() => setReportTab("TOTAL")}
-                  className={`flex-1 py-1 sm:py-1 rounded-lg text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "TOTAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
-                >
-                  Tudo
-                </button>
-              </div>
-            </div>
-            <div className="bg-sky-950/20 backdrop-blur-sm border-t border-white/5 flex items-center justify-between px-8 py-2 relative z-10">
-              <button
-                onClick={() => changeDate(-1)}
-                className="p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg active:scale-75 transition-all disabled:opacity-25"
-                disabled={reportTab === "TOTAL"}
-              >
-                <ChevronLeft size={18} className="stroke-[2.5]" />
-              </button>
-              <span className="text-sm font-extrabold uppercase tracking-wide text-white drop-shadow-sm">
-                {reportTab === "DIARIO"
-                  ? currentDate.toLocaleDateString("pt-BR")
-                  : reportTab === "MENSAL"
-                    ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`
-                    : reportTab === "ANUAL"
-                      ? currentDate.getFullYear()
-                      : "Todo o Período"}
-              </span>
-              <button
-                onClick={() => changeDate(1)}
-                className="p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg active:scale-75 transition-all disabled:opacity-25"
-                disabled={reportTab === "TOTAL"}
-              >
-                <ChevronRight size={20} className="stroke-[2.5]" />
-              </button>
-            </div>
+            {currentScreen === "CLIENT_REPORT" ? (
+              <>
+                <div className="px-6 pb-2.5 mt-1.5 relative z-10">
+                  <div className="flex justify-between items-center bg-sky-950/25 p-1 rounded-[1.2rem] border border-white/5">
+                    <button
+                      onClick={() => setRankingFilterType("MENSAL")}
+                      className={`flex-1 py-1 sm:py-1 rounded-lg text-sm sm:text-base font-black uppercase tracking-tight transition-all ${rankingFilterType === "MENSAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                    >
+                      Mensal
+                    </button>
+                    <button
+                      onClick={() => setRankingFilterType("PERIODO")}
+                      className={`flex-1 py-1 sm:py-1 rounded-lg text-sm sm:text-base font-black uppercase tracking-tight transition-all ${rankingFilterType === "PERIODO" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                    >
+                      Por Período
+                    </button>
+                  </div>
+                </div>
+                <div className="bg-sky-950/20 backdrop-blur-sm border-t border-white/5 flex flex-col px-6 py-2.5 relative z-10 gap-2">
+                  {rankingFilterType === "MENSAL" ? (
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-black uppercase text-sky-100">Escolha o Mês:</span>
+                      <input
+                        type="month"
+                        value={rankingMonth}
+                        onChange={(e) => setRankingMonth(e.target.value)}
+                        className="bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl px-3 py-1 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-sky-300"
+                        style={{ colorScheme: "dark" }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-black uppercase text-sky-100 mb-1">Data Início</span>
+                        <input
+                          type="date"
+                          value={rankingStartDate}
+                          onChange={(e) => setRankingStartDate(e.target.value)}
+                          className="bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl px-2 py-1 text-xs sm:text-sm font-bold text-white w-full focus:outline-none focus:ring-1 focus:ring-sky-300"
+                          style={{ colorScheme: "dark" }}
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-black uppercase text-sky-100 mb-1">Data Fim</span>
+                        <input
+                          type="date"
+                          value={rankingEndDate}
+                          onChange={(e) => setRankingEndDate(e.target.value)}
+                          className="bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl px-2 py-1 text-xs sm:text-sm font-bold text-white w-full focus:outline-none focus:ring-1 focus:ring-sky-300"
+                          style={{ colorScheme: "dark" }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="px-6 pb-2.5 mt-1.5 relative z-10">
+                  <div className="flex justify-between items-center bg-sky-950/25 p-1 rounded-[1.2rem] border border-white/5">
+                    <button
+                      onClick={() => setReportTab("DIARIO")}
+                      className={`flex-1 py-1 sm:py-1 rounded-lg text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "DIARIO" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                    >
+                      Dia
+                    </button>
+                    <button
+                      onClick={() => setReportTab("MENSAL")}
+                      className={`flex-1 py-1 sm:py-1 rounded-lg text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "MENSAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                    >
+                      Mês
+                    </button>
+                    <button
+                      onClick={() => setReportTab("ANUAL")}
+                      className={`flex-1 py-1 sm:py-1 rounded-lg text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "ANUAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                    >
+                      Ano
+                    </button>
+                    <button
+                      onClick={() => setReportTab("TOTAL")}
+                      className={`flex-1 py-1 sm:py-1 rounded-lg text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "TOTAL" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
+                    >
+                      Tudo
+                    </button>
+                  </div>
+                </div>
+                <div className="bg-sky-950/20 backdrop-blur-sm border-t border-white/5 flex items-center justify-between px-8 py-2 relative z-10">
+                  <button
+                    onClick={() => changeDate(-1)}
+                    className="p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg active:scale-75 transition-all disabled:opacity-25"
+                    disabled={reportTab === "TOTAL"}
+                  >
+                    <ChevronLeft size={18} className="stroke-[2.5]" />
+                  </button>
+                  <span className="text-sm font-extrabold uppercase tracking-wide text-white drop-shadow-sm">
+                    {reportTab === "DIARIO"
+                      ? currentDate.toLocaleDateString("pt-BR")
+                      : reportTab === "MENSAL"
+                        ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`
+                        : reportTab === "ANUAL"
+                          ? currentDate.getFullYear()
+                          : "Todo o Período"}
+                  </span>
+                  <button
+                    onClick={() => changeDate(1)}
+                    className="p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg active:scale-75 transition-all disabled:opacity-25"
+                    disabled={reportTab === "TOTAL"}
+                  >
+                    <ChevronRight size={20} className="stroke-[2.5]" />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-3 pb-24">
@@ -4981,6 +5088,10 @@ Obrigado pela preferência!`;
         onViewSale={(sale) => {
           setSelectedSale(sale);
         }}
+        rankingFilterType={rankingFilterType}
+        rankingMonth={rankingMonth}
+        rankingStartDate={rankingStartDate}
+        rankingEndDate={rankingEndDate}
       />
 
       {subscriptionModal.isOpen && subscriptionModal.business && (

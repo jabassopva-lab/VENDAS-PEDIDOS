@@ -26,6 +26,10 @@ interface ClientReportModalProps {
   profile: BusinessProfile;
   onTogglePaid?: (saleId: string, isPaid: boolean) => void;
   onViewSale?: (sale: Sale) => void;
+  rankingFilterType?: "MENSAL" | "PERIODO";
+  rankingMonth?: string;
+  rankingStartDate?: string;
+  rankingEndDate?: string;
 }
 
 const ClientReportModal: React.FC<ClientReportModalProps> = ({
@@ -35,9 +39,34 @@ const ClientReportModal: React.FC<ClientReportModalProps> = ({
   sales,
   profile,
   onTogglePaid,
-  onViewSale
+  onViewSale,
+  rankingFilterType,
+  rankingMonth,
+  rankingStartDate,
+  rankingEndDate
 }) => {
   if (!isOpen || !client) return null;
+
+  // Format period
+  const getPeriodString = () => {
+    if (!rankingFilterType) return "";
+    if (rankingFilterType === "MENSAL" && rankingMonth) {
+      const [yr, mn] = rankingMonth.split("-");
+      const lastDay = new Date(Number(yr), Number(mn), 0).getDate();
+      return `Período: 01/${mn}/${yr} até ${String(lastDay).padStart(2, "0")}/${mn}/${yr}`;
+    } else if (rankingFilterType === "PERIODO" && rankingStartDate && rankingEndDate) {
+      const formatIsoToPtBr = (isoStr: string) => {
+        if (!isoStr) return "";
+        const parts = isoStr.split("-");
+        if (parts.length === 3) {
+          return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+        return isoStr;
+      };
+      return `Período: ${formatIsoToPtBr(rankingStartDate)} até ${formatIsoToPtBr(rankingEndDate)}`;
+    }
+    return "";
+  };
 
   // Compute metrics
   const totalSold = sales.reduce((acc, s) => acc + s.total, 0);
@@ -79,14 +108,8 @@ const ClientReportModal: React.FC<ClientReportModalProps> = ({
     const salesListHTML = sales.map(s => {
       return `
         <tr style="border-bottom: 1px solid #e2e8f0;">
-          <td style="padding: 12px 8px; font-size: 13px;">${s.orderNumber ? "#" + String(s.orderNumber).padStart(4, '0') : "#" + s.id.substring(0, 5)}</td>
+          <td style="padding: 12px 8px; font-size: 13px;">${s.orderNumber ? String(s.orderNumber).padStart(4, '0') : s.id.substring(0, 5)}</td>
           <td style="padding: 12px 8px; font-size: 13px;">${s.date} ${s.time || ''}</td>
-          <td style="padding: 12px 8px; font-size: 13px;">${s.paymentMethod}</td>
-          <td style="padding: 12px 8px; font-size: 13px;">
-            ${s.isPaid 
-              ? '<span style="color: #10b981; font-weight: bold; background: #ecfdf5; padding: 2px 6px; border-radius: 4px;">PAGO</span>' 
-              : '<span style="color: #ef4444; font-weight: bold; background: #fef2f2; padding: 2px 6px; border-radius: 4px;">PENDENTE</span>'}
-          </td>
           <td style="padding: 12px 8px; font-size: 13px; text-align: right; font-weight: bold;">R$ ${s.total.toFixed(2)}</td>
         </tr>
       `;
@@ -113,7 +136,7 @@ const ClientReportModal: React.FC<ClientReportModalProps> = ({
             .info-block { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; }
             .info-title { font-size: 11px; font-weight: bold; text-transform: uppercase; color: #64748b; margin: 0 0 8px 0; letter-spacing: 0.05em; }
             .info-row { font-size: 13px; margin: 4px 0; display: flex; gap: 6px; align-items: center; }
-            .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
+            .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; }
             .stat-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: center; background: white; }
             .stat-title { font-size: 9px; font-weight: 800; text-transform: uppercase; color: #64748b; margin: 0 0 4px 0; }
             .stat-value { font-size: 16px; font-weight: 800; margin: 0; color: #0f172a; }
@@ -127,6 +150,7 @@ const ClientReportModal: React.FC<ClientReportModalProps> = ({
             <div>
               <h1 class="title">${client.name}</h1>
               <p class="subtitle">Relatório Consolidado de Vendas • Gerado em ${new Date().toLocaleDateString('pt-BR')}</p>
+              ${getPeriodString() ? `<p class="subtitle" style="font-weight: bold; margin-top: 4px; color: #0284c7;">${getPeriodString()}</p>` : ''}
             </div>
             <div class="company">
               <div>${profile.companyName || 'Meu Negócio'}</div>
@@ -153,14 +177,6 @@ const ClientReportModal: React.FC<ClientReportModalProps> = ({
               <p class="stat-title">Total Comprado</p>
               <p class="stat-value" style="color: #0284c7;">R$ ${totalSold.toFixed(2)}</p>
             </div>
-            <div class="stat-card" style="border-left: 4px solid #ef4444;">
-              <p class="stat-title">Saldo Devedor</p>
-              <p class="stat-value" style="color: #ef4444;">R$ ${totalPendingAmount.toFixed(2)}</p>
-            </div>
-            <div class="stat-card" style="border-left: 4px solid #10b981;">
-              <p class="stat-title">Total Pago</p>
-              <p class="stat-value" style="color: #10b981;">R$ ${totalPaidAmount.toFixed(2)}</p>
-            </div>
             <div class="stat-card" style="border-left: 4px solid #f59e0b;">
               <p class="stat-title">Total Itens</p>
               <p class="stat-value">${totalPotes} Unid.</p>
@@ -173,13 +189,11 @@ const ClientReportModal: React.FC<ClientReportModalProps> = ({
               <tr>
                 <th style="padding: 10px 8px;">Nº Pedido</th>
                 <th style="padding: 10px 8px;">Data</th>
-                <th style="padding: 10px 8px;">Forma Pagmto.</th>
-                <th style="padding: 10px 8px;">Status Pagmto.</th>
                 <th style="padding: 10px 8px; text-align: right;">Total do Pedido</th>
               </tr>
             </thead>
             <tbody>
-              ${salesListHTML || '<tr><td colspan="5" style="padding:20px; text-align:center; color:#94a3b8;">Nenhum pedido registrado para este período</td></tr>'}
+              ${salesListHTML || '<tr><td colspan="3" style="padding:20px; text-align:center; color:#94a3b8;">Nenhum pedido registrado para este período</td></tr>'}
             </tbody>
           </table>
 
@@ -218,7 +232,7 @@ const ClientReportModal: React.FC<ClientReportModalProps> = ({
           <div className="absolute top-0 right-0 w-36 h-36 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
           <div className="relative z-10">
             <p className="text-[9px] font-black uppercase tracking-widest text-sky-100/90 mb-1">
-              Relatório Comercial Consolidado
+              Relatório Comercial Consolidado {getPeriodString() ? `• ${getPeriodString()}` : ''}
             </p>
             <h3 className="text-lg sm:text-xl font-extrabold uppercase tracking-tight italic drop-shadow-xs max-w-[280px] sm:max-w-[450px] truncate">
               {client.name}
@@ -279,7 +293,7 @@ const ClientReportModal: React.FC<ClientReportModalProps> = ({
           </div>
 
           {/* Quick Stats Bento-Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="bg-white p-3.5 rounded-3xl border border-slate-100 shadow-xs text-center flex flex-col justify-between">
               <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block mb-1">
                 Total Comprado
@@ -301,18 +315,6 @@ const ClientReportModal: React.FC<ClientReportModalProps> = ({
               </p>
               <span className="text-[7px] font-bold text-slate-400">
                 {sales.length} Pedidos
-              </span>
-            </div>
-
-            <div className="bg-rose-50/45 p-3.5 rounded-3xl border border-rose-100 shadow-xs text-center flex flex-col justify-center gap-1">
-              <span className="text-[8px] font-extrabold text-[#f43f5e] uppercase tracking-widest block leading-none">
-                Saldo Devedor
-              </span>
-              <p className="text-base sm:text-lg font-black text-[#e11d48]">
-                R$ {totalPendingAmount.toFixed(2)}
-              </p>
-              <span className="text-[7px] font-bold text-rose-500">
-                {pendingSales.length} em aberto
               </span>
             </div>
 
@@ -367,49 +369,18 @@ const ClientReportModal: React.FC<ClientReportModalProps> = ({
                     {/* Left: order details */}
                     <div className="flex items-start gap-3">
                       <div className="w-9 h-9 bg-slate-900 text-white rounded-lg flex items-center justify-center font-black italic text-[10px]">
-                        {sale.orderNumber ? `#${String(sale.orderNumber).padStart(4, '0')}` : `#${sale.id.substring(0, 4)}`}
+                        {sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : sale.id.substring(0, 4)}
                       </div>
-                      <div className="font-sans">
+                      <div className="font-sans flex items-center">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="font-extrabold text-slate-800 text-xs sm:text-sm">R$ {sale.total.toFixed(2)}</span>
                           <span className="text-[9px] text-slate-400">• {sale.date}</span>
                         </div>
-                        <p className="text-[9px] text-slate-400 uppercase font-black tracking-wider mt-0.5">
-                          {sale.paymentMethod} {sale.paymentTerms && `(${sale.paymentTerms})`}
-                        </p>
                       </div>
                     </div>
                     
-                    {/* Right: toggle / actions */}
+                    {/* Right: actions */}
                     <div className="flex items-center justify-between sm:justify-end gap-2 border-t sm:border-t-0 border-slate-50 pt-2 sm:pt-0">
-                      {/* Payment Toggle */}
-                      {onTogglePaid && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onTogglePaid(sale.id, !sale.isPaid);
-                          }}
-                          className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all border ${
-                            sale.isPaid
-                              ? "bg-emerald-50/40 hover:bg-emerald-50 border-emerald-100 text-emerald-700"
-                              : "bg-rose-50/40 hover:bg-rose-50 border-[#fca5a5] text-rose-750"
-                          }`}
-                          title={sale.isPaid ? "Estornar Pagamento (Mudar para Pendente)" : "Dar baixa (Marcar como Pago)"}
-                        >
-                          {sale.isPaid ? (
-                            <>
-                              <CheckCircle2 size={12} className="text-emerald-500" />
-                              <span>Pago</span>
-                            </>
-                          ) : (
-                            <>
-                              <AlertCircle size={12} className="text-rose-500" />
-                              <span>Pendente</span>
-                            </>
-                          )}
-                        </button>
-                      )}
-
                       {/* View details */}
                       {onViewSale && (
                         <button
