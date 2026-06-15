@@ -2762,7 +2762,7 @@ Obrigado pela preferência!`;
     rightAction?: React.ReactNode;
   }) => (
     <div className="sticky top-0 z-40 bg-[#fffbeb]">
-      <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-2 pb-2 sm:pt-4 sm:pb-3 px-4 sm:px-6 shadow-xl rounded-b-[1.5rem] sm:rounded-b-[1.8rem] relative overflow-hidden border-b-4 border-yellow-400">
+      <header className="bg-gradient-to-b from-[#0ea5e9] to-[#0284c7] text-white pt-1.5 pb-1.5 sm:pt-3 sm:pb-3 px-4 sm:px-6 shadow-xl rounded-b-[1.5rem] sm:rounded-b-[1.8rem] relative overflow-hidden border-b-4 border-yellow-400">
         <div className="absolute top-2 right-0 p-4 opacity-10 rotate-12 pointer-events-none">
           <Palmtree size={50} />
         </div>
@@ -2788,6 +2788,7 @@ Obrigado pela preferência!`;
                   <img
                     src={convertDriveLink(businessProfile.logoUrl)}
                     className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
                   />
                 ) : (
                   <span className="text-[#0ea5e9] font-black text-xl italic leading-none">
@@ -2796,11 +2797,11 @@ Obrigado pela preferência!`;
                 )}
               </div>
             )}
-            <div>
-              <h1 className="text-3xl font-black tracking-tighter uppercase italic leading-none">
+            <div className="flex flex-col justify-center">
+              <h1 className="text-[32px] sm:text-[38px] font-black tracking-tighter uppercase italic leading-none">
                 {title}
               </h1>
-              <p className="text-yellow-300 text-[9px] font-black uppercase tracking-[0.2em] mt-1">
+              <p className="text-yellow-300 text-[10px] sm:text-[12px] font-black uppercase tracking-[0.15em] mt-0.5 leading-none">
                 Conectado OmniVenda Cloud
               </p>
             </div>
@@ -2912,7 +2913,7 @@ Obrigado pela preferência!`;
   return (
     <>
       <div
-        className={`min-h-screen bg-[#fffbeb] flex flex-col print:hidden ${currentScreen === "HOME" ? "h-screen overflow-hidden" : "pb-32"}`}
+        className={`min-h-screen bg-[#fffbeb] flex flex-col print:hidden ${currentScreen === "HOME" ? "overflow-y-auto pb-10" : "pb-32"}`}
       >
       {saveNotify.show && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-green-500 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-in slide-in-from-top-10 font-black uppercase italic text-[10px] border-2 border-white">
@@ -3247,47 +3248,47 @@ Obrigado pela preferência!`;
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
-                        onClick={() => handlePrintSaleDirect(sale)}
-                        className="flex items-center gap-1 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 text-slate-700 p-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
+                        onClick={() => setSelectedSale(sale)}
+                        className="flex items-center gap-1 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 text-slate-700 p-2 sm:px-3 sm:py-1.5 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
                         title="Visualizar Pedido"
                       >
-                        <Eye size={13} className="text-slate-500 sm:w-[15px] sm:h-[15px]" />
+                        <Eye size={16} className="text-slate-500 sm:w-[17px] sm:h-[17px]" />
                         <span className="hidden sm:inline">Visualizar</span>
                       </button>
 
                       <button
                         onClick={() => handleOpenEditSale(sale)}
-                        className="flex items-center gap-1 bg-blue-50/40 hover:bg-blue-50 border border-blue-100/50 text-blue-600 p-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
+                        className="flex items-center gap-1 bg-blue-50/40 hover:bg-blue-50 border border-blue-100/50 text-blue-600 p-2 sm:px-3 sm:py-1.5 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
                         title="Editar Pedido"
                       >
-                        <Edit3 size={13} className="text-blue-500 sm:w-[15px] sm:h-[15px]" />
+                        <Edit3 size={16} className="text-blue-500 sm:w-[17px] sm:h-[17px]" />
                         <span className="hidden sm:inline">Editar</span>
                       </button>
 
                       <button
                         onClick={() => handlePrintSaleDirect(sale)}
-                        className="flex items-center gap-1 bg-sky-50/40 hover:bg-sky-50 border border-sky-100/50 text-sky-600 p-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
+                        className="flex items-center gap-1 bg-sky-50/40 hover:bg-sky-50 border border-sky-100/50 text-sky-600 p-2 sm:px-3 sm:py-1.5 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
                         title="Imprimir Comprovante"
                       >
-                        <Printer size={13} className="text-sky-500 sm:w-[15px] sm:h-[15px]" />
+                        <Printer size={16} className="text-sky-500 sm:w-[17px] sm:h-[17px]" />
                         <span className="hidden sm:inline">Imprimir</span>
                       </button>
 
                       <button
                         onClick={() => handleShareWhatsAppDirect(sale)}
-                        className="flex items-center gap-1 bg-emerald-50/40 hover:bg-emerald-50 border border-emerald-100/50 text-emerald-600 p-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
+                        className="flex items-center gap-1 bg-emerald-50/40 hover:bg-emerald-50 border border-emerald-100/50 text-emerald-600 p-2 sm:px-3 sm:py-1.5 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
                         title="Enviar WhatsApp"
                       >
-                        <MessageSquare size={13} className="text-emerald-500 sm:w-[15px] sm:h-[15px]" />
+                        <MessageSquare size={16} className="text-emerald-500 sm:w-[17px] sm:h-[17px]" />
                         <span className="hidden sm:inline">WhatsApp</span>
                       </button>
 
                       <button
                         onClick={() => handleDeleteSale(sale.id)}
-                        className="flex items-center gap-1 bg-red-50/40 hover:bg-red-50 border border-red-100/50 text-red-650 p-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
+                        className="flex items-center gap-1 bg-red-50/40 hover:bg-red-50 border border-red-100/50 text-red-650 p-2 sm:px-3 sm:py-1.5 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
                         title="Excluir Pedido"
                       >
-                        <Trash2 size={13} className="text-red-500 sm:w-[15px] sm:h-[15px]" />
+                        <Trash2 size={16} className="text-red-500 sm:w-[17px] sm:h-[17px]" />
                         <span className="hidden sm:inline">Excluir</span>
                       </button>
                     </div>
