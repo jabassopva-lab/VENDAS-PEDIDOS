@@ -2886,8 +2886,8 @@ Obrigado pela preferência!`;
         <div className="absolute top-2 right-0 p-4 opacity-10 rotate-12 pointer-events-none">
           <Palmtree size={50} />
         </div>
-        <div className="flex items-center justify-between relative z-10">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between relative z-10 gap-3">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             {showBack && !isProfileIncomplete ? (
               <button
                 onClick={() =>
@@ -2895,7 +2895,7 @@ Obrigado pela preferência!`;
                     ? handleExitImpersonation()
                     : setCurrentScreen("HOME")
                 }
-                className="bg-white text-blue-600 hover:bg-yellow-400 hover:text-slate-900 border-2 border-yellow-300 px-3 py-2 rounded-2xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-1.5 font-black text-[10px] uppercase tracking-wider"
+                className="bg-white text-blue-600 hover:bg-yellow-400 hover:text-slate-900 border-2 border-yellow-300 px-3 py-2 rounded-2xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-1.5 font-black text-[10px] uppercase tracking-wider shrink-0"
                 title="Voltar"
               >
                 <ArrowLeft size={18} strokeWidth={3.5} />
@@ -2904,7 +2904,7 @@ Obrigado pela preferência!`;
             ) : (
               <div
                 onClick={() => !isPureAdmin && setCurrentScreen("SETTINGS")}
-                className="w-12 h-12 bg-white rounded-xl shadow-lg border-2 border-yellow-400 flex items-center justify-center overflow-hidden cursor-pointer"
+                className="w-12 h-12 bg-white rounded-xl shadow-lg border-2 border-yellow-400 flex items-center justify-center overflow-hidden cursor-pointer shrink-0"
               >
                 {businessProfile.logoUrl ? (
                   <img
@@ -2919,16 +2919,16 @@ Obrigado pela preferência!`;
                 )}
               </div>
             )}
-            <div className="flex flex-col justify-center">
-              <h1 className="text-[32px] sm:text-[38px] font-black tracking-tighter uppercase italic leading-none">
+            <div className="flex flex-col justify-center min-w-0">
+              <h1 className="text-[24px] sm:text-[38px] font-black tracking-tighter uppercase italic leading-none truncate" title={title}>
                 {title}
               </h1>
-              <p className="text-yellow-300 text-[10px] sm:text-[12px] font-black uppercase tracking-[0.15em] mt-0.5 leading-none">
+              <p className="text-yellow-300 text-[8px] sm:text-[12px] font-black uppercase tracking-[0.12em] mt-0.5 leading-none truncate">
                 Conectado OmniVenda Cloud
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 shrink-0">
             {rightAction}
             <button
               onClick={handleLogout}
