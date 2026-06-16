@@ -274,6 +274,7 @@ const App: React.FC = () => {
     sales: Sale[];
   } | null>(null);
   const [catalogSearch, setCatalogSearch] = useState("");
+  const [clientSearch, setClientSearch] = useState("");
   const [filterClientId, setFilterClientId] = useState<string>("ALL");
   const [filterProductId, setFilterProductId] = useState<string>("ALL");
   const [showFilters, setShowFilters] = useState(false);
@@ -3201,31 +3202,52 @@ Obrigado pela preferência!`;
               </button>
             }
           />
-          <div className="px-6 py-8 space-y-3">
-            {clients.map((c) => (
-              <div
-                key={c.id}
-                onClick={() =>
-                  setClientModal({ type: ModalType.EDIT, data: c })
-                }
-                className="bg-white p-4 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all cursor-pointer"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center text-sky-600 font-black text-xl">
-                    {c.name.charAt(0)}
+          <div className="px-6 pt-4">
+            <div className="relative">
+              <Search
+                className="absolute left-3 top-3 text-gray-400"
+                size={18}
+              />
+              <input
+                type="text"
+                placeholder="Buscar cliente..."
+                value={clientSearch}
+                onChange={(e) => setClientSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none"
+              />
+            </div>
+          </div>
+          <div className="px-6 py-6 space-y-3">
+            {clients
+              .filter((c) =>
+                c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+                (c.phone && c.phone.includes(clientSearch))
+              )
+              .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+              .map((c) => (
+                <div
+                  key={c.id}
+                  onClick={() =>
+                    setClientModal({ type: ModalType.EDIT, data: c })
+                  }
+                  className="bg-white p-4 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all cursor-pointer"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center text-sky-600 font-black text-xl">
+                      {c.name.charAt(0)}
+                    </div>
+                    <div>
+                      <h4 className="font-black text-slate-800 text-base uppercase italic leading-tight">
+                        {c.name}
+                      </h4>
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                        {c.phone}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-black text-slate-800 text-base uppercase italic leading-tight">
-                      {c.name}
-                    </h4>
-                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
-                      {c.phone}
-                    </p>
-                  </div>
+                  <ChevronRight size={20} className="text-slate-200" />
                 </div>
-                <ChevronRight size={20} className="text-slate-200" />
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}
