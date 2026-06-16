@@ -123,12 +123,16 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
     );
   }, [products, searchQuery]);
 
+  const sortedClients = useMemo(() => {
+    return [...clients].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  }, [clients]);
+
   const filteredClients = useMemo(() => {
     if (!clientSearchQuery) return [];
-    return clients.filter((c) =>
+    return sortedClients.filter((c) =>
       c.name.toLowerCase().includes(clientSearchQuery.toLowerCase()),
     );
-  }, [clients, clientSearchQuery]);
+  }, [sortedClients, clientSearchQuery]);
 
   const addToCart = (product: Product) => {
     setCart((prev) => {
@@ -337,9 +341,9 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 )}
                 {isClientDropdownOpen &&
                   !clientSearchQuery &&
-                  clients.length > 0 && (
+                  sortedClients.length > 0 && (
                     <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl mt-1 shadow-2xl z-50 max-h-60 overflow-y-auto">
-                      {clients.slice(0, 10).map((c) => (
+                      {sortedClients.map((c) => (
                         <div
                           key={c.id}
                           className="p-4 hover:bg-blue-50 cursor-pointer font-black text-slate-700 uppercase italic text-[10px] border-b last:border-0 border-slate-50 flex justify-between items-center"
@@ -355,8 +359,8 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
                           )}
                         </div>
                       ))}
-                      <div className="p-2 text-center bg-slate-50 text-[8px] font-black text-slate-300 uppercase italic">
-                        Digite para filtrar mais...
+                      <div className="p-2 text-center bg-slate-50 text-[8px] font-black text-slate-400 uppercase italic border-t border-slate-100">
+                        Mostrando todos os {sortedClients.length} clientes cadastrados
                       </div>
                     </div>
                   )}

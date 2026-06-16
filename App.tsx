@@ -1760,19 +1760,21 @@ Obrigado pela preferência!`;
           productsMap[item.id] = {
             name: item.name,
             salesCount: 0,
+            totalPotes: 0,
             totalSold: 0,
             totalProfit: 0,
           };
         }
         const qty = Number(item.quantity) || 0;
-        productsMap[item.id].salesCount += qty;
+        productsMap[item.id].totalPotes += qty;
+        productsMap[item.id].salesCount += 1; // Number of orders featuring this item
         productsMap[item.id].totalSold += (Number(item.price) || 0) * qty;
         productsMap[item.id].totalProfit +=
           ((Number(item.price) || 0) - (Number(item.costPrice) || 0)) * qty;
       });
     });
     return Object.values(productsMap).sort(
-      (a, b) => b.salesCount - a.salesCount,
+      (a, b) => b.totalPotes - a.totalPotes,
     );
   }, [salesHistory, currentDate, reportTab]);
 
@@ -2892,9 +2894,11 @@ Obrigado pela preferência!`;
                     ? handleExitImpersonation()
                     : setCurrentScreen("HOME")
                 }
-                className="bg-white/20 p-1.5 rounded-lg active:scale-90 transition-all"
+                className="bg-white text-blue-600 hover:bg-yellow-400 hover:text-slate-900 border-2 border-yellow-300 px-3 py-2 rounded-2xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-1.5 font-black text-[10px] uppercase tracking-wider"
+                title="Voltar"
               >
-                <ArrowLeft size={18} />
+                <ArrowLeft size={18} strokeWidth={3.5} />
+                <span>Voltar</span>
               </button>
             ) : (
               <div
@@ -4010,9 +4014,11 @@ Obrigado pela preferência!`;
             <div className="flex items-center justify-between px-6 pt-6 pb-6">
               <button
                 onClick={() => setCurrentScreen("REPORTS")}
-                className="bg-white/10 p-2.5 rounded-2xl active:scale-90 transition-all"
+                className="bg-white text-slate-800 hover:bg-yellow-400 hover:text-slate-900 px-3 py-2 rounded-2xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-1.5 font-black text-[10px] uppercase tracking-wider"
+                title="Voltar"
               >
-                <ArrowLeft size={20} />
+                <ArrowLeft size={18} strokeWidth={3.5} />
+                <span>Voltar</span>
               </button>
               <h3 className="text-lg font-black uppercase italic tracking-tighter text-center flex-1">
                 Dashboard Executivo
@@ -4536,9 +4542,11 @@ Obrigado pela preferência!`;
             <div className="flex items-center justify-between px-6 pt-6 pb-2 relative z-10">
               <button
                 onClick={() => setCurrentScreen("REPORTS")}
-                className="bg-white/10 hover:bg-white/20 p-2.5 rounded-2xl active:scale-90 transition-all border border-white/5"
+                className="bg-white text-blue-600 hover:bg-yellow-400 hover:text-slate-900 border-2 border-yellow-300 px-3 py-2 rounded-2xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-1.5 font-black text-[10px] uppercase tracking-wider"
+                title="Voltar"
               >
-                <ArrowLeft size={20} className="stroke-[2.5]" />
+                <ArrowLeft size={18} strokeWidth={3.5} />
+                <span>Voltar</span>
               </button>
               <h3 className="text-lg sm:text-xl font-extrabold tracking-tight text-center flex-1">
                 {currentScreen === "CLIENT_REPORT"
@@ -4946,10 +4954,9 @@ Obrigado pela preferência!`;
                           {item.name}
                         </h4>
                         <p className="text-[8px] font-black text-slate-400 uppercase">
-                          {item.salesCount} Vendas
-                          {currentScreen === "CLIENT_REPORT"
-                            ? ` • ${item.totalPotes || 0} Potes`
-                            : ""}
+                          {currentScreen === "PRODUCT_REPORT"
+                            ? `${item.salesCount} Pedido${item.salesCount !== 1 ? "s" : ""} • ${item.totalPotes || 0} Pote${(item.totalPotes || 0) !== 1 ? "s" : ""}`
+                            : `${item.salesCount} Venda${item.salesCount !== 1 ? "s" : ""}${currentScreen === "CLIENT_REPORT" ? ` • ${item.totalPotes || 0} Pote${(item.totalPotes || 0) !== 1 ? "s" : ""}` : ""}`}
                         </p>
                       </div>
                     </div>
@@ -4993,7 +5000,12 @@ Obrigado pela preferência!`;
                               (acc, curr) => acc + (curr.totalPotes || 0),
                               0,
                             )
-                          : "-"}
+                          : currentScreen === "PRODUCT_REPORT"
+                            ? productRanking.reduce(
+                                (acc, curr) => acc + (curr.totalPotes || 0),
+                                0,
+                              )
+                            : "-"}
                       </p>
                     </div>
                     <div>
