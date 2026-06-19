@@ -3341,7 +3341,13 @@ Obrigado pela preferência!`;
                       {/* Left side: Avatar + Client Name & Badges */}
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <div
-                          className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 ${sale.status === "ORCAMENTO" ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"}`}
+                          className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 ${
+                            sale.status === "ORCAMENTO"
+                              ? "bg-amber-50 text-amber-600"
+                              : sale.isPaid
+                              ? "bg-emerald-50 text-emerald-600"
+                              : "bg-red-50 text-red-600"
+                          }`}
                         >
                           {sale.status === "ORCAMENTO" ? (
                             <FileText size={16} className="sm:w-[20px] sm:h-[20px]" />
