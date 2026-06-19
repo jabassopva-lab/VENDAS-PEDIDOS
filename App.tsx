@@ -313,7 +313,8 @@ const App: React.FC = () => {
   }, [session, businessProfile]);
 
   const isPureAdmin = useMemo(() => {
-    return session?.user?.email?.toLowerCase() === "omnvenda_adm@omnivenda.com";
+    const email = session?.user?.email?.toLowerCase();
+    return email === "omnvenda_adm@omnivenda.com" || email === "jabasso.pva@gmail.com";
   }, [session]);
 
   const isProfileIncomplete = useMemo(() => {
