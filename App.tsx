@@ -832,7 +832,11 @@ const App: React.FC = () => {
                         <div class="section-title">Informações de Venda</div>
                         <div class="details-box">
                             <p class="client-detail"><strong>Forma de Pagamento:</strong> ${sale.paymentMethod || "Dinheiro"}</p>
-                            <p class="client-detail"><strong>Condição de Pagamento:</strong> ${sale.paymentTerms || "À vista"}</p>
+                            <p class="client-detail"><strong>Vencimento:</strong> <strong>${(() => {
+                                const terms = sale.paymentTerms || "À vista";
+                                const match = terms.match(/(\d{2}\/\d{2}\/\d{4})/);
+                                return match ? match[1] : terms;
+                            })()}</strong></p>
                             <p class="client-detail"><strong>Validade / Tipo:</strong> Documento sem valor fiscal</p>
                         </div>
                     </div>
@@ -1407,7 +1411,11 @@ const App: React.FC = () => {
                         <div class="section-title">Informações de Venda</div>
                         <div class="details-box">
                             <p class="client-detail"><strong>Forma de Pagamento:</strong> ${sale.paymentMethod || "Dinheiro"}</p>
-                            <p class="client-detail"><strong>Condição de Pagamento:</strong> ${sale.paymentTerms || "À vista"}</p>
+                            <p class="client-detail"><strong>Vencimento:</strong> <strong>${(() => {
+                                const terms = sale.paymentTerms || "À vista";
+                                const match = terms.match(/(\d{2}\/\d{2}\/\d{4})/);
+                                return match ? match[1] : terms;
+                            })()}</strong></p>
                             <p class="client-detail"><strong>Validade / Tipo:</strong> Documento sem valor fiscal</p>
                         </div>
                     </div>

@@ -361,7 +361,11 @@ Obrigado pela preferência!`;
                         <div class="section-title">Informações de Venda</div>
                         <div class="details-box">
                             <p class="client-detail"><strong>Forma de Pagamento:</strong> ${sale.paymentMethod || 'Dinheiro'}</p>
-                            <p class="client-detail"><strong>Condição de Pagamento:</strong> ${sale.paymentTerms || 'À vista'}</p>
+                            <p class="client-detail"><strong>Vencimento:</strong> <strong>${(() => {
+                                const terms = sale.paymentTerms || 'À vista';
+                                const match = terms.match(/(\d{2}\/\d{2}\/\d{4})/);
+                                return match ? match[1] : terms;
+                            })()}</strong></p>
                             <p class="client-detail"><strong>Validade / Tipo:</strong> Documento sem valor fiscal</p>
                         </div>
                     </div>
@@ -585,7 +589,14 @@ Obrigado pela preferência!`;
                       <strong className="text-slate-400 font-bold mr-1">Forma de Pagamento:</strong> {sale.paymentMethod || 'Dinheiro'}
                     </p>
                     <p className="text-xs text-slate-600">
-                      <strong className="text-slate-400 font-bold mr-1">Condição de Pagamento:</strong> {sale.paymentTerms || 'À vista'}
+                      <strong className="text-slate-400 font-bold mr-1">Vencimento:</strong> 
+                      <strong className="text-slate-900 font-bold">
+                        {(() => {
+                          const terms = sale.paymentTerms || 'À vista';
+                          const match = terms.match(/(\d{2}\/\d{2}\/\d{4})/);
+                          return match ? match[1] : terms;
+                        })()}
+                      </strong>
                     </p>
                     <div className="pt-1.5 border-t border-slate-50 mt-1">
                       <p className="text-[10px] text-slate-400 italic">
