@@ -7,6 +7,51 @@ interface AuthScreenProps {
   onAuthSuccess: (isTest?: boolean, testName?: string) => void;
 }
 
+const translateAuthError = (message: string): string => {
+  if (!message) return 'Erro ao autenticar. Verifique seus dados.';
+  
+  const lowerMessage = message.toLowerCase();
+  
+  if (lowerMessage.includes('invalid login credentials')) {
+    return 'Credenciais de login inválidas. Verifique seu e-mail e senha.';
+  }
+  if (lowerMessage.includes('email not confirmed')) {
+    return 'E-mail não confirmado. Por favor, confirme seu cadastro no link enviado para seu e-mail.';
+  }
+  if (lowerMessage.includes('user already registered')) {
+    return 'Este e-mail já está cadastrado no sistema.';
+  }
+  if (lowerMessage.includes('password should be at least 6 characters')) {
+    return 'A senha deve ter pelo menos 6 caracteres.';
+  }
+  if (lowerMessage.includes('unable to validate email address') || lowerMessage.includes('invalid email')) {
+    return 'E-mail em formato inválido. Use um e-mail válido (ex: seu_nome@dominio.com).';
+  }
+  if (lowerMessage.includes('email rate limit exceeded')) {
+    return 'Muitas tentativas de envio por e-mail. Por favor, aguarde alguns minutos antes de tentar novamente.';
+  }
+  if (lowerMessage.includes('rate limit exceeded')) {
+    return 'Limite de tentativas excedido. Por favor, tente novamente mais tarde.';
+  }
+  if (lowerMessage.includes('user not found')) {
+    return 'Usuário não encontrado.';
+  }
+  if (lowerMessage.includes('expired_oauth_state')) {
+    return 'O estado da sessão expirou. Tente novamente.';
+  }
+  if (lowerMessage.includes('token has expired') || lowerMessage.includes('token is invalid')) {
+    return 'O link ou código de recuperação expirou ou é inválido.';
+  }
+  if (lowerMessage.includes('new password should be different')) {
+    return 'A nova senha deve ser diferente da senha anterior.';
+  }
+  if (lowerMessage.includes('network error') || lowerMessage.includes('failed to fetch')) {
+    return 'Erro de conexão com o servidor. Ao utilizar o navegador em aba privada ou ao faltar conexão com a internet, este erro pode ocorrer.';
+  }
+
+  return message;
+};
+
 const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -91,7 +136,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
       }
       if (!isForgotPassword && isLogin) onAuthSuccess();
     } catch (err: any) {
-      setError(err.message || 'Erro ao autenticar. Verifique seus dados.');
+      setError(translateAuthError(err.message || 'Erro ao autenticar. Verifique seus dados.'));
     } finally {
       setLoading(false);
     }
