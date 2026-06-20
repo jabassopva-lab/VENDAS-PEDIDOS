@@ -296,6 +296,104 @@ const App: React.FC = () => {
     business: any | null;
   }>({ isOpen: false, business: null });
 
+  const getVisualStack = () => {
+    const stack = [];
+    if (currentScreen !== "HOME") stack.push("screen");
+    if (showDueTodayModal) stack.push("due-today");
+    if (selectedClientReport) stack.push("client-report");
+    if (subscriptionModal?.isOpen) stack.push("subscription");
+    if (saleModal) stack.push("new-sale");
+    if (productModal?.type !== ModalType.NONE) stack.push("product");
+    if (clientModal?.type !== ModalType.NONE) stack.push("client");
+    if (selectedSale) stack.push("sale-detail");
+    return stack;
+  };
+
+  const prevStackLengthRef = React.useRef(0);
+  const isHistoryPoppingRef = React.useRef(false);
+
+  useEffect(() => {
+    if (isHistoryPoppingRef.current) {
+      return;
+    }
+
+    const currentStack = getVisualStack();
+    const currentLength = currentStack.length;
+    const prevLength = prevStackLengthRef.current;
+
+    if (currentLength > prevLength) {
+      const diff = currentLength - prevLength;
+      for (let i = 0; i < diff; i++) {
+        window.history.pushState({ appHistory: true }, "");
+      }
+    } else if (currentLength < prevLength) {
+      const diff = prevLength - currentLength;
+      for (let i = 0; i < diff; i++) {
+        window.history.back();
+      }
+    }
+
+    prevStackLengthRef.current = currentLength;
+  }, [
+    currentScreen,
+    showDueTodayModal,
+    selectedClientReport,
+    subscriptionModal?.isOpen,
+    saleModal,
+    productModal?.type,
+    clientModal?.type,
+    selectedSale,
+  ]);
+
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const stack = getVisualStack();
+      if (stack.length > 0) {
+        isHistoryPoppingRef.current = true;
+
+        const topOfStack = stack[stack.length - 1];
+
+        if (topOfStack === "sale-detail") {
+          setSelectedSale(null);
+        } else if (topOfStack === "client") {
+          setClientModal({ type: ModalType.NONE });
+        } else if (topOfStack === "product") {
+          setProductModal({ type: ModalType.NONE });
+        } else if (topOfStack === "new-sale") {
+          setSaleModal(false);
+        } else if (topOfStack === "subscription") {
+          setSubscriptionModal({ isOpen: false, business: null });
+        } else if (topOfStack === "client-report") {
+          setSelectedClientReport(null);
+        } else if (topOfStack === "due-today") {
+          setShowDueTodayModal(false);
+        } else if (topOfStack === "screen") {
+          setCurrentScreen("HOME");
+        }
+
+        prevStackLengthRef.current = stack.length - 1;
+
+        setTimeout(() => {
+          isHistoryPoppingRef.current = false;
+        }, 0);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [
+    currentScreen,
+    showDueTodayModal,
+    selectedClientReport,
+    subscriptionModal,
+    saleModal,
+    productModal,
+    clientModal,
+    selectedSale,
+  ]);
+
   const resetBusinessData = () => {
     setProducts([]);
     setClients([]);
