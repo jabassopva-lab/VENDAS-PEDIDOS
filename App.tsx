@@ -701,6 +701,8 @@ const App: React.FC = () => {
     const printContent = `
       <html>
         <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Pedido ${sale.orderNumber ? String(sale.orderNumber).padStart(4, "0") : sale.id}</title>
           <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
           <style>
@@ -1285,6 +1287,8 @@ const App: React.FC = () => {
     const printContent = `
       <html>
         <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Pedido ${sale.orderNumber ? String(sale.orderNumber).padStart(4, "0") : sale.id}</title>
           <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
           <style>
@@ -2669,6 +2673,7 @@ Obrigado pela preferência!`;
       <html lang="pt-BR">
       <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Resumo Executivo - ${companyName}</title>
         <style>
           * { box-sizing: border-box; }

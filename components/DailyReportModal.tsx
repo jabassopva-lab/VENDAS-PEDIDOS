@@ -14,9 +14,13 @@ import {
   Coins,
   CreditCard,
   Layers,
-  FileSpreadsheet
+  FileSpreadsheet,
+  MessageSquare,
+  Download,
+  Share2
 } from 'lucide-react';
 import { Sale, Client, BusinessProfile } from '../types';
+import { jsPDF } from 'jspdf';
 
 interface DailyReportModalProps {
   isOpen: boolean;
@@ -582,6 +586,344 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
     }
   };
 
+  const handleShareWhatsAppReport = () => {
+    const companyName = profile.companyName || "OMNIVENDA";
+    const reportTitle = reportType === 'SIMPLIFIED' 
+      ? `RELATÓRIO SIMPLIFICADO DE VENDAS` 
+      : `FECHAMENTO DE CAIXA DIÁRIO`;
+
+    let message = `*${companyName} - ${reportTitle}*
+---------------------------
+📅 *Data:* ${activeDateBR}
+`;
+
+    if (reportType === 'SIMPLIFIED') {
+      message += `
+📊 *Resumo Geral:*
+• Produtos Vendidos: ${totalQtySold}
+• Faturamento Total: R$ ${totalValueSold.toFixed(2)}
+
+📦 *Lista de Produtos:*
+`;
+      if (topProducts.length > 0) {
+        topProducts.forEach(p => {
+          message += `• ${p.quantity}x ${p.name} - R$ ${p.totalSold.toFixed(2)}\n`;
+        });
+      } else {
+        message += `Nenhum produto vendido hoje.\n`;
+      }
+    } else {
+      const pBreakdown = paymentBreakdown.map(pb => `• ${pb.name} (${pb.count}x): R$ ${pb.total.toFixed(2)}`).join('\n');
+      const productsText = topProducts.map(p => `• ${p.quantity}x ${p.name} - R$ ${p.totalSold.toFixed(2)}`).join('\n');
+
+      message += `
+📊 *Resumo Financeiro:*
+• Vendas Finalizadas: ${stats.vendasCount}
+• Total Faturado: R$ ${stats.vendasTotal.toFixed(2)}
+• Total Recebido (Pago): R$ ${stats.recebidoTotal.toFixed(2)}
+• Contas a Receber: R$ ${stats.aReceberTotal.toFixed(2)}
+• Lucro Estimado: R$ ${stats.lucro.toFixed(2)}
+${stats.budgetsCount > 0 ? `• Orçamentos Criados: ${stats.budgetsCount} (R$ ${stats.budgetsTotal.toFixed(2)})\n` : ''}
+💳 *Meios de Pagamento:*
+${paymentBreakdown.length > 0 ? pBreakdown : 'Nenhum pagamento registrado.'}
+
+📦 *Produtos Vendidos Hoje:*
+${topProducts.length > 0 ? productsText : 'Nenhum produto vendido hoje.'}
+`;
+    }
+
+    message += `
+---------------------------
+Feito pelo OmniVenda Co-piloto`;
+
+    const encodedText = encodeURIComponent(message);
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodedText}`;
+    window.open(whatsappUrl, "_blank");
+  };
+
+  const generateDailyReportPDF = () => {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    let y = 15;
+
+    // Header brand bar
+    doc.setFillColor(14, 165, 233); // #0ea5e9
+    doc.rect(0, 0, 210, 5, 'F');
+
+    y = 20;
+
+    // Company Name
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(15, 23, 42); // #0f172a
+    const companyName = profile.companyName || 'OMNIVENDA';
+    doc.text(companyName.toUpperCase(), 15, y);
+
+    // Report Title badge
+    const isSimplified = reportType === 'SIMPLIFIED';
+    const reportTitle = isSimplified ? 'RELATORIO SIMPLIFICADO' : 'FECHAMENTO DE CAIXA';
+    doc.setFontSize(9);
+    doc.setFont('Helvetica', 'bold');
+    doc.setTextColor(isSimplified ? 13 : 14, isSimplified ? 148 : 165, isSimplified ? 136 : 233);
+    doc.setFillColor(240, 249, 255); // light sky blue background
+    doc.rect(130, y - 5, 65, 6.5, 'F');
+    doc.text(reportTitle, 162.5, y - 1, { align: 'center' });
+
+    y += 7;
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(100, 116, 139);
+    if (profile.document) {
+      doc.text(`CNPJ/CPF: ${profile.document}`, 15, y);
+      y += 5;
+    }
+    doc.text(`Data do Fechamento: ${activeDateBR}`, 15, y);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR').substring(0, 5)}`, 130, y);
+
+    y += 6;
+    // Divider
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.4);
+    doc.line(15, y, 195, y);
+    y += 8;
+
+    if (isSimplified) {
+      // Simplified Report Summary Card
+      doc.setFillColor(248, 250, 252);
+      doc.rect(15, y, 180, 20, 'F');
+      doc.setDrawColor(241, 245, 249);
+      doc.rect(15, y, 180, 20, 'S');
+
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(100, 116, 139);
+      doc.text('RESUMO GERAL', 20, y + 6);
+
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(15, 23, 42);
+      doc.text(`Total de Itens Vendidos: ${totalQtySold}`, 20, y + 13);
+      doc.text(`Faturamento Total: R$ ${totalValueSold.toFixed(2)}`, 110, y + 13);
+
+      y += 28;
+    } else {
+      // Complete Report Financial Summary Grid
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(71, 85, 105);
+      doc.text('RESUMO FINANCEIRO DIARIO', 15, y);
+      y += 4;
+      doc.line(15, y, 195, y);
+      y += 6;
+
+      // 4 mini cards
+      // Card 1: Faturamento Total
+      doc.setFillColor(240, 253, 250); // thin mint
+      doc.rect(15, y, 85, 16, 'F');
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(13, 148, 136); // teal-600
+      doc.text('FATURAMENTO TOTAL', 20, y + 5);
+      doc.setFontSize(11);
+      doc.text(`R$ ${stats.vendasTotal.toFixed(2)}`, 20, y + 11);
+
+      // Card 2: Caixa / Recebido
+      doc.setFillColor(240, 253, 244); // light green
+      doc.rect(110, y, 85, 16, 'F');
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(22, 163, 74); // green-600
+      doc.text('TOTAL RECEBIDO (PAGO)', 115, y + 5);
+      doc.setFontSize(11);
+      doc.text(`R$ ${stats.recebidoTotal.toFixed(2)}`, 115, y + 11);
+
+      y += 20;
+
+      // Card 3: Contas a Receber
+      doc.setFillColor(254, 242, 242); // light red
+      doc.rect(15, y, 85, 16, 'F');
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(220, 38, 38); // red-600
+      doc.text('VALOR A RECEBER (PENDENTE)', 20, y + 5);
+      doc.setFontSize(11);
+      doc.text(`R$ ${stats.aReceberTotal.toFixed(2)}`, 20, y + 11);
+
+      // Card 4: Lucro Estimado
+      doc.setFillColor(245, 243, 255); // light purple
+      doc.rect(110, y, 85, 16, 'F');
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(124, 58, 237); // purple-600
+      doc.text('LUCRO ESTIMADO', 115, y + 5);
+      doc.setFontSize(11);
+      doc.text(`R$ ${stats.lucro.toFixed(2)}`, 115, y + 11);
+
+      y += 22;
+
+      // Budgets metadata line
+      if (stats.budgetsCount > 0) {
+        doc.setFillColor(255, 251, 235);
+        doc.rect(15, y, 180, 10, 'F');
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(217, 119, 6);
+        doc.text(`Orcamentos criados hoje: ${stats.budgetsCount} no valor de R$ ${stats.budgetsTotal.toFixed(2)}`, 20, y + 6.5);
+        y += 15;
+      }
+
+      // Payments Breakdown Box
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(71, 85, 105);
+      doc.text('MEIOS DE PAGAMENTO REGISTRADOS', 15, y);
+      y += 4;
+      doc.line(15, y, 195, y);
+      y += 5;
+
+      if (paymentBreakdown.length > 0) {
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(51, 65, 85);
+        paymentBreakdown.forEach((pb) => {
+          doc.setFont('Helvetica', 'bold');
+          doc.text(pb.name, 20, y);
+          doc.setFont('Helvetica', 'normal');
+          doc.text(`(${pb.count} vendas)`, 75, y);
+          doc.setFont('Helvetica', 'bold');
+          doc.text(`R$ ${pb.total.toFixed(2)}`, 190, y, { align: 'right' });
+          y += 5.5;
+        });
+      } else {
+        doc.setFont('Helvetica', 'italic');
+        doc.setFontSize(9);
+        doc.setTextColor(148, 163, 184);
+        doc.text('Nenhum pagamento registrado hoje.', 20, y);
+        y += 6;
+      }
+      y += 6;
+    }
+
+    // Products table header
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(71, 85, 105);
+    doc.text('PRODUTOS MAIS VENDIDOS NO DIA', 15, y);
+    y += 4;
+    doc.line(15, y, 195, y);
+    y += 5;
+
+    // Table Header
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text('NOME DO PRODUTO', 15, y);
+    doc.text('QUANTIDADE', 125, y, { align: 'center' });
+    doc.text('TOTAL FATURADO', 195, y, { align: 'right' });
+
+    y += 3;
+    doc.line(15, y, 195, y);
+    y += 6;
+
+    // Table Items
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(51, 65, 85);
+
+    if (topProducts.length > 0) {
+      topProducts.forEach((p) => {
+        if (y > 270) {
+          doc.addPage();
+          y = 20;
+          doc.line(15, y, 195, y);
+          y += 5;
+        }
+
+        doc.setFont('Helvetica', 'bold');
+        doc.text(p.name.toUpperCase(), 15, y);
+        doc.setFont('Helvetica', 'normal');
+        doc.text(String(p.quantity), 125, y, { align: 'center' });
+        doc.setFont('Helvetica', 'bold');
+        doc.text(`R$ ${p.totalSold.toFixed(2)}`, 195, y, { align: 'right' });
+
+        y += 5.5;
+        doc.setDrawColor(241, 245, 249);
+        doc.line(15, y, 195, y);
+        y += 2;
+      });
+    } else {
+      doc.setFont('Helvetica', 'italic');
+      doc.setFontSize(9);
+      doc.setTextColor(148, 163, 184);
+      doc.text('Nenhum produto vendido hoje.', 15, y);
+      y += 6;
+    }
+
+    // PDF Footer
+    if (y > 265) {
+      doc.addPage();
+      y = 20;
+    } else {
+      y += 10;
+    }
+    doc.line(15, y, 195, y);
+    y += 4;
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    doc.text('RELATÓRIO AUXILIAR DE FECHAMENTO DIÁRIO • GERADO AUTOMATICAMENTE • SEM VALOR FISCAL', 105, y, { align: 'center' });
+    doc.text('OmniVenda Co-piloto Digital', 105, y + 4, { align: 'center' });
+
+    return doc;
+  };
+
+  const handleDownloadPDF = () => {
+    try {
+      const doc = generateDailyReportPDF();
+      doc.save(`relatorio_diario_${selectedISO}.pdf`);
+    } catch (err) {
+      console.error(err);
+      alert("Houve um erro ao exportar o PDF.");
+    }
+  };
+
+  const handleSharePDFWhatsApp = async () => {
+    try {
+      const doc = generateDailyReportPDF();
+      const filename = `relatorio_diario_${selectedISO}.pdf`;
+      const pdfBlob = doc.output('blob');
+      const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
+
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        await navigator.share({
+          files: [pdfFile],
+          title: `Relatório do Dia ${activeDateBR}`,
+          text: `Segue o fechamento em PDF de ${activeDateBR}.`
+        });
+        return;
+      }
+    } catch (shareErr) {
+      console.log("Native share unsupported", shareErr);
+    }
+
+    // Fallback: download PDF + open WhatsApp and inform user
+    try {
+      const doc = generateDailyReportPDF();
+      doc.save(`relatorio_diario_${selectedISO}.pdf`);
+
+      alert(`📄 PDF de Fechamento do Dia ${activeDateBR} foi baixado com sucesso!\n\nAgora abriremos o WhatsApp. Basta anexar o arquivo PDF baixado (clipe de papel) na conversa do WhatsApp.`);
+
+      handleShareWhatsAppReport();
+    } catch (err) {
+      console.error("Erro no compartilhamento fallback", err);
+      handleShareWhatsAppReport();
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[95] flex items-center justify-center p-4 animate-in fade-in duration-300">
       <div className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 animate-in zoom-in-95">
@@ -601,14 +943,47 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
               </p>
             </div>
           </div>
-          <div className="flex gap-2 items-center relative z-10">
+          <div className="flex gap-1.5 items-center relative z-10 select-none">
+            {/* WhatsApp (PDF) */}
+            <button
+              onClick={handleSharePDFWhatsApp}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white p-2.5 rounded-xl transition-all active:scale-95 border border-emerald-500/20 shadow-xs flex items-center justify-center"
+              title="Compartilhar PDF no WhatsApp"
+            >
+              <Share2 size={16} />
+              <span className="hidden md:inline font-bold text-[10px] uppercase tracking-wider ml-1.5">PDF WhatsApp</span>
+            </button>
+
+            {/* WhatsApp (Texto) */}
+            <button
+              onClick={handleShareWhatsAppReport}
+              className="bg-sky-600 hover:bg-sky-700 text-white p-2.5 rounded-xl transition-all active:scale-95 border border-sky-500/20 shadow-xs flex items-center justify-center"
+              title="Compartilhar Texto no WhatsApp"
+            >
+              <MessageSquare size={16} />
+              <span className="hidden md:inline font-bold text-[10px] uppercase tracking-wider ml-1.5">Texto</span>
+            </button>
+
+            {/* Download PDF */}
+            <button
+              onClick={handleDownloadPDF}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 rounded-xl transition-all active:scale-95 border border-indigo-500/20 shadow-xs flex items-center justify-center"
+              title="Baixar PDF do Fechamento"
+            >
+              <Download size={16} />
+              <span className="hidden md:inline font-bold text-[10px] uppercase tracking-wider ml-1.5">Baixar PDF</span>
+            </button>
+
+            {/* Print */}
             <button
               onClick={handlePrint}
-              className="bg-white/15 text-white hover:bg-white/25 px-4 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-wider flex items-center gap-2 transition-all active:scale-95 border border-white/10"
-              title="Imprimir Relatório"
+              className="bg-white/10 text-white hover:bg-white/20 p-2.5 rounded-xl transition-all active:scale-95 border border-white/10 flex items-center justify-center"
+              title="Imprimir"
             >
-              <Printer size={16} /> <span className="hidden sm:inline">Imprimir</span>
+              <Printer size={16} />
+              <span className="hidden md:inline font-bold text-[10px] uppercase tracking-wider ml-1.5">Imprimir</span>
             </button>
+
             <button
               onClick={onClose}
               className="bg-slate-950/20 hover:bg-slate-950/30 text-white p-2.5 rounded-xl transition-all active:scale-95 border border-white/5"

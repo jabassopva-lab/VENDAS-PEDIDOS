@@ -1,7 +1,8 @@
 import React from 'react';
-import { X, Printer, Package, Building2, Calendar, Clock, CreditCard, User, Palmtree, Sun, ShoppingBag, MessageSquare, Share2, Edit3, Trash2, ChevronLeft, ChevronRight, Sliders, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Printer, Package, Building2, Calendar, Clock, CreditCard, User, Palmtree, Sun, ShoppingBag, MessageSquare, Share2, Edit3, Trash2, ChevronLeft, ChevronRight, Sliders, CheckCircle2, AlertCircle, Download, FileText } from 'lucide-react';
 import { Sale, BusinessProfile, Client } from '../types';
 import { convertDriveLink } from '../App.tsx';
+import { jsPDF } from 'jspdf';
 
 interface SaleDetailModalProps {
   isOpen: boolean;
@@ -81,6 +82,255 @@ Obrigado pela preferência!`;
     window.open(whatsappUrl, '_blank');
   };
 
+  const generateSalePDF = () => {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    let y = 15;
+
+    // Header brand bar
+    doc.setFillColor(14, 165, 233); // #0ea5e9
+    doc.rect(0, 0, 210, 5, 'F');
+
+    y = 20;
+
+    // Company Name
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.setTextColor(15, 23, 42); // #0f172a
+    const companyName = profile.companyName || 'OMNIVENDA';
+    doc.text(companyName.toUpperCase(), 15, y);
+
+    // Document status badge
+    const isBudget = sale.status === 'ORCAMENTO';
+    const statusLabel = isBudget ? 'ORCAMENTO' : 'COMPROVANTE DE PEDIDO';
+    doc.setFontSize(8.5);
+    doc.setFont('Helvetica', 'bold');
+    doc.setTextColor(isBudget ? 180 : 21, isBudget ? 83 : 128, isBudget ? 9 : 61);
+    doc.setFillColor(isBudget ? 254 : 220, isBudget ? 243 : 252, isBudget ? 199 : 231);
+    doc.rect(135, y - 5, 60, 6, 'F');
+    doc.text(statusLabel, 165, y - 1, { align: 'center' });
+
+    y += 7;
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    if (profile.document) {
+      doc.text(`CNPJ/CPF: ${profile.document}`, 15, y);
+      y += 5;
+    }
+    if (profile.phone) {
+      doc.text(`WhatsApp: ${profile.phone}`, 15, y);
+      y += 5;
+    }
+
+    // Right side header info (Order #, Date)
+    const orderNum = sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : sale.id.substring(0, 8).toUpperCase();
+    doc.text(`PEDIDO N.: #${orderNum}`, 135, y - 5);
+    doc.text(`Data: ${sale.date} ${sale.time || ''}`, 135, y);
+
+    y += 5;
+    // Divider line
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.4);
+    doc.line(15, y, 195, y);
+    y += 7;
+
+    // Client card
+    doc.setFillColor(248, 250, 252);
+    doc.rect(15, y, 180, 26, 'F');
+    doc.setDrawColor(241, 245, 249);
+    doc.rect(15, y, 180, 26, 'S');
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text('CLIENTE', 20, y + 5);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(2, 132, 199);
+    doc.text(sale.clientName.toUpperCase(), 20, y + 11);
+
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    const addressText = clientData?.address || 'Não informado';
+    const phoneText = clientData?.phone || 'Não informado';
+    doc.text(`WhatsApp/Tel: ${phoneText}`, 20, y + 16);
+    doc.text(`Endereço: ${addressText}`, 20, y + 21);
+
+    y += 32;
+
+    // Payment Box
+    doc.setFillColor(248, 250, 252);
+    doc.rect(15, y, 180, 14, 'F');
+    doc.setDrawColor(241, 245, 249);
+    doc.rect(15, y, 180, 14, 'S');
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text('DADOS DE PAGAMENTO', 20, y + 5);
+
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(51, 65, 85);
+    doc.text(`Forma: ${sale.paymentMethod || 'Dinheiro'}`, 20, y + 10);
+    doc.text(`Vencimento: ${sale.paymentTerms || 'À vista'}`, 90, y + 10);
+    if (sale.installments && sale.installments > 1) {
+      doc.text(`Parcelas: ${sale.installments}x de R$ ${(sale.total / sale.installments).toFixed(2)}`, 145, y + 10);
+    }
+
+    y += 20;
+
+    // Table of products header
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    doc.text('PRODUTOS DO PEDIDO', 15, y);
+
+    y += 3;
+    doc.setDrawColor(226, 232, 240);
+    doc.line(15, y, 195, y);
+    y += 5;
+
+    // Columns
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text('DESCRIÇÃO DO PRODUTO', 15, y);
+    doc.text('QTD', 115, y, { align: 'center' });
+    doc.text('VL. UNITÁRIO', 145, y, { align: 'right' });
+    doc.text('SUBTOTAL', 195, y, { align: 'right' });
+
+    y += 3;
+    doc.line(15, y, 195, y);
+    y += 6;
+
+    // Items
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(51, 65, 85);
+
+    sale.items.forEach((item) => {
+      if (y > 265) {
+        doc.addPage();
+        y = 20;
+        doc.line(15, y, 195, y);
+        y += 5;
+      }
+
+      doc.setFont('Helvetica', 'bold');
+      doc.text(item.name.toUpperCase(), 15, y);
+
+      doc.setFont('Helvetica', 'normal');
+      const unitPrice = item.price - (item.discount || 0);
+      doc.text(String(item.quantity), 115, y, { align: 'center' });
+      doc.text(`R$ ${unitPrice.toFixed(2)}`, 145, y, { align: 'right' });
+      doc.setFont('Helvetica', 'bold');
+      doc.text(`R$ ${(unitPrice * item.quantity).toFixed(2)}`, 195, y, { align: 'right' });
+
+      y += 5;
+      if (item.discount > 0) {
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(239, 68, 68);
+        doc.text(`Desconto de R$ ${item.discount.toFixed(2)} por un.`, 15, y);
+        y += 4;
+      }
+
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(51, 65, 85);
+
+      doc.setDrawColor(241, 245, 249);
+      doc.line(15, y, 195, y);
+      y += 5;
+    });
+
+    if (y > 255) {
+      doc.addPage();
+      y = 20;
+    }
+
+    y += 2;
+    doc.setFillColor(250, 250, 251);
+    doc.rect(15, y, 180, 16, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.rect(15, y, 180, 16, 'S');
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(71, 85, 105);
+    doc.text('VALOR TOTAL DO PEDIDO:', 20, y + 10);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(15);
+    doc.setTextColor(14, 165, 233);
+    doc.text(`R$ ${sale.total.toFixed(2)}`, 190, y + 11.5, { align: 'right' });
+
+    y += 25;
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    doc.text('DOCUMENTO AUXILIAR DE VENDA E DESCRITIVO DE PRODUTOS • SEM VALOR FISCAL', 105, y, { align: 'center' });
+    doc.text('Gerado pelo OmniVenda Digital', 105, y + 4, { align: 'center' });
+
+    return doc;
+  };
+
+  const handleDownloadPDF = () => {
+    try {
+      const doc = generateSalePDF();
+      const orderNum = sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : sale.id.substring(0, 8).toUpperCase();
+      doc.save(`pedido_${orderNum}.pdf`);
+    } catch (err) {
+      console.error("Erro ao gerar PDF", err);
+      alert("Houve um problema ao gerar o arquivo PDF.");
+    }
+  };
+
+  const handleSharePDFWhatsApp = async () => {
+    const orderNum = sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : sale.id.substring(0, 8).toUpperCase();
+    try {
+      const doc = generateSalePDF();
+      const filename = `pedido_${orderNum}.pdf`;
+      const pdfBlob = doc.output('blob');
+      const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
+
+      // Check if browser/tab can natively share files
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        await navigator.share({
+          files: [pdfFile],
+          title: `Pedido #${orderNum}`,
+          text: `Segue o comprovante em PDF do seu pedido.`
+        });
+        return;
+      }
+    } catch (shareErr) {
+      console.log("Native share failed/unsupported", shareErr);
+    }
+
+    // Fallback: download PDF + open WhatsApp and inform user
+    try {
+      const doc = generateSalePDF();
+      doc.save(`pedido_${orderNum}.pdf`);
+      
+      // Let user know their PDF was downloaded and that they can attach it
+      alert(`📄 PDF do Pedido #${orderNum} foi baixado com sucesso!\n\nAgora abriremos o WhatsApp. Basta anexar o arquivo PDF baixado (clipe de papel) na conversa do WhatsApp.`);
+      
+      // Open WhatsApp with text summary as well
+      handleShareWhatsApp();
+    } catch (err) {
+      console.error("Erro no compartilhamento fallback", err);
+      handleShareWhatsApp();
+    }
+  };
+
   const handlePrint = () => {
     const logoUrl = convertDriveLink(profile.logoUrl || '');
     const companyName = profile.companyName || 'OMNIVENDA';
@@ -91,6 +341,8 @@ Obrigado pela preferência!`;
     const printContent = `
       <html>
         <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Pedido ${sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : sale.id}</title>
           <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
           <style>
@@ -675,17 +927,45 @@ Obrigado pela preferência!`;
                  </div>
               </button>
 
-              {/* WhatsApp */}
+              {/* WhatsApp Text */}
               <button 
                 onClick={handleShareWhatsApp}
-                className="bg-white p-5 rounded-[2rem] border border-slate-150 flex flex-col justify-between items-stretch text-left active:scale-98 transition-all group hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-50 shadow-sm"
+                className="bg-white p-5 rounded-[2rem] border border-slate-150 flex flex-col justify-between items-stretch text-left active:scale-98 transition-all group hover:border-[#0284c7] hover:shadow-lg hover:shadow-sky-50 shadow-sm"
               >
-                 <div className="w-11 h-11 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform mb-4 border border-emerald-100">
+                 <div className="w-11 h-11 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform mb-4 border border-sky-100">
                    <MessageSquare size={22} className="stroke-[2.5]" />
                  </div>
                  <div className="text-left font-sans">
-                   <p className="font-extrabold text-slate-800 text-sm sm:text-base leading-tight">Enviar no WhatsApp</p>
-                   <p className="text-xs text-slate-500 mt-1.5 leading-snug">Compartilhar recibo de venda em formato de texto para o cliente.</p>
+                   <p className="font-extrabold text-slate-800 text-sm sm:text-base leading-tight">Enviar no WhatsApp (Texto)</p>
+                   <p className="text-xs text-slate-500 mt-1.5 leading-snug">Compartilhar recibo de venda em formato de texto.</p>
+                 </div>
+              </button>
+
+              {/* Send PDF on WhatsApp */}
+              <button 
+                onClick={handleSharePDFWhatsApp}
+                className="bg-white p-5 rounded-[2rem] border border-slate-150 flex flex-col justify-between items-stretch text-left active:scale-98 transition-all group hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-50 shadow-sm"
+              >
+                 <div className="w-11 h-11 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform mb-4 border border-emerald-100">
+                   <Share2 size={22} className="stroke-[2.5]" />
+                 </div>
+                 <div className="text-left font-sans">
+                   <p className="font-extrabold text-slate-800 text-sm sm:text-base leading-tight">Enviar PDF no WhatsApp</p>
+                   <p className="text-xs text-slate-500 mt-1.5 leading-snug">Gerar PDF e compartilhar diretamente ou via download + envio rápido.</p>
+                 </div>
+              </button>
+
+              {/* Download PDF directly */}
+              <button 
+                onClick={handleDownloadPDF}
+                className="bg-white p-5 rounded-[2rem] border border-slate-150 flex flex-col justify-between items-stretch text-left active:scale-98 transition-all group hover:border-indigo-500 hover:shadow-lg hover:shadow-indigo-50 shadow-sm"
+              >
+                 <div className="w-11 h-11 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform mb-4 border border-indigo-100">
+                   <Download size={22} className="stroke-[2.5]" />
+                 </div>
+                 <div className="text-left font-sans">
+                   <p className="font-extrabold text-slate-800 text-sm sm:text-base leading-tight">Baixar PDF do Pedido</p>
+                   <p className="text-xs text-slate-500 mt-1.5 leading-snug">Gerar e salvar o arquivo PDF em formato A4 profissional no seu dispositivo.</p>
                  </div>
               </button>
 

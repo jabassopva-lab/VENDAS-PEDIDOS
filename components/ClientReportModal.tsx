@@ -14,7 +14,10 @@ import {
   AlertCircle, 
   ExternalLink,
   ChevronRight,
-  TrendingDown
+  TrendingDown,
+  MessageSquare,
+  Download,
+  Share2
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -28,6 +31,7 @@ import {
   Cell
 } from 'recharts';
 import { Sale, Client, BusinessProfile } from '../types';
+import { jsPDF } from 'jspdf';
 
 interface ClientReportModalProps {
   isOpen: boolean;
@@ -269,6 +273,8 @@ const ClientReportModal: React.FC<ClientReportModalProps> = ({
     printWindow.document.write(`
       <html>
         <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Relatório - ${client.name}</title>
           <style>
             body { 
@@ -501,6 +507,262 @@ const ClientReportModal: React.FC<ClientReportModalProps> = ({
     window.open(`https://wa.me/${finalPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  const handleShareWhatsAppReport = () => {
+    const companyName = profile.companyName || 'OMNIVENDA';
+    const periodStr = getPeriodString() || 'Todo o Período';
+    
+    const topProductsText = topProducts.map(p => `• ${p.quantity}x ${p.name}`).join('\n');
+    const message = `*${companyName} - Relatório de Cliente*
+---------------------------
+👤 *Cliente:* ${client.name}
+📅 *Período:* ${periodStr}
+
+📊 *Resumo de Compras:*
+• Total Comprado: R$ ${totalSold.toFixed(2)}
+• Total de Pedidos: ${sales.length}
+• Ticket Médio: R$ ${averageTicket.toFixed(2)}
+
+💰 *Situação Financeira:*
+• Valor Pago: R$ ${totalPaidAmount.toFixed(2)}
+• Valor Pendente: R$ ${totalPendingAmount.toFixed(2)}
+
+${topProducts.length > 0 ? `📦 *Lista de Principais Produtos:*\n${topProductsText}\n` : ''}
+Obrigado pela preferência e parceria!`;
+
+    const encodedText = encodeURIComponent(message);
+    const cleanPhone = client.phone ? client.phone.replace(/\D/g, '') : '';
+    const finalPhone = cleanPhone.length >= 10 ? `55${cleanPhone}` : cleanPhone;
+    
+    const whatsappUrl = finalPhone 
+      ? `https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodedText}`
+      : `https://api.whatsapp.com/send?text=${encodedText}`;
+
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const generateClientReportPDF = () => {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    let y = 15;
+
+    // Header brand bar
+    doc.setFillColor(14, 165, 233); // #0ea5e9
+    doc.rect(0, 0, 210, 5, 'F');
+
+    y = 20;
+
+    // Company Name
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(15, 23, 42); // #0f172a
+    const companyName = profile.companyName || 'OMNIVENDA';
+    doc.text(companyName.toUpperCase(), 15, y);
+
+    // Title badge
+    doc.setFontSize(9);
+    doc.setFont('Helvetica', 'bold');
+    doc.setTextColor(14, 165, 233);
+    doc.setFillColor(240, 249, 255); // light sky blue background
+    doc.rect(130, y - 5, 65, 6.5, 'F');
+    doc.text('EXTRATO DE CLIENTE', 162.5, y - 1, { align: 'center' });
+
+    y += 7;
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(100, 116, 139);
+    if (profile.document) {
+      doc.text(`CNPJ/CPF: ${profile.document}`, 15, y);
+      y += 5;
+    }
+    const periodStr = getPeriodString() || 'Todo o Periodo';
+    doc.text(`Periodo: ${periodStr}`, 15, y);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR').substring(0, 5)}`, 130, y);
+
+    y += 6;
+    // Divider
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.4);
+    doc.line(15, y, 195, y);
+    y += 8;
+
+    // Client card info
+    doc.setFillColor(248, 250, 252);
+    doc.rect(15, y, 180, 26, 'F');
+    doc.setDrawColor(241, 245, 249);
+    doc.rect(15, y, 180, 26, 'S');
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text('CLIENTE CADASTRADO', 20, y + 5);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(2, 132, 199);
+    doc.text(client.name.toUpperCase(), 20, y + 11);
+
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`WhatsApp/Tel: ${client.phone || 'Nao informado'}`, 20, y + 16);
+    doc.text(`Email: ${client.email || 'Nao informado'}`, 20, y + 21);
+
+    y += 32;
+
+    // Commercial & Buying Summary card
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(71, 85, 105);
+    doc.text('RESUMO DO HISTORICO DE COMPRAS (DADOS CONSOLIDADOS)', 15, y);
+    y += 4;
+    doc.line(15, y, 195, y);
+    y += 5;
+
+    // Financial breakdown mini-grid (cards)
+    // Card 1: Total comprado
+    doc.setFillColor(240, 253, 250);
+    doc.rect(15, y, 85, 16, 'F');
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(13, 148, 136);
+    doc.text('TOTAL COMPRADO (FATURAMENTO)', 20, y + 5);
+    doc.setFontSize(11);
+    doc.text(`R$ ${totalSold.toFixed(2)}`, 20, y + 11);
+
+    // Card 2: Valor pago
+    doc.setFillColor(240, 253, 244);
+    doc.rect(110, y, 85, 16, 'F');
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(22, 163, 74);
+    doc.text('TOTAL JA RECEBIDO (QUITADO)', 115, y + 5);
+    doc.setFontSize(11);
+    doc.text(`R$ ${totalPaidAmount.toFixed(2)}`, 115, y + 11);
+
+    y += 20;
+
+    // Card 3: Valor pendente
+    doc.setFillColor(254, 242, 242);
+    doc.rect(15, y, 85, 16, 'F');
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(220, 38, 38);
+    doc.text('TOTAL PENDENTE (EM ABERTO)', 20, y + 5);
+    doc.setFontSize(11);
+    doc.text(`R$ ${totalPendingAmount.toFixed(2)}`, 20, y + 11);
+
+    // Card 4: Ticket médio e pedidos count
+    doc.setFillColor(245, 243, 255);
+    doc.rect(110, y, 85, 16, 'F');
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(124, 58, 237);
+    doc.text('PEDIDOS / TICKET MEDIO', 115, y + 5);
+    doc.setFontSize(10);
+    doc.text(`${sales.length} pedido(s)  TM: R$ ${averageTicket.toFixed(2)}`, 115, y + 11);
+
+    y += 24;
+
+    // Top Products list block
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(71, 85, 105);
+    doc.text('PRINCIPAIS PRODUTOS COMPRADOS', 15, y);
+    y += 4;
+    doc.line(15, y, 195, y);
+    y += 5;
+
+    if (topProducts.length > 0) {
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(51, 65, 85);
+      topProducts.forEach((p) => {
+        if (y > 270) {
+          doc.addPage();
+          y = 20;
+          doc.line(15, y, 195, y);
+          y += 5;
+        }
+
+        doc.setFont('Helvetica', 'bold');
+        doc.text(p.name, 20, y);
+        doc.setFont('Helvetica', 'normal');
+        doc.text(`Comprado ${p.quantity} vez(es)`, 190, y, { align: 'right' });
+        y += 6;
+      });
+    } else {
+      doc.setFont('Helvetica', 'italic');
+      doc.setFontSize(9);
+      doc.setTextColor(148, 163, 184);
+      doc.text('Nenhum produto registrado para o cliente.', 20, y);
+      y += 6;
+    }
+
+    // PDF Footer
+    if (y > 265) {
+      doc.addPage();
+      y = 20;
+    } else {
+      y += 10;
+    }
+    doc.line(15, y, 195, y);
+    y += 5;
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    doc.text('RELATORIO AUXILIAR DO CLIENTE • GERADO PELO SISTEMA • SEM VALOR FISCAL', 105, y, { align: 'center' });
+    doc.text('OmniVenda Co-piloto Digital', 105, y + 4, { align: 'center' });
+
+    return doc;
+  };
+
+  const handleDownloadPDF = () => {
+    try {
+      const doc = generateClientReportPDF();
+      doc.save(`extrato_${client.name.replace(/\s+/g, '_').toLowerCase()}.pdf`);
+    } catch (err) {
+      console.error(err);
+      alert("Houve um erro ao baixar o PDF.");
+    }
+  };
+
+  const handleSharePDFWhatsApp = async () => {
+    try {
+      const doc = generateClientReportPDF();
+      const filename = `extrato_${client.name.replace(/\s+/g, '_').toLowerCase()}.pdf`;
+      const pdfBlob = doc.output('blob');
+      const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
+
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        await navigator.share({
+          files: [pdfFile],
+          title: `Historico comercial - ${client.name}`,
+          text: `Ola ${client.name}, segue o demonstrativo das suas compras.`
+        });
+        return;
+      }
+    } catch (shareErr) {
+      console.log("Native share unsupported", shareErr);
+    }
+
+    // Fallback: download PDF + open WhatsApp and inform user
+    try {
+      const doc = generateClientReportPDF();
+      doc.save(`extrato_${client.name.replace(/\s+/g, '_').toLowerCase()}.pdf`);
+
+      alert(`📄 O PDF do extrato de ${client.name} foi baixado com sucesso!\n\nAgora abriremos o WhatsApp para você. Basta anexar o arquivo PDF baixado (clipe de papel) na conversa do cliente.`);
+
+      handleShareWhatsAppReport();
+    } catch (err) {
+      console.error("Erro no compartilhamento fallback", err);
+      handleShareWhatsAppReport();
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
       <div className="bg-slate-50 w-full max-w-2xl rounded-[2.2rem] shadow-2xl border border-slate-100 flex flex-col overflow-hidden max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
@@ -516,19 +778,40 @@ const ClientReportModal: React.FC<ClientReportModalProps> = ({
               {client.name}
             </h3>
           </div>
-          <div className="flex gap-2 relative z-10">
+          <div className="flex gap-1.5 relative z-10">
+            <button
+              onClick={handleSharePDFWhatsApp}
+              title="Compartilhar PDF no WhatsApp"
+              className="bg-[#22c55e] hover:bg-[#16a34a] text-white p-2 sm:p-2.5 rounded-xl active:scale-90 transition-all border border-emerald-500/20 shadow-xs flex items-center justify-center"
+            >
+              <Share2 size={18} className="stroke-[2.5]" />
+            </button>
+            <button
+              onClick={handleShareWhatsAppReport}
+              title="Compartilhar texto no WhatsApp"
+              className="bg-white/10 hover:bg-white/20 text-white p-2 sm:p-2.5 rounded-xl active:scale-90 transition-all border border-white/10 flex items-center justify-center"
+            >
+              <MessageSquare size={18} className="stroke-[2.5]" />
+            </button>
+            <button
+              onClick={handleDownloadPDF}
+              title="Baixar Extrato em PDF"
+              className="bg-white/10 hover:bg-white/20 text-white p-2 sm:p-2.5 rounded-xl active:scale-90 transition-all border border-white/10 flex items-center justify-center"
+            >
+              <Download size={18} className="stroke-[2.5]" />
+            </button>
             <button
               onClick={handlePrint}
               title="Imprimir Relatório de Cliente"
-              className="bg-white/15 hover:bg-white/25 text-white p-2.5 rounded-xl active:scale-90 transition-all border border-white/5"
+              className="bg-white/10 hover:bg-white/20 text-white p-2 sm:p-2.5 rounded-xl active:scale-90 transition-all border border-white/10 flex items-center justify-center"
             >
-              <Printer size={20} className="stroke-[2.5]" />
+              <Printer size={18} className="stroke-[2.5]" />
             </button>
             <button
               onClick={onClose}
-              className="bg-white/15 hover:bg-white/25 text-white p-2.5 rounded-xl active:scale-90 transition-all border border-white/5"
+              className="bg-white/10 hover:bg-white/20 text-white p-2 sm:p-2.5 rounded-xl active:scale-90 transition-all border border-white/10 flex items-center justify-center"
             >
-              <X size={20} className="stroke-[2.5]" />
+              <X size={18} className="stroke-[2.5]" />
             </button>
           </div>
         </div>
