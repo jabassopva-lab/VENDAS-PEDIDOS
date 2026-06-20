@@ -154,6 +154,7 @@ const App: React.FC = () => {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [isTestMode, setIsTestMode] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<Screen>("HOME");
+  const [showDueTodayModal, setShowDueTodayModal] = useState(false);
   const [saveNotify, setSaveNotify] = useState<{ show: boolean; msg: string }>({
     show: false,
     msg: "",
@@ -206,6 +207,16 @@ const App: React.FC = () => {
       }))
       .reverse();
   }, [salesHistory]);
+
+  const dueTodaySales = useMemo(() => {
+    const todayBR = new Date().toLocaleDateString("pt-BR");
+    return salesHistoryWithNumbers.filter((sale) => {
+      if (sale.status !== "FINALIZADA" || sale.isPaid) return false;
+      const terms = sale.paymentTerms || "";
+      return terms.includes(todayBR);
+    });
+  }, [salesHistoryWithNumbers]);
+
   const [businessProfile, setBusinessProfile] =
     useState<BusinessProfile>(DEFAULT_PROFILE);
 
@@ -2937,8 +2948,24 @@ Obrigado pela preferência!`;
               </p>
             </div>
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex gap-2 shrink-0 items-center">
             {rightAction}
+            <button
+              onClick={() => setShowDueTodayModal(true)}
+              className={`p-2 rounded-xl transition-all relative ${
+                dueTodaySales.length > 0
+                  ? "bg-amber-400 text-slate-900 border-2 border-yellow-300 animate-pulse font-bold"
+                  : "bg-white/20 hover:bg-white/30 text-white border border-white/10"
+              }`}
+              title="Vencimentos de Hoje"
+            >
+              <Bell size={18} className={dueTodaySales.length > 0 ? "animate-bounce" : ""} />
+              {dueTodaySales.length > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white font-black text-[8px] min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center border border-slate-950">
+                  {dueTodaySales.length}
+                </span>
+              )}
+            </button>
             <button
               onClick={handleLogout}
               className="p-2 bg-red-500/20 rounded-xl border border-white/10"
@@ -3056,6 +3083,26 @@ Obrigado pela preferência!`;
         <>
           <Header title={businessProfile.companyName} />
           <main className="px-6 mt-6 relative z-30 space-y-4 flex-1">
+            {dueTodaySales.length > 0 && (
+              <div className="bg-amber-50 border-2 border-amber-300 rounded-[2rem] p-5 shadow-lg flex items-start gap-4 mb-2 animate-in fade-in duration-300">
+                <div className="p-3 bg-amber-500 rounded-2xl text-white shrink-0 shadow-md">
+                  <Bell size={20} className="animate-bounce" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-black text-amber-900 text-xs uppercase italic tracking-tight">Vencimentos Pendentes de Hoje!</h4>
+                  <p className="text-[10px] text-amber-700 font-extrabold uppercase mt-1 leading-snug">
+                    Você possui {dueTodaySales.length} {dueTodaySales.length === 1 ? 'venda que vence' : 'vendas que vencem'} hoje no sistema.
+                  </p>
+                  <button 
+                    onClick={() => setShowDueTodayModal(true)}
+                    className="mt-3 px-4 py-2 bg-[#0ea5e9] text-white hover:bg-blue-600 font-extrabold text-[9px] uppercase italic rounded-xl border-b-4 border-blue-700 shadow-md active:scale-95 transition-all flex items-center gap-1.5"
+                  >
+                    <span>Ver Contas a Receber</span>
+                    <ArrowRight size={12} strokeWidth={3} />
+                  </button>
+                </div>
+              </div>
+            )}
             {isDeveloper && (
               <button
                 onClick={() => setCurrentScreen("DEVELOPER_PANEL")}
@@ -5126,6 +5173,122 @@ Obrigado pela preferência!`;
         onDelete={handleDeleteSale}
         onTogglePaid={handleTogglePaid}
       />
+
+      {/* Modal de Contas a Receber Vencendo Hoje */}
+      {showDueTodayModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border border-slate-200 animate-in zoom-in-95">
+            
+            {/* Header */}
+            <div className="bg-[#0ea5e9] text-white px-6 py-5 flex justify-between items-center border-b border-sky-600 relative overflow-hidden">
+              <div className="absolute top-2 right-0 p-4 opacity-10 rotate-12 pointer-events-none">
+                <Palmtree size={50} />
+              </div>
+              <div className="flex items-center gap-3 relative z-10">
+                <div className="bg-white/20 p-2.5 rounded-xl border border-white/10">
+                  <Bell size={20} className="text-yellow-300 fill-yellow-300 animate-bounce" />
+                </div>
+                <div>
+                  <h2 className="text-xs font-black uppercase tracking-widest text-[#fffbeb]">Vencimentos de Hoje</h2>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-sky-100">
+                    {dueTodaySales.length} {dueTodaySales.length === 1 ? 'Venda a Prazo' : 'Vendas a Prazo'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDueTodayModal(false)}
+                className="bg-white/10 text-white p-2 rounded-xl hover:bg-white/20 transition-all active:scale-95"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* List */}
+            <div className="overflow-y-auto p-6 space-y-4 bg-slate-50 flex-1">
+              {dueTodaySales.length === 0 ? (
+                <div className="text-center py-10 space-y-3">
+                  <p className="text-2xl">🎉</p>
+                  <p className="text-xs font-black text-slate-800 uppercase italic">Tudo em dia!</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Nenhuma conta com vencimento programado para hoje.</p>
+                </div>
+              ) : (
+                dueTodaySales.map((sale) => {
+                  const clientData = clients.find((c) => c.id === sale.clientId);
+                  return (
+                    <div
+                      key={sale.id}
+                      className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col gap-3 justify-between"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="min-w-0 flex-1 pr-2">
+                          <span className="text-[8px] font-black text-[#0ea5e9] uppercase tracking-widest bg-sky-50 px-2 py-0.5 rounded-md">
+                            Pedido #{sale.orderNumber || sale.id}
+                          </span>
+                          <h4 className="font-black text-slate-800 text-xs uppercase italic mt-1 truncate">{sale.clientName}</h4>
+                          <p className="text-[9px] text-slate-400 font-bold uppercase mt-0.5 flex items-center gap-1">
+                             <span>Condição:</span> 
+                             <strong className="text-slate-700">{sale.paymentTerms || 'À vista'}</strong>
+                          </p>
+                          {clientData?.phone && (
+                            <p className="text-[9px] text-slate-400 font-bold uppercase mt-0.5 flex items-center gap-1">
+                              <span>Telefone:</span>
+                              <strong className="text-slate-600 truncate">{clientData.phone}</strong>
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Valor</span>
+                          <h3 className="text-sm sm:text-base font-black text-slate-800 italic leading-none">
+                            R$ {sale.total.toFixed(2)}
+                          </h3>
+                        </div>
+                      </div>
+
+                      {/* Actions inside list item */}
+                      <div className="flex gap-2 pt-2 border-t border-slate-100">
+                        <button
+                          onClick={() => {
+                            setSelectedSale(sale);
+                            setShowDueTodayModal(false);
+                          }}
+                          className="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-600 py-3 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all flex items-center justify-center gap-1 active:scale-95"
+                        >
+                          Ver Detalhes
+                        </button>
+                        <button
+                          onClick={() => handleShareWhatsAppDirect(sale)}
+                          className="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-3.5 py-3 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all flex items-center justify-center gap-1 border border-emerald-100 active:scale-95"
+                          title="Cobrar via WhatsApp"
+                        >
+                          <MessageSquare size={14} />Cobrar
+                        </button>
+                        <button
+                          onClick={() => handleTogglePaid(sale.id, true)}
+                          className="bg-green-500 hover:bg-green-600 text-white px-3.5 py-3 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all flex items-center justify-center gap-1 border-b-2 border-green-700 shadow-sm active:scale-95"
+                          title="Dar Baixa (Marcar como Pago)"
+                        >
+                          <CheckCircle size={14} />Baixar Pago
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 bg-white border-t border-slate-100 flex gap-2">
+              <button
+                onClick={() => setShowDueTodayModal(false)}
+                className="w-full bg-[#f1f5f9] hover:bg-slate-200 text-slate-600 py-4 rounded-2xl font-black text-[10px] uppercase tracking-wider transition-all active:scale-95"
+              >
+                Fechar
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       <ClientReportModal
         isOpen={!!selectedClientReport}
