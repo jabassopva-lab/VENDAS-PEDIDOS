@@ -54,6 +54,7 @@ import {
   LayoutDashboard,
   Edit3,
   MessageSquare,
+  FileSpreadsheet,
 } from "lucide-react";
 import {
   AreaChart,
@@ -74,6 +75,7 @@ import ClientForm from "./components/ClientForm.tsx";
 import NewSaleModal from "./components/NewSaleModal.tsx";
 import SaleDetailModal from "./components/SaleDetailModal.tsx";
 import ClientReportModal from "./components/ClientReportModal.tsx";
+import DailyReportModal from "./components/DailyReportModal.tsx";
 import SettingsForm from "./components/SettingsForm.tsx";
 import CostCorrectionTool from "./components/CostCorrectionTool.tsx";
 import AuthScreen from "./components/AuthScreen.tsx";
@@ -155,6 +157,7 @@ const App: React.FC = () => {
   const [isTestMode, setIsTestMode] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<Screen>("HOME");
   const [showDueTodayModal, setShowDueTodayModal] = useState(false);
+  const [showDailyReportModal, setShowDailyReportModal] = useState(false);
   const [saveNotify, setSaveNotify] = useState<{ show: boolean; msg: string }>({
     show: false,
     msg: "",
@@ -300,6 +303,7 @@ const App: React.FC = () => {
     const stack = [];
     if (currentScreen !== "HOME") stack.push("screen");
     if (showDueTodayModal) stack.push("due-today");
+    if (showDailyReportModal) stack.push("daily-report");
     if (selectedClientReport) stack.push("client-report");
     if (subscriptionModal?.isOpen) stack.push("subscription");
     if (saleModal) stack.push("new-sale");
@@ -337,6 +341,7 @@ const App: React.FC = () => {
   }, [
     currentScreen,
     showDueTodayModal,
+    showDailyReportModal,
     selectedClientReport,
     subscriptionModal?.isOpen,
     saleModal,
@@ -365,6 +370,8 @@ const App: React.FC = () => {
           setSubscriptionModal({ isOpen: false, business: null });
         } else if (topOfStack === "client-report") {
           setSelectedClientReport(null);
+        } else if (topOfStack === "daily-report") {
+          setShowDailyReportModal(false);
         } else if (topOfStack === "due-today") {
           setShowDueTodayModal(false);
         } else if (topOfStack === "screen") {
@@ -386,6 +393,7 @@ const App: React.FC = () => {
   }, [
     currentScreen,
     showDueTodayModal,
+    showDailyReportModal,
     selectedClientReport,
     subscriptionModal,
     saleModal,
@@ -3247,28 +3255,43 @@ Obrigado pela preferência!`;
               </div>
             </div>
 
-            <button
-              onClick={() => {
-                setEditingSale(null);
-                setSaleModal(true);
-              }}
-              className="w-full bg-yellow-400 text-[#1e293b] py-4 px-6 rounded-[2.5rem] shadow-xl flex items-center justify-between border-b-6 border-yellow-600 active:scale-95 transition-all"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-yellow-500">
-                  <Plus size={24} strokeWidth={4} />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setEditingSale(null);
+                  setSaleModal(true);
+                }}
+                className="flex-1 bg-yellow-400 text-[#1e293b] py-4 px-6 rounded-[2.5rem] shadow-xl flex items-center justify-between border-b-6 border-yellow-600 active:scale-95 transition-all"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-yellow-500">
+                    <Plus size={24} strokeWidth={4} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-lg font-black uppercase italic tracking-tighter leading-none">
+                      Novo Pedido
+                    </h3>
+                    <p className="text-amber-900/60 text-[7px] font-black uppercase mt-1">
+                      Sincronizado na Nuvem
+                    </p>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <h3 className="text-lg font-black uppercase italic tracking-tighter leading-none">
-                    Novo Pedido
-                  </h3>
-                  <p className="text-amber-900/60 text-[7px] font-black uppercase mt-1">
-                    Sincronizado na Nuvem
-                  </p>
+                <ChevronRight size={24} className="text-amber-900/20" />
+              </button>
+
+              <button
+                onClick={() => setShowDailyReportModal(true)}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white py-4 px-5 rounded-[2.5rem] shadow-xl flex flex-col items-center justify-center border-b-6 border-indigo-900 active:scale-95 transition-all min-w-[76px] sm:min-w-[90px]"
+                title="Relatório da Venda do Dia"
+              >
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white">
+                  <FileSpreadsheet size={22} className="text-yellow-300" />
                 </div>
-              </div>
-              <ChevronRight size={24} className="text-amber-900/20" />
-            </button>
+                <span className="text-[7.5px] font-black uppercase tracking-widest mt-1 text-indigo-100">
+                  Dia
+                </span>
+              </button>
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -5402,6 +5425,19 @@ Obrigado pela preferência!`;
         rankingMonth={rankingMonth}
         rankingStartDate={rankingStartDate}
         rankingEndDate={rankingEndDate}
+      />
+
+      <DailyReportModal
+        isOpen={showDailyReportModal}
+        onClose={() => setShowDailyReportModal(false)}
+        sales={salesHistory}
+        clients={clients}
+        profile={businessProfile}
+        onTogglePaid={handleTogglePaid}
+        onViewSale={(sale) => {
+          setSelectedSale(sale);
+          setShowDailyReportModal(false);
+        }}
       />
 
       {subscriptionModal.isOpen && subscriptionModal.business && (
