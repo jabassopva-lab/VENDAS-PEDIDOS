@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Printer, Package, Building2, Calendar, Clock, CreditCard, User, Palmtree, Sun, ShoppingBag, MessageSquare, Share2, Edit3, Trash2, ChevronLeft, ChevronRight, Sliders, CheckCircle2, AlertCircle, Download, FileText } from 'lucide-react';
+import { X, Printer, Package, Building2, Calendar, Clock, CreditCard, User, Palmtree, Sun, ShoppingBag, MessageSquare, Share2, Edit3, Trash2, ChevronLeft, ChevronRight, Sliders, CheckCircle2, AlertCircle, Download, FileText, Phone } from 'lucide-react';
 import { Sale, BusinessProfile, Client } from '../types';
 import { convertDriveLink } from '../App.tsx';
 import { jsPDF } from 'jspdf';
@@ -27,13 +27,25 @@ const SaleDetailModal: React.FC<SaleDetailModalProps> = ({
 }) => {
   const [showConfirmDelete, setShowConfirmDelete] = React.useState(false);
   const [viewMode, setViewMode] = React.useState<'VIEW' | 'ACTIONS'>('VIEW');
+  const [customPhone, setCustomPhone] = React.useState<string>("");
 
   React.useEffect(() => {
     if (isOpen && sale) {
       setViewMode('VIEW');
       setShowConfirmDelete(false);
+      const cData = clients.find(c => c.id === sale.clientId);
+      setCustomPhone(cData?.phone || "");
     }
-  }, [isOpen, sale]);
+  }, [isOpen, sale, clients]);
+
+  React.useEffect(() => {
+    if (isOpen && sale) {
+      const timer = setTimeout(() => {
+        handlePrint();
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, sale?.id]);
 
   if (!isOpen || !sale) return null;
 
@@ -72,8 +84,14 @@ ${itemsText}
 Obrigado pela preferência!`;
 
     const encodedText = encodeURIComponent(message);
-    const cleanPhone = clientData?.phone ? clientData.phone.replace(/\D/g, '') : '';
-    const finalPhone = cleanPhone.length >= 10 ? `55${cleanPhone}` : cleanPhone;
+    const phoneToUse = customPhone || '';
+    const cleanPhone = phoneToUse.replace(/\D/g, '');
+    let finalPhone = cleanPhone;
+    if (cleanPhone.length >= 10) {
+      if (!cleanPhone.startsWith('55')) {
+        finalPhone = `55${cleanPhone}`;
+      }
+    }
     
     const whatsappUrl = finalPhone 
       ? `https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodedText}`
@@ -681,15 +699,6 @@ Obrigado pela preferência!`;
     }
   };
 
-  React.useEffect(() => {
-    if (isOpen && sale) {
-      const timer = setTimeout(() => {
-        handlePrint();
-      }, 400);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, sale?.id]);
-
   const currentLogo = convertDriveLink(profile.logoUrl || '');
 
   return (
@@ -914,6 +923,36 @@ Obrigado pela preferência!`;
           </div>
         ) : (
           <div className="overflow-y-auto p-5 sm:p-6 space-y-4 bg-slate-50/50 flex-1">
+            <div className="bg-white p-5 rounded-[2rem] border border-slate-150 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center border border-emerald-100 shrink-0">
+                  <Phone size={20} className="stroke-[2.5]" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase text-slate-500 tracking-wider">Enviar para WhatsApp</h4>
+                  <p className="text-[11px] text-slate-450 leading-tight">Escolha ou digite um número personalizado para compartilhar o pedido.</p>
+                </div>
+              </div>
+              <div className="w-full sm:w-auto flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="DDD + Número (ex: 11999999999)"
+                  value={customPhone}
+                  onChange={(e) => setCustomPhone(e.target.value)}
+                  className="w-full sm:w-56 px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-emerald-500 focus:bg-white text-slate-700 font-medium placeholder-slate-400"
+                />
+                {clientData?.phone && customPhone !== clientData.phone && (
+                  <button
+                    onClick={() => setCustomPhone(clientData.phone || '')}
+                    className="text-[10px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-2.5 rounded-xl border border-emerald-100 transition-all cursor-pointer whitespace-nowrap"
+                    title="Restaurar número original do cliente"
+                  >
+                    Resetar
+                  </button>
+                )}
+              </div>
+            </div>
+
             <p className="text-xs font-bold text-slate-500 ml-1.5 block">Opções disponíveis para o pedido:</p>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
