@@ -41,8 +41,6 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
   onTogglePaid,
   onViewSale
 }) => {
-  if (!isOpen) return null;
-
   // Safe client-side local ISO string (YYYY-MM-DD)
   const [selectedISO, setSelectedISO] = useState<string>(() => {
     const d = new Date();
@@ -60,6 +58,8 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
     const [year, month, day] = selectedISO.split("-");
     return `${day}/${month}/${year}`;
   }, [selectedISO]);
+
+  if (!isOpen) return null;
 
   // Navigate to previous day
   const handlePrevDay = () => {
@@ -915,7 +915,11 @@ Feito pelo OmniVenda Co-piloto`;
       const doc = generateDailyReportPDF();
       doc.save(`relatorio_diario_${selectedISO}.pdf`);
 
-      alert(`📄 PDF de Fechamento do Dia ${activeDateBR} foi baixado com sucesso!\n\nAgora abriremos o WhatsApp. Basta anexar o arquivo PDF baixado (clipe de papel) na conversa do WhatsApp.`);
+      try {
+        alert(`📄 PDF de Fechamento do Dia ${activeDateBR} foi baixado com sucesso!\n\nAgora abriremos o WhatsApp. Basta anexar o arquivo PDF baixado (clipe de papel) na conversa do WhatsApp.`);
+      } catch (alertErr) {
+        console.warn("Alert is blocked by browser policies:", alertErr);
+      }
 
       handleShareWhatsAppReport();
     } catch (err) {

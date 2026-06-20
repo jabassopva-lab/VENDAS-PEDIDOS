@@ -754,7 +754,11 @@ Obrigado pela preferência e parceria!`;
       const doc = generateClientReportPDF();
       doc.save(`extrato_${client.name.replace(/\s+/g, '_').toLowerCase()}.pdf`);
 
-      alert(`📄 O PDF do extrato de ${client.name} foi baixado com sucesso!\n\nAgora abriremos o WhatsApp para você. Basta anexar o arquivo PDF baixado (clipe de papel) na conversa do cliente.`);
+      try {
+        alert(`📄 O PDF do extrato de ${client.name} foi baixado com sucesso!\n\nAgora abriremos o WhatsApp para você. Basta anexar o arquivo PDF baixado (clipe de papel) na conversa do cliente.`);
+      } catch (alertErr) {
+        console.warn("Alert is blocked by browser policies:", alertErr);
+      }
 
       handleShareWhatsAppReport();
     } catch (err) {

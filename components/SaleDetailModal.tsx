@@ -25,19 +25,19 @@ const SaleDetailModal: React.FC<SaleDetailModalProps> = ({
   onDelete,
   onTogglePaid
 }) => {
-  if (!isOpen || !sale) return null;
-
-  const clientData = clients.find(c => c.id === sale.clientId);
-
   const [showConfirmDelete, setShowConfirmDelete] = React.useState(false);
   const [viewMode, setViewMode] = React.useState<'VIEW' | 'ACTIONS'>('VIEW');
 
   React.useEffect(() => {
-    if (isOpen) {
+    if (isOpen && sale) {
       setViewMode('VIEW');
       setShowConfirmDelete(false);
     }
   }, [isOpen, sale]);
+
+  if (!isOpen || !sale) return null;
+
+  const clientData = clients.find(c => c.id === sale.clientId);
 
   const handleDelete = () => {
     console.log("SaleDetailModal - Clique no botão excluir - solicitando confirmação");
@@ -321,7 +321,11 @@ Obrigado pela preferência!`;
       doc.save(`pedido_${orderNum}.pdf`);
       
       // Let user know their PDF was downloaded and that they can attach it
-      alert(`📄 PDF do Pedido #${orderNum} foi baixado com sucesso!\n\nAgora abriremos o WhatsApp. Basta anexar o arquivo PDF baixado (clipe de papel) na conversa do WhatsApp.`);
+      try {
+        alert(`📄 PDF do Pedido #${orderNum} foi baixado com sucesso!\n\nAgora abriremos o WhatsApp. Basta anexar o arquivo PDF baixado (clipe de papel) na conversa do WhatsApp.`);
+      } catch (alertErr) {
+        console.warn("Alert is blocked by browser policies:", alertErr);
+      }
       
       // Open WhatsApp with text summary as well
       handleShareWhatsApp();
