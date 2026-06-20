@@ -4086,9 +4086,29 @@ Obrigado pela preferência!`;
               {/* Three Ranking Action Buttons - TARGETED */}
               <div className="space-y-3 text-left">
                 <span className="text-[9px] font-black uppercase tracking-widest text-[#94a3b8] ml-1 block font-sans">
-                  Explorar Rankings
+                  Relatórios e Rankings
                 </span>
                 <div className="grid grid-cols-1 gap-3">
+                  <button
+                    onClick={() => setShowDailyReportModal(true)}
+                    className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between active:scale-95 transition-all"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500">
+                        <FileSpreadsheet size={24} />
+                      </div>
+                      <div className="text-left font-sans font-sans">
+                        <p className="font-black text-slate-800 uppercase text-xs italic">
+                          Relatório Diário de Hoje
+                        </p>
+                        <p className="text-[7px] font-black text-[#94a3b8] uppercase tracking-widest leading-none mt-1 font-sans">
+                          Consolidado das vendas e fechamento do caixa de hoje
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight size={20} className="text-slate-300" />
+                  </button>
+
                   <button
                     onClick={() => setCurrentScreen("CLIENT_REPORT")}
                     className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between active:scale-95 transition-all"
