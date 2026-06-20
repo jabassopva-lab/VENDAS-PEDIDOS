@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { 
   X, 
   Printer, 
@@ -10,6 +10,7 @@ import {
   CheckCircle2, 
   AlertCircle,
   ChevronRight,
+  ChevronLeft,
   Coins,
   CreditCard,
   Layers,
@@ -38,21 +39,66 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const todayBR = new Date().toLocaleDateString("pt-BR");
+  // Safe client-side local ISO string (YYYY-MM-DD)
+  const [selectedISO, setSelectedISO] = useState<string>(() => {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  });
 
-  // Filter today's sales
+  // Calculate DD/MM/YYYY of the active date
+  const activeDateBR = useMemo(() => {
+    if (!selectedISO) return "";
+    const [year, month, day] = selectedISO.split("-");
+    return `${day}/${month}/${year}`;
+  }, [selectedISO]);
+
+  // Navigate to previous day
+  const handlePrevDay = () => {
+    const [year, month, day] = selectedISO.split("-").map(Number);
+    const current = new Date(year, month - 1, day);
+    current.setDate(current.getDate() - 1);
+    const yyyy = current.getFullYear();
+    const mm = String(current.getMonth() + 1).padStart(2, '0');
+    const dd = String(current.getDate()).padStart(2, '0');
+    setSelectedISO(`${yyyy}-${mm}-${dd}`);
+  };
+
+  // Navigate to next day
+  const handleNextDay = () => {
+    const [year, month, day] = selectedISO.split("-").map(Number);
+    const current = new Date(year, month - 1, day);
+    current.setDate(current.getDate() + 1);
+    const yyyy = current.getFullYear();
+    const mm = String(current.getMonth() + 1).padStart(2, '0');
+    const dd = String(current.getDate()).padStart(2, '0');
+    setSelectedISO(`${yyyy}-${mm}-${dd}`);
+  };
+
+  // Jump back to today
+  const handleSetToday = () => {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    setSelectedISO(`${yyyy}-${mm}-${dd}`);
+  };
+
+  // Filter selected date's sales
   const todaySales = useMemo(() => {
     return sales.filter((s) => {
       if (!s.date) return false;
       // Allow FINALIZADA and PENDENTE for the main report stats (exclude speculative ORCAMENTO)
-      return s.date === todayBR && ["FINALIZADA", "PENDENTE"].includes(s.status);
+      return s.date === activeDateBR && ["FINALIZADA", "PENDENTE"].includes(s.status);
     });
-  }, [sales, todayBR]);
+  }, [sales, activeDateBR]);
 
-  // Today's budgets/drafts
+  // Selected date's budgets/drafts
   const todayBudgets = useMemo(() => {
-    return sales.filter((s) => s.date === todayBR && s.status === "ORCAMENTO");
-  }, [sales, todayBR]);
+    return sales.filter((s) => s.date === activeDateBR && s.status === "ORCAMENTO");
+  }, [sales, activeDateBR]);
 
   // Parse safety helpers
   const safeNumber = (val: any) => {
@@ -144,7 +190,7 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
       <html lang="pt-BR">
       <head>
           <meta charset="UTF-8">
-          <title>Relatório do Dia - ${todayBR}</title>
+          <title>Relatório do Dia - ${activeDateBR}</title>
           <style>
               body {
                   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -275,7 +321,7 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
           <div class="header">
               <h1>${profile.companyName || 'OMNIVENDA'}</h1>
               <p>Relatório de Fechamento de Caixa</p>
-              <div style="font-size: 10px; font-weight: 800; margin-top: 6px; color: #0184c7;">DATA: ${todayBR}</div>
+              <div style="font-size: 10px; font-weight: 800; margin-top: 6px; color: #0184c7;">DATA: ${activeDateBR}</div>
           </div>
 
           <div class="section-title">Resumo Financeiro</div>
@@ -404,10 +450,10 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
               <FileSpreadsheet size={22} className="text-yellow-300" />
             </div>
             <div>
-              <h2 className="text-xs font-black uppercase tracking-widest text-[#f5f3ff]">Consolidado do Dia</h2>
+              <h2 className="text-xs font-black uppercase tracking-widest text-[#f5f3ff]">Consolidado Diário</h2>
               <p className="text-sm font-black italic tracking-tight text-white flex items-center gap-1.5 uppercase mt-0.5">
                 <Calendar size={13} className="text-sky-200" />
-                Vendas de Hoje • {todayBR}
+                Vendas de {activeDateBR}
               </p>
             </div>
           </div>
@@ -415,7 +461,7 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
             <button
               onClick={handlePrint}
               className="bg-white/15 text-white hover:bg-white/25 px-4 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-wider flex items-center gap-2 transition-all active:scale-95 border border-white/10"
-              title="Imprimir Fechamento de Hoje"
+              title="Imprimir Relatório"
             >
               <Printer size={16} /> <span className="hidden sm:inline">Imprimir</span>
             </button>
@@ -425,6 +471,54 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
             >
               <X size={18} />
             </button>
+          </div>
+        </div>
+
+        {/* Date Selector Navigation Bar */}
+        <div className="bg-slate-100 border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row gap-3 items-center justify-between z-20">
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Período:</span>
+            <div className="flex bg-white rounded-xl border border-slate-200 p-0.5">
+              <button
+                type="button"
+                onClick={handlePrevDay}
+                className="p-1 px-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors"
+                title="Dia Anterior"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={handleSetToday}
+                className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-colors ${
+                  activeDateBR === new Date().toLocaleDateString("pt-BR")
+                    ? "bg-indigo-50 text-indigo-600"
+                    : "hover:bg-slate-100 text-slate-600"
+                }`}
+              >
+                Hoje
+              </button>
+              <button
+                type="button"
+                onClick={handleNextDay}
+                className="p-1 px-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors"
+                title="Próximo Dia"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 w-full sm:w-auto">
+            <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider shrink-0">Consultar Data:</span>
+            <input
+              type="date"
+              value={selectedISO}
+              onChange={(e) => {
+                if (e.target.value) setSelectedISO(e.target.value);
+              }}
+              className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-auto"
+            />
           </div>
         </div>
 
