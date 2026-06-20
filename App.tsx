@@ -402,6 +402,28 @@ const App: React.FC = () => {
     selectedSale,
   ]);
 
+  useEffect(() => {
+    const stack = getVisualStack();
+    if (stack.length > 0) {
+      document.body.style.overscrollBehaviorY = "contain";
+    } else {
+      document.body.style.overscrollBehaviorY = "auto";
+    }
+    return () => {
+      document.body.style.overscrollBehaviorY = "auto";
+    };
+  }, [
+    currentScreen,
+    showDueTodayModal,
+    showDailyReportModal,
+    selectedClientReport,
+    subscriptionModal?.isOpen,
+    saleModal,
+    productModal?.type,
+    clientModal?.type,
+    selectedSale,
+  ]);
+
   const resetBusinessData = () => {
     setProducts([]);
     setClients([]);
