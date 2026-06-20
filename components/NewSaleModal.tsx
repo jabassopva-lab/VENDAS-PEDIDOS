@@ -669,6 +669,35 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       value={dueDate}
                       onChange={(e) => setDueDate(e.target.value)}
                     />
+                    
+                    {/* Atalhos de Prazos Rápidos */}
+                    <div className="mt-2.5 space-y-1.5">
+                      <span className="text-[8px] font-black text-gray-400 uppercase tracking-wider block">
+                        Definir Prazo (Dias):
+                      </span>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[14, 21, 30].map((days) => {
+                          const d = new Date();
+                          d.setDate(d.getDate() + days);
+                          const targetDate = d.toISOString().split("T")[0];
+                          const isActive = dueDate === targetDate;
+                          return (
+                            <button
+                              type="button"
+                              key={days}
+                              onClick={() => setDueDate(targetDate)}
+                              className={`py-2 px-3 rounded-xl text-[10px] font-bold uppercase transition-all duration-150 border active:scale-95 text-center ${
+                                isActive
+                                  ? "bg-indigo-600 border-indigo-600 text-white shadow-xs"
+                                  : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+                              }`}
+                            >
+                              +{days} dias
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
