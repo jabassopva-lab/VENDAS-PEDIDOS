@@ -48,6 +48,8 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
     return `${yyyy}-${mm}-${dd}`;
   });
 
+  const [reportType, setReportType] = useState<'COMPLETE' | 'SIMPLIFIED'>('COMPLETE');
+
   // Calculate DD/MM/YYYY of the active date
   const activeDateBR = useMemo(() => {
     if (!selectedISO) return "";
@@ -183,21 +185,33 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
     return Object.values(productsMap).sort((a, b) => b.quantity - a.quantity);
   }, [todaySales]);
 
+  // Totals for the simplified report
+  const totalQtySold = useMemo(() => {
+    return topProducts.reduce((acc, p) => acc + p.quantity, 0);
+  }, [topProducts]);
+
+  const totalValueSold = useMemo(() => {
+    return topProducts.reduce((acc, p) => acc + p.totalSold, 0);
+  }, [topProducts]);
+
   // Printable Report Generation
   const handlePrint = () => {
-    const printContent = `
+    const isSimplified = reportType === 'SIMPLIFIED';
+
+    const printContent = isSimplified ? `
       <!DOCTYPE html>
       <html lang="pt-BR">
       <head>
           <meta charset="UTF-8">
-          <title>Relatório do Dia - ${activeDateBR}</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Relatório de Vendas (Simplificado) - ${activeDateBR}</title>
           <style>
               body {
                   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
                   color: #334155;
-                  margin: 20px;
-                  font-size: 11px;
-                  line-height: 1.4;
+                  margin: 15px;
+                  font-size: 13px;
+                  line-height: 1.5;
               }
               .header {
                   text-align: center;
@@ -206,7 +220,7 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
                   margin-bottom: 20px;
               }
               .header h1 {
-                  font-size: 18px;
+                  font-size: 20px;
                   margin: 0;
                   font-weight: 800;
                   color: #0f172a;
@@ -216,38 +230,168 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
               .header p {
                   margin: 5px 0 0;
                   color: #64748b;
-                  font-size: 10px;
+                  font-size: 11px;
                   font-weight: 700;
                   text-transform: uppercase;
               }
               .section-title {
+                  font-size: 11px;
+                  font-weight: 955;
+                  text-transform: uppercase;
+                  color: #475569;
+                  letter-spacing: 0.5px;
+                  border-bottom: 2px solid #e2e8f0;
+                  padding-bottom: 5px;
+                  margin-top: 20px;
+                  margin-bottom: 12px;
+              }
+              .details-table {
+                  width: 100%;
+                  border-collapse: collapse;
+              }
+              .details-table th {
+                  background-color: #f8fafc;
+                  padding: 10px 12px;
+                  font-weight: 800;
+                  text-transform: uppercase;
                   font-size: 10px;
+                  color: #64748b;
+                  text-align: left;
+                  border-bottom: 1px solid #cbd5e1;
+              }
+              .details-table td {
+                  padding: 10px 12px;
+                  border-bottom: 1px solid #f1f5f9;
+                  font-size: 12px;
+              }
+              .text-right {
+                  text-align: right;
+              }
+              .text-center {
+                  text-align: center;
+              }
+              .font-bold {
+                  font-weight: 700;
+              }
+              .footer {
+                  text-align: center;
+                  font-size: 9px;
+                  color: #94a3b8;
+                  margin-top: 40px;
+                  border-top: 1px dashed #cbd5e1;
+                  padding-top: 15px;
+                  font-weight: 700;
+                  text-transform: uppercase;
+              }
+          </style>
+      </head>
+      <body>
+          <div class="header">
+              <h1>${profile.companyName || 'OMNIVENDA'}</h1>
+              <p>Relatório de Produtos Vendidos (Simplificado)</p>
+              <div style="font-size: 10px; font-weight: 800; margin-top: 6px; color: #0184c7;">DATA: ${activeDateBR}</div>
+          </div>
+
+          <div class="section-title">Produtos Vendidos</div>
+          <table class="details-table">
+              <thead>
+                  <tr>
+                      <th>Produto / Descrição</th>
+                      <th class="text-center" style="width: 100px;">Qtd Vendida</th>
+                      <th class="text-right" style="width: 150px;">Subtotal</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  ${topProducts.length === 0 ? `
+                      <tr><td colspan="3" class="text-center" style="color: #94a3b8; font-weight: 700; padding: 20px;">Nenhum item vendido nesta data.</td></tr>
+                  ` : topProducts.map(product => `
+                      <tr>
+                          <td class="font-bold">${product.name}</td>
+                          <td class="text-center font-bold" style="color: #4f46e5;">${product.quantity}</td>
+                          <td class="text-right font-bold">R$ ${product.totalSold.toFixed(2)}</td>
+                      </tr>
+                  `).join('')}
+              </tbody>
+              ${topProducts.length > 0 ? `
+              <tfoot>
+                  <tr style="border-top: 2px solid #cbd5e1; font-weight: 900; background-color: #f8fafc;">
+                      <td style="padding: 10px 10px; font-weight: 900; font-size: 10px; text-transform: uppercase;">Total Geral</td>
+                      <td class="text-center" style="padding: 10px 10px; font-weight: 900; font-size: 11px; color: #4f46e5;">${totalQtySold}</td>
+                      <td class="text-right" style="padding: 10px 10px; font-weight: 900; font-size: 11px; color: #1e293b;">R$ ${totalValueSold.toFixed(2)}</td>
+                  </tr>
+              </tfoot>
+              ` : ''}
+          </table>
+
+          <div class="footer">
+              OMNIVENDA • RELATÓRIO SIMPLIFICADO DE PRODUTOS
+          </div>
+      </body>
+      </html>
+    ` : `
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Relatório do Dia - ${activeDateBR}</title>
+          <style>
+              body {
+                  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                  color: #334155;
+                  margin: 15px;
+                  font-size: 13px;
+                  line-height: 1.5;
+              }
+              .header {
+                  text-align: center;
+                  padding-bottom: 20px;
+                  border-bottom: 2px dashed #cbd5e1;
+                  margin-bottom: 20px;
+              }
+              .header h1 {
+                  font-size: 20px;
+                  margin: 0;
+                  font-weight: 800;
+                  color: #0f172a;
+                  text-transform: uppercase;
+                  letter-spacing: -0.5px;
+              }
+              .header p {
+                  margin: 5px 0 0;
+                  color: #64748b;
+                  font-size: 11px;
+                  font-weight: 700;
+                  text-transform: uppercase;
+              }
+              .section-title {
+                  font-size: 11px;
                   font-weight: 900;
                   text-transform: uppercase;
                   color: #475569;
                   letter-spacing: 0.5px;
                   border-bottom: 1px solid #e2e8f0;
-                  padding-bottom: 4px;
+                  padding-bottom: 5px;
                   margin-top: 20px;
-                  margin-bottom: 8px;
+                  margin-bottom: 10px;
               }
               .kpi-table {
                   width: 100%;
                   border-collapse: collapse;
                   margin-bottom: 15px;
-              }
+               }
               .kpi-table td {
-                  padding: 8px;
+                  padding: 10px;
                   border: 1px solid #e2e8f0;
               }
               .kpi-label {
                   font-weight: 700;
                   color: #64748b;
-                  font-size: 9px;
+                  font-size: 10px;
                   text-transform: uppercase;
               }
               .kpi-value {
-                  font-size: 13px;
+                  font-size: 14px;
                   font-weight: 850;
                   color: #0f172a;
                   text-align: right;
@@ -267,18 +411,18 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
               }
               .details-table th {
                   background-color: #f8fafc;
-                  padding: 6px 8px;
+                  padding: 8px 10px;
                   font-weight: 800;
                   text-transform: uppercase;
-                  font-size: 8px;
+                  font-size: 10px;
                   color: #64748b;
                   text-align: left;
                   border-bottom: 1px solid #cbd5e1;
               }
               .details-table td {
-                  padding: 8px;
+                  padding: 10px;
                   border-bottom: 1px solid #f1f5f9;
-                  font-size: 9px;
+                  font-size: 11px;
               }
               .text-right {
                   text-align: right;
@@ -291,9 +435,9 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
               }
               .badge {
                   display: inline-block;
-                  padding: 2px 5px;
+                  padding: 3px 6px;
                   border-radius: 4px;
-                  font-size: 7px;
+                  font-size: 9px;
                   font-weight: 900;
                   text-transform: uppercase;
               }
@@ -307,7 +451,7 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
               }
               .footer {
                   text-align: center;
-                  font-size: 8px;
+                  font-size: 9px;
                   color: #94a3b8;
                   margin-top: 30px;
                   border-top: 1px dashed #cbd5e1;
@@ -522,165 +666,264 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
           </div>
         </div>
 
+        {/* Report Format Selector */}
+        <div className="bg-slate-50 border-b border-slate-200 px-6 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 z-10">
+          <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider shrink-0">Formato do Relatório:</span>
+          <div className="flex bg-slate-200 rounded-xl p-0.5 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setReportType('COMPLETE')}
+              className={`flex-1 sm:flex-none px-4 py-1.5 text-[9px] font-black uppercase rounded-lg transition-all duration-150 ${
+                reportType === 'COMPLETE'
+                  ? "bg-white text-slate-800 shadow-xs scale-100"
+                  : "hover:bg-white/40 text-slate-500"
+              }`}
+            >
+              Completo (Finanças & Vendas)
+            </button>
+            <button
+              type="button"
+              onClick={() => setReportType('SIMPLIFIED')}
+              className={`flex-1 sm:flex-none px-4 py-1.5 text-[9px] font-black uppercase rounded-lg transition-all duration-150 ${
+                reportType === 'SIMPLIFIED'
+                  ? "bg-white text-slate-800 shadow-xs scale-100"
+                  : "hover:bg-white/40 text-slate-500"
+              }`}
+            >
+              Simplificado (Apenas Produtos)
+            </button>
+          </div>
+        </div>
+
         {/* Scrollable Container */}
         <div className="overflow-y-auto p-6 space-y-6 bg-slate-50 flex-1">
-          
-          {/* Quick Metrics (Bento-grid) */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
-              <div className="flex justify-between items-center">
-                <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest leading-none">Vendas Realizadas</span>
-                <span className="w-5 h-5 bg-sky-50 rounded-lg flex items-center justify-center text-sky-500 font-black text-[9px]">{stats.vendasCount}</span>
+          {reportType === 'SIMPLIFIED' ? (
+            /* Simplified Report listing ONLY sold products */
+            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 bg-pink-50 rounded-xl flex items-center justify-center text-pink-500 shrink-0">
+                    <ShoppingBag size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-sans font-black text-xs text-slate-800 uppercase tracking-wider leading-none">
+                      Lista de Produtos Vendidos
+                    </h3>
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1.5">
+                      {topProducts.length} itens distintos comercializados
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="mt-3">
-                <p className="text-xs text-slate-400 font-extrabold uppercase leading-none">Total Faturado</p>
-                <h4 className="text-lg font-black text-slate-800 tracking-tight mt-1">R$ {stats.vendasTotal.toFixed(2)}</h4>
-              </div>
-            </div>
 
-            <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
-              <div className="flex justify-between items-center">
-                <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest leading-none">Recebido Digital</span>
-                <span className="w-5 h-5 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-500 font-black text-[9px]">💳</span>
-              </div>
-              <div className="mt-3">
-                <p className="text-xs text-emerald-600 font-extrabold uppercase leading-none">Pago (Liquidado)</p>
-                <h4 className="text-lg font-black text-emerald-600 tracking-tight mt-1">R$ {stats.recebidoTotal.toFixed(2)}</h4>
-              </div>
-            </div>
+              {topProducts.length > 0 && (
+                <div className="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <div className="space-y-1">
+                    <span className="text-[8px] font-black uppercase text-[#94a3b8] tracking-wider block font-sans">
+                      Total de Unidades Vendidas
+                    </span>
+                    <p className="text-sm font-black text-slate-700 uppercase italic font-sans">
+                      {totalQtySold} {totalQtySold === 1 ? 'unidade' : 'unidades'}
+                    </p>
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <span className="text-[8px] font-black uppercase text-[#94a3b8] tracking-wider block font-sans">
+                      Valor Total Faturado
+                    </span>
+                    <p className="text-sm font-black text-emerald-600 uppercase italic font-sans">
+                      R$ {totalValueSold.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              )}
 
-            <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
-              <div className="flex justify-between items-center">
-                <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest leading-none">A Receber</span>
-                <span className="w-5 h-5 bg-amber-50 rounded-lg flex items-center justify-center text-amber-500 font-black text-[9px]">⏳</span>
-              </div>
-              <div className="mt-3">
-                <p className="text-xs text-amber-600 font-extrabold uppercase leading-none">A prazo pendente</p>
-                <h4 className="text-lg font-black text-amber-600 tracking-tight mt-1">R$ {stats.aReceberTotal.toFixed(2)}</h4>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
-              <div className="flex justify-between items-center">
-                <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest leading-none">Margem Líquida</span>
-                <span className="w-5 h-5 bg-[#dcfce7] rounded-lg flex items-center justify-center text-green-600"><TrendingUp size={12} /></span>
-              </div>
-              <div className="mt-3">
-                <p className="text-xs text-green-600 font-extrabold uppercase leading-none">Lucro Estimado</p>
-                <h4 className="text-lg font-black text-green-600 tracking-tight mt-1">R$ {stats.lucro.toFixed(2)}</h4>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
-            {/* Payment breakdowns */}
-            <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
-              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                <Coins size={14} className="text-[#0ea5e9]" />
-                Breakdown de Pagamentos
-              </h3>
-              <div className="space-y-2.5">
-                {paymentBreakdown.length === 0 ? (
-                  <p className="text-[10px] font-black text-slate-400 uppercase italic text-center py-4">Sem faturamento registrado hoje.</p>
-                ) : (
-                  paymentBreakdown.map((method) => {
-                    const percentage = stats.vendasTotal > 0 ? (method.total / stats.vendasTotal) * 100 : 0;
-                    return (
-                      <div key={method.name} className="space-y-1">
-                        <div className="flex justify-between items-center text-[10px]">
-                          <span className="font-extrabold text-slate-700 uppercase italic">{method.name} ({method.count}x)</span>
-                          <span className="font-black text-slate-800">R$ {method.total.toFixed(2)}</span>
-                        </div>
-                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                          <div className="bg-[#0ea5e9] h-full rounded-full" style={{ width: `${percentage}%` }}></div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* Top items sold */}
-            <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
-              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                <ShoppingBag size={14} className="text-pink-500" />
-                Produtos Vendidos Hoje
-              </h3>
-              <div className="space-y-3 max-h-[160px] overflow-y-auto pr-1">
+              <div className="divide-y divide-slate-100">
                 {topProducts.length === 0 ? (
-                  <p className="text-[10px] font-black text-slate-400 uppercase italic text-center py-4">Nenhum produto listado hoje.</p>
+                  <div className="text-center py-12">
+                    <p className="text-3xl">📦</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase italic mt-2.5">
+                      Nenhum produto vendido nesta data.
+                    </p>
+                  </div>
                 ) : (
                   topProducts.map((p, idx) => (
-                    <div key={idx} className="flex justify-between items-center border-b border-slate-50 pb-2 last:border-0 last:pb-0">
+                    <div key={idx} className="py-4 flex justify-between items-center first:pt-0 last:pb-0">
                       <div>
-                        <h4 className="font-bold text-slate-700 text-xs uppercase italic">{p.name}</h4>
-                        <p className="text-[9px] text-slate-400 font-extrabold uppercase mt-0.5">{p.quantity} unidades vendidas</p>
+                        <h4 className="font-sans font-black text-xs text-slate-700 uppercase italic">
+                          {p.name}
+                        </h4>
+                        <p className="text-[9px] text-[#94a3b8] font-black uppercase tracking-widest mt-1">
+                          {p.quantity} {p.quantity === 1 ? 'unidade vendida' : 'unidades vendidas'}
+                        </p>
                       </div>
-                      <span className="font-black text-slate-800 text-xs">R$ {p.totalSold.toFixed(2)}</span>
+                      <div className="text-right shrink-0">
+                        <span className="font-mono font-black text-xs text-slate-800 bg-slate-100 px-2.5 py-1.5 rounded-lg block">
+                          R$ {p.totalSold.toFixed(2)}
+                        </span>
+                      </div>
                     </div>
                   ))
                 )}
               </div>
             </div>
-
-          </div>
-
-          {/* Today's comprehensive sales list */}
-          <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
-            <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-              <Clock size={14} className="text-violet-500" />
-              Cronologia das Vendas do Dia
-            </h3>
-            <div className="space-y-3">
-              {todaySales.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-2xl">⚡</p>
-                  <p className="text-[10px] font-black text-slate-400 uppercase italic mt-1">Nenhuma venda faturada hoje.</p>
+          ) : (
+            /* Complete report with financials and order history */
+            <>
+              {/* Quick Metrics (Bento-grid) */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest leading-none">Vendas Realizadas</span>
+                    <span className="w-5 h-5 bg-sky-50 rounded-lg flex items-center justify-center text-sky-500 font-black text-[9px]">{stats.vendasCount}</span>
+                  </div>
+                  <div className="mt-3">
+                    <p className="text-xs text-slate-400 font-extrabold uppercase leading-none">Total Faturado</p>
+                    <h4 className="text-lg font-black text-slate-800 tracking-tight mt-1">R$ {stats.vendasTotal.toFixed(2)}</h4>
+                  </div>
                 </div>
-              ) : (
-                todaySales.map((sale) => {
-                  const isPaid = sale.isPaid === true || String(sale.isPaid) === "true" || Number(sale.isPaid) === 1;
-                  return (
-                    <div 
-                      key={sale.id}
-                      onClick={() => onViewSale?.(sale)}
-                      className="group p-3.5 rounded-2xl border border-slate-100 hover:border-[#0ea5e9] bg-slate-50/50 hover:bg-white cursor-pointer transition-all flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 bg-white rounded-xl flex flex-col items-center justify-center font-black text-slate-400 text-[10px] shadow-sm shrink-0">
-                          <span className="text-slate-800 text-[10px] leading-tight">{sale.time || '--:--'}</span>
-                          <span className="text-[6px] font-black uppercase text-slate-300">Resumo</span>
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="font-black text-slate-700 text-xs uppercase italic group-hover:text-[#0ea5e9] transition-colors truncate">
-                            {sale.clientName}
-                          </h4>
-                          <p className="text-[8px] text-slate-400 font-black uppercase tracking-wider mt-0.5">
-                            {sale.paymentMethod} • {sale.paymentTerms || 'À Vista'}
-                          </p>
-                        </div>
-                      </div>
 
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="text-right">
-                          <span className="text-[10px] font-black text-slate-800 italic">R$ {safeNumber(sale.total).toFixed(2)}</span>
-                          <div className="mt-0.5">
-                            <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded-md ${isPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                              {isPaid ? 'Pago' : 'Pendente'}
-                            </span>
+                <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest leading-none">Recebido Digital</span>
+                    <span className="w-5 h-5 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-500 font-black text-[9px]">💳</span>
+                  </div>
+                  <div className="mt-3">
+                    <p className="text-xs text-emerald-600 font-extrabold uppercase leading-none">Pago (Liquidado)</p>
+                    <h4 className="text-lg font-black text-emerald-600 tracking-tight mt-1">R$ {stats.recebidoTotal.toFixed(2)}</h4>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest leading-none">A Receber</span>
+                    <span className="w-5 h-5 bg-amber-50 rounded-lg flex items-center justify-center text-amber-500 font-black text-[9px]">⏳</span>
+                  </div>
+                  <div className="mt-3">
+                    <p className="text-xs text-amber-600 font-extrabold uppercase leading-none">A prazo pendente</p>
+                    <h4 className="text-lg font-black text-amber-600 tracking-tight mt-1">R$ {stats.aReceberTotal.toFixed(2)}</h4>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest leading-none">Margem Líquida</span>
+                    <span className="w-5 h-5 bg-[#dcfce7] rounded-lg flex items-center justify-center text-green-600"><TrendingUp size={12} /></span>
+                  </div>
+                  <div className="mt-3">
+                    <p className="text-xs text-green-600 font-extrabold uppercase leading-none">Lucro Estimado</p>
+                    <h4 className="text-lg font-black text-green-600 tracking-tight mt-1">R$ {stats.lucro.toFixed(2)}</h4>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Payment breakdowns */}
+                <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
+                  <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                    <Coins size={14} className="text-[#0ea5e9]" />
+                    Breakdown de Pagamentos
+                  </h3>
+                  <div className="space-y-2.5">
+                    {paymentBreakdown.length === 0 ? (
+                      <p className="text-[10px] font-black text-slate-400 uppercase italic text-center py-4">Sem faturamento registrado hoje.</p>
+                    ) : (
+                      paymentBreakdown.map((method) => {
+                        const percentage = stats.vendasTotal > 0 ? (method.total / stats.vendasTotal) * 100 : 0;
+                        return (
+                          <div key={method.name} className="space-y-1">
+                            <div className="flex justify-between items-center text-[10px]">
+                              <span className="font-extrabold text-slate-700 uppercase italic">{method.name} ({method.count}x)</span>
+                              <span className="font-black text-slate-800">R$ {method.total.toFixed(2)}</span>
+                            </div>
+                            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                              <div className="bg-[#0ea5e9] h-full rounded-full" style={{ width: `${percentage}%` }}></div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Top items sold */}
+                <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
+                  <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                    <ShoppingBag size={14} className="text-pink-500" />
+                    Produtos Vendidos Hoje
+                  </h3>
+                  <div className="space-y-3 max-h-[160px] overflow-y-auto pr-1">
+                    {topProducts.length === 0 ? (
+                      <p className="text-[10px] font-black text-slate-400 uppercase italic text-center py-4">Nenhum produto listado hoje.</p>
+                    ) : (
+                      topProducts.map((p, idx) => (
+                        <div key={idx} className="flex justify-between items-center border-b border-slate-50 pb-2 last:border-0 last:pb-0">
+                          <div>
+                            <h4 className="font-bold text-slate-700 text-xs uppercase italic">{p.name}</h4>
+                            <p className="text-[9px] text-slate-400 font-extrabold uppercase mt-0.5">{p.quantity} unidades vendidas</p>
+                          </div>
+                          <span className="font-black text-slate-800 text-xs">R$ {p.totalSold.toFixed(2)}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Today's comprehensive sales list */}
+              <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
+                <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                  <Clock size={14} className="text-violet-500" />
+                  Cronologia das Vendas do Dia
+                </h3>
+                <div className="space-y-3">
+                  {todaySales.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-2xl">⚡</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase italic mt-1">Nenhuma venda faturada hoje.</p>
+                    </div>
+                  ) : (
+                    todaySales.map((sale) => {
+                      const isPaid = sale.isPaid === true || String(sale.isPaid) === "true" || Number(sale.isPaid) === 1;
+                      return (
+                        <div 
+                          key={sale.id}
+                          onClick={() => onViewSale?.(sale)}
+                          className="group p-3.5 rounded-2xl border border-slate-100 hover:border-[#0ea5e9] bg-slate-50/50 hover:bg-white cursor-pointer transition-all flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 bg-white rounded-xl flex flex-col items-center justify-center font-black text-slate-400 text-[10px] shadow-sm shrink-0">
+                              <span className="text-slate-800 text-[10px] leading-tight">{sale.time || '--:--'}</span>
+                              <span className="text-[6px] font-black uppercase text-slate-300">Resumo</span>
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="font-black text-slate-700 text-xs uppercase italic group-hover:text-[#0ea5e9] transition-colors truncate">
+                                {sale.clientName}
+                              </h4>
+                              <p className="text-[8px] text-slate-400 font-black uppercase tracking-wider mt-0.5">
+                                {sale.paymentMethod} • {sale.paymentTerms || 'À Vista'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 shrink-0">
+                            <div className="text-right">
+                              <span className="text-[10px] font-black text-slate-800 italic">R$ {safeNumber(sale.total).toFixed(2)}</span>
+                              <div className="mt-0.5">
+                                <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded-md ${isPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                  {isPaid ? 'Pago' : 'Pendente'}
+                                </span>
+                              </div>
+                            </div>
+                            <ChevronRight size={16} className="text-slate-300 group-hover:text-[#0ea5e9] transition-colors" />
                           </div>
                         </div>
-                        <ChevronRight size={16} className="text-slate-300 group-hover:text-[#0ea5e9] transition-colors" />
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Footer */}
