@@ -59,8 +59,6 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
     return `${day}/${month}/${year}`;
   }, [selectedISO]);
 
-  if (!isOpen) return null;
-
   // Navigate to previous day
   const handlePrevDay = () => {
     const [year, month, day] = selectedISO.split("-").map(Number);
@@ -197,6 +195,8 @@ const DailyReportModal: React.FC<DailyReportModalProps> = ({
   const totalValueSold = useMemo(() => {
     return topProducts.reduce((acc, p) => acc + p.totalSold, 0);
   }, [topProducts]);
+
+  if (!isOpen) return null;
 
   // Printable Report Generation
   const handlePrint = () => {
