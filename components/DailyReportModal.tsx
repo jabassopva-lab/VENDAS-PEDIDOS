@@ -930,7 +930,7 @@ Feito pelo OmniVenda Co-piloto`;
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[95] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div className="bg-white rounded-[2.5rem] w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 animate-in zoom-in-95">
+      <div className="bg-white sm:rounded-3xl rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 animate-in zoom-in-95">
         
         {/* Header Ribbon styled with gradient background */}
         <div className="bg-gradient-to-r from-sky-500 to-indigo-600 px-6 py-5 flex justify-between items-center relative overflow-hidden">
@@ -947,52 +947,58 @@ Feito pelo OmniVenda Co-piloto`;
               </p>
             </div>
           </div>
-          <div className="flex gap-1.5 items-center relative z-10 select-none">
+          
+          <button
+            onClick={onClose}
+            className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-xl transition-all active:scale-95 border border-white/10 z-10 flex items-center justify-center shrink-0 cursor-pointer"
+            title="Fechar"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Dedicated Quick Actions Bar */}
+        <div className="bg-slate-50 border-b border-slate-200 p-4 sm:p-5 flex flex-col md:flex-row gap-3 items-start md:items-center justify-between z-20">
+          <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider shrink-0">Ações do Relatório:</span>
+          <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 w-full md:w-auto">
             {/* WhatsApp (PDF) */}
             <button
               onClick={handleSharePDFWhatsApp}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white p-2.5 rounded-xl transition-all active:scale-95 border border-emerald-500/20 shadow-xs flex items-center justify-center"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-3 rounded-lg transition-all active:scale-95 border border-emerald-500/20 shadow-xs flex items-center justify-center gap-1.5 cursor-pointer text-center"
               title="Compartilhar PDF no WhatsApp"
             >
-              <Share2 size={16} />
-              <span className="hidden md:inline font-bold text-[10px] uppercase tracking-wider ml-1.5">PDF WhatsApp</span>
+              <Share2 size={14} className="shrink-0" />
+              <span className="font-extrabold text-[9px] uppercase tracking-wider">PDF WhatsApp</span>
             </button>
 
             {/* WhatsApp (Texto) */}
             <button
               onClick={handleShareWhatsAppReport}
-              className="bg-sky-600 hover:bg-sky-700 text-white p-2.5 rounded-xl transition-all active:scale-95 border border-sky-500/20 shadow-xs flex items-center justify-center"
+              className="bg-sky-600 hover:bg-sky-700 text-white py-2.5 px-3 rounded-lg transition-all active:scale-95 border border-sky-500/20 shadow-xs flex items-center justify-center gap-1.5 cursor-pointer text-center"
               title="Compartilhar Texto no WhatsApp"
             >
-              <MessageSquare size={16} />
-              <span className="hidden md:inline font-bold text-[10px] uppercase tracking-wider ml-1.5">Texto</span>
+              <MessageSquare size={14} className="shrink-0" />
+              <span className="font-extrabold text-[9px] uppercase tracking-wider">Texto</span>
             </button>
 
             {/* Download PDF */}
             <button
               onClick={handleDownloadPDF}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 rounded-xl transition-all active:scale-95 border border-indigo-500/20 shadow-xs flex items-center justify-center"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-3 rounded-lg transition-all active:scale-95 border border-indigo-500/20 shadow-xs flex items-center justify-center gap-1.5 cursor-pointer text-center"
               title="Baixar PDF do Fechamento"
             >
-              <Download size={16} />
-              <span className="hidden md:inline font-bold text-[10px] uppercase tracking-wider ml-1.5">Baixar PDF</span>
+              <Download size={14} className="shrink-0" />
+              <span className="font-extrabold text-[9px] uppercase tracking-wider">Baixar PDF</span>
             </button>
 
             {/* Print */}
             <button
               onClick={handlePrint}
-              className="bg-white/10 text-white hover:bg-white/20 p-2.5 rounded-xl transition-all active:scale-95 border border-white/10 flex items-center justify-center"
+              className="bg-slate-700 hover:bg-slate-800 text-white py-2.5 px-3 rounded-lg transition-all active:scale-95 border border-slate-600/20 shadow-xs flex items-center justify-center gap-1.5 cursor-pointer text-center"
               title="Imprimir"
             >
-              <Printer size={16} />
-              <span className="hidden md:inline font-bold text-[10px] uppercase tracking-wider ml-1.5">Imprimir</span>
-            </button>
-
-            <button
-              onClick={onClose}
-              className="bg-slate-950/20 hover:bg-slate-950/30 text-white p-2.5 rounded-xl transition-all active:scale-95 border border-white/5"
-            >
-              <X size={18} />
+              <Printer size={14} className="shrink-0" />
+              <span className="font-extrabold text-[9px] uppercase tracking-wider">Imprimir</span>
             </button>
           </div>
         </div>
