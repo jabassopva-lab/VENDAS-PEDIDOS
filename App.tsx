@@ -294,6 +294,7 @@ const App: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [allBusinessesStats, setAllBusinessesStats] = useState<any[]>([]);
   const [isImpersonating, setIsImpersonating] = useState(false);
+  const [devPanelTab, setDevPanelTab] = useState<"BUSINESSES" | "PLANS">("BUSINESSES");
   const [subscriptionModal, setSubscriptionModal] = useState<{
     isOpen: boolean;
     business: any | null;
@@ -304,6 +305,23 @@ const App: React.FC = () => {
     message: string;
     limitName: string;
   } | null>(null);
+
+  const [plansConfig, setPlansConfig] = useState<Record<string, { price: number; maxProducts: number; maxClients: number; maxSellers: number; label: string }>>(() => {
+    const saved = localStorage.getItem("omnivenda_plan_configs");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return {
+      START: { price: 49.90, maxProducts: 15, maxClients: 20, maxSellers: 2, label: "Start (Básico)" },
+      PREMIUM: { price: 99.90, maxProducts: 50, maxClients: 100, maxSellers: 5, label: "Premium" },
+      ULTRA: { price: 149.90, maxProducts: 200, maxClients: 300, maxSellers: 10, label: "Ultra" },
+      MASTER: { price: 199.90, maxProducts: Infinity, maxClients: Infinity, maxSellers: Infinity, label: "Master" },
+    };
+  });
 
   const getVisualStack = () => {
     const stack = [];
@@ -474,14 +492,8 @@ const App: React.FC = () => {
 
   const currentPlanLimits = useMemo(() => {
     const type = (businessProfile.planType || "START").toUpperCase();
-    const limits: Record<string, { maxProducts: number; maxClients: number; label: string }> = {
-      START: { maxProducts: 15, maxClients: 20, label: "Start (Básico)" },
-      PREMIUM: { maxProducts: 50, maxClients: 100, label: "Premium" },
-      ULTRA: { maxProducts: 200, maxClients: 300, label: "Ultra" },
-      MASTER: { maxProducts: Infinity, maxClients: Infinity, label: "Master" },
-    };
-    return limits[type] || limits.START;
-  }, [businessProfile]);
+    return plansConfig[type] || plansConfig.START;
+  }, [businessProfile, plansConfig]);
 
   const isSubscriptionBlocked = useMemo(() => {
     if (isPureAdmin || isDeveloper) return false;
@@ -3317,12 +3329,10 @@ Obrigado pela preferência!`;
                 <p className="text-[9px] text-slate-400 uppercase font-black">Valor do Plano</p>
                 <p className="text-slate-700 font-black">
                   {(() => {
-                    const t = (businessProfile.planType || "START").toUpperCase();
-                    if (t === "PREMIUM") return "R$ 99,90/mês";
-                    if (t === "ULTRA") return "R$ 149,90/mês";
-                    if (t === "MASTER") return "R$ 199,90/mês";
-                    return "R$ 49,90/mês";
-                  })()}
+                  const t = (businessProfile.planType || "START").toUpperCase();
+                  const plan = plansConfig[t] || plansConfig.START;
+                  return `R$ ${plan.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}/mês`;
+                })()}
                 </p>
               </div>
             </div>
@@ -3859,33 +3869,224 @@ Obrigado pela preferência!`;
         )}
 
       {currentScreen === "DEVELOPER_PANEL" && isDeveloper && (
-        <div className="min-h-screen">
-          <Header title="Admin" showBack={!isPureAdmin} />
-          <div className="px-6 py-6 space-y-4">
-            {allBusinessesStats.map((biz) => (
-              <div
-                key={biz.id}
-                className="bg-white p-4 rounded-[2rem] shadow-md flex items-center justify-between"
-              >
-                <div>
-                  <h4 className="font-black text-slate-800 text-sm uppercase italic">
-                    {biz.companyName}
-                  </h4>
-                  <p className="text-[10px] font-black text-slate-400 uppercase">
-                    {biz.email}
-                  </p>
-                </div>
-                <button
-                  onClick={() =>
-                    setSubscriptionModal({ isOpen: true, business: biz })
-                  }
-                  className="bg-blue-500 text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase"
-                >
-                  Gerenciar
-                </button>
-              </div>
-            ))}
+        <div className="min-h-screen bg-slate-50 pb-24">
+          <Header title="Painel Admin" showBack={!isPureAdmin} />
+          
+          {/* Segmented Control Header */}
+          <div className="mx-6 mt-4 flex bg-slate-200/55 p-1 rounded-2xl border border-slate-200">
+            <button
+              onClick={() => setDevPanelTab("BUSINESSES")}
+              className={`flex-1 py-3 text-center rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                devPanelTab === "BUSINESSES"
+                  ? "bg-white text-slate-800 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              Clientes SaaS ({allBusinessesStats.length})
+            </button>
+            <button
+              onClick={() => setDevPanelTab("PLANS")}
+              className={`flex-1 py-3 text-center rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                devPanelTab === "PLANS"
+                  ? "bg-white text-slate-800 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              Preços &amp; Limites
+            </button>
           </div>
+
+          {devPanelTab === "BUSINESSES" ? (
+            <div className="px-6 py-6 space-y-4 animate-in fade-in duration-200">
+              {allBusinessesStats.length === 0 ? (
+                <div className="text-center py-12 bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Nenhuma empresa cadastrada no sistema.</p>
+                </div>
+              ) : (
+                allBusinessesStats.map((biz) => (
+                  <div
+                    key={biz.id}
+                    className="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all group animate-[slideIn_0.3s_ease-out]"
+                  >
+                    <div className="min-w-0 pr-2">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-black text-slate-800 text-sm uppercase italic truncate">
+                          {biz.companyName || "Empresa Sem Nome"}
+                        </h4>
+                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${
+                          biz.planStatus === 'ATIVO' ? 'bg-emerald-50 text-emerald-600' :
+                          biz.planStatus === 'BLOQUEADO' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'
+                        }`}>
+                          {biz.planStatus || 'ATIVO'}
+                        </span>
+                      </div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase truncate">
+                        {biz.email}
+                      </p>
+                      <p className="text-[9px] font-extrabold text-indigo-500 uppercase mt-0.5">
+                        Plano: {biz.planType || "START"} • Recorrente: {biz.nextBilling || "-"}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() =>
+                        setSubscriptionModal({ isOpen: true, business: biz })
+                      }
+                      className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 shrink-0"
+                    >
+                      Gerenciar
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          ) : (
+            <div className="px-6 py-6 space-y-6 animate-in fade-in duration-200">
+              <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-[2rem] p-6 shadow-lg relative overflow-hidden">
+                <div className="absolute right-4 bottom-4 transform translate-x-1/4 translate-y-1/4 opacity-10 pointer-events-none text-white">
+                  <DollarSign size={144} />
+                </div>
+                <h3 className="font-black text-lg uppercase italic tracking-tighter mb-1">Gestão de Cobrança SaaS</h3>
+                <p className="text-blue-100 text-[10px] font-bold opacity-90 max-w-sm">
+                  Modifique os preços que os clientes visualizam em suas telas de bloqueio e altere os limites máximos de registros de forma 100% dinâmica.
+                </p>
+              </div>
+
+              {["START", "PREMIUM", "ULTRA", "MASTER"].map((planKey) => {
+                const planValue = plansConfig[planKey];
+                if (!planValue) return null;
+                
+                return (
+                  <div key={planKey} className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 space-y-4">
+                    <div className="flex justify-between items-center border-b border-slate-50 pb-3">
+                      <div>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Plano</span>
+                        <h4 className="font-black text-slate-800 uppercase tracking-tight italic text-base">
+                          {planValue.label} ({planKey})
+                        </h4>
+                      </div>
+                      <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-xl text-[10px] font-black uppercase">
+                        Configuração
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Valor do Plano */}
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">
+                          Valor Mensal (R$)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={planValue.price}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            setPlansConfig(prev => {
+                              const updated = {
+                                ...prev,
+                                [planKey]: { ...prev[planKey], price: val }
+                              };
+                              localStorage.setItem("omnivenda_plan_configs", JSON.stringify(updated));
+                              return updated;
+                            });
+                          }}
+                          className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all"
+                        />
+                      </div>
+
+                      {/* Limite de Vendedores */}
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">
+                          Limite Vendedores
+                        </label>
+                        <input
+                          type="text"
+                          value={planValue.maxSellers === Infinity || !isFinite(planValue.maxSellers) ? "Ilimitado" : planValue.maxSellers}
+                          onChange={(e) => {
+                            const inputVal = e.target.value.toLowerCase().trim();
+                            const val = inputVal === 'ilimitado' || inputVal === 'infinite' || inputVal === 'infinity' || inputVal === '' 
+                              ? Infinity 
+                              : (parseInt(inputVal) || 0);
+                            setPlansConfig(prev => {
+                              const updated = {
+                                ...prev,
+                                [planKey]: { ...prev[planKey], maxSellers: val }
+                              };
+                              localStorage.setItem("omnivenda_plan_configs", JSON.stringify(updated));
+                              return updated;
+                            });
+                          }}
+                          placeholder="Ex: 5 ou Ilimitado"
+                          className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all"
+                        />
+                      </div>
+
+                      {/* Limite de Produtos */}
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">
+                          Limite Produtos
+                        </label>
+                        <input
+                          type="text"
+                          value={planValue.maxProducts === Infinity || !isFinite(planValue.maxProducts) ? "Ilimitado" : planValue.maxProducts}
+                          onChange={(e) => {
+                            const inputVal = e.target.value.toLowerCase().trim();
+                            const val = inputVal === 'ilimitado' || inputVal === 'infinite' || inputVal === 'infinity' || inputVal === '' 
+                              ? Infinity 
+                              : (parseInt(inputVal) || 0);
+                            setPlansConfig(prev => {
+                              const updated = {
+                                ...prev,
+                                [planKey]: { ...prev[planKey], maxProducts: val }
+                              };
+                              localStorage.setItem("omnivenda_plan_configs", JSON.stringify(updated));
+                              return updated;
+                            });
+                          }}
+                          placeholder="Ex: 15 ou Ilimitado"
+                          className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all"
+                        />
+                      </div>
+
+                      {/* Limite de Clientes */}
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">
+                          Limite Clientes
+                        </label>
+                        <input
+                          type="text"
+                          value={planValue.maxClients === Infinity || !isFinite(planValue.maxClients) ? "Ilimitado" : planValue.maxClients}
+                          onChange={(e) => {
+                            const inputVal = e.target.value.toLowerCase().trim();
+                            const val = inputVal === 'ilimitado' || inputVal === 'infinite' || inputVal === 'infinity' || inputVal === '' 
+                              ? Infinity 
+                              : (parseInt(inputVal) || 0);
+                            setPlansConfig(prev => {
+                              const updated = {
+                                ...prev,
+                                [planKey]: { ...prev[planKey], maxClients: val }
+                              };
+                              localStorage.setItem("omnivenda_plan_configs", JSON.stringify(updated));
+                              return updated;
+                            });
+                          }}
+                          placeholder="Ex: 20 ou Ilimitado"
+                          className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              <div className="bg-blue-50 border border-blue-100 p-5 rounded-[2rem] text-center space-y-2">
+                <p className="text-xs font-bold text-blue-800">💡 Dica de Configuração</p>
+                <p className="text-[10px] font-semibold text-blue-600/90 leading-relaxed max-w-sm mx-auto">
+                  Você pode digitar "Ilimitado" em qualquer um dos campos de limite para desativar a verificação de barreira para aquele plano específico. Salvamentos são automáticos e aplicados instantaneamente.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

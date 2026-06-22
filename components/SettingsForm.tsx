@@ -280,10 +280,25 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }
             <p className="text-xs font-bold text-white leading-relaxed">
               {(() => {
                 const t = (formData.planType || 'START').toUpperCase();
-                if (t === 'PREMIUM') return '✓ Limite: 50 Produtos • 100 Clientes • 5 Vendedores';
-                if (t === 'ULTRA') return '✓ Limite: 200 Produtos • 300 Clientes • 10 Vendedores';
-                if (t === 'MASTER') return '✓ Ilimitado: Produtos e Clientes Ilimitados • Suporte Dedicado';
-                return '✓ Limite: 15 Produtos • 20 Clientes • 2 Vendedores';
+                const saved = localStorage.getItem("omnivenda_plan_configs");
+                let plans: any = {
+                  START: { maxProducts: 15, maxClients: 20, maxSellers: 2 },
+                  PREMIUM: { maxProducts: 50, maxClients: 100, maxSellers: 5 },
+                  ULTRA: { maxProducts: 200, maxClients: 300, maxSellers: 10 },
+                  MASTER: { maxProducts: Infinity, maxClients: Infinity, maxSellers: Infinity },
+                };
+                if (saved) {
+                  try { plans = JSON.parse(saved); } catch (e) {}
+                }
+                const planValue = plans[t] || plans.START;
+                const prodStr = planValue.maxProducts === Infinity || !isFinite(planValue.maxProducts) ? 'Ilimitados' : planValue.maxProducts;
+                const clientStr = planValue.maxClients === Infinity || !isFinite(planValue.maxClients) ? 'Ilimitados' : planValue.maxClients;
+                const sellerStr = planValue.maxSellers === Infinity || !isFinite(planValue.maxSellers) ? 'Ilimitados' : planValue.maxSellers;
+
+                if (t === 'MASTER') {
+                  return '✓ Ilimitado: Produtos, Clientes e Vendedores • Suporte Dedicado';
+                }
+                return `✓ Limite atual de uso: ${prodStr} Produtos • ${clientStr} Clientes • ${sellerStr} Vendedores`;
               })()}
             </p>
           </div>
