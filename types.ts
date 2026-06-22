@@ -45,7 +45,7 @@ export interface BusinessProfile {
   nextBilling: string;
   pixKey?: string;
   role?: 'USER' | 'ADMIN' | 'DEVELOPER';
-  businessType?: 'COCORA' | 'ACAI' | 'GERAL';
+  businessType?: 'COCORA' | 'ACAI' | 'GERAL' | 'COSMETIC_PERFUME' | 'CLEANING_PRODUCTS' | 'FOOD_DISTRIBUTION';
 }
 
 export interface BusinessStats {

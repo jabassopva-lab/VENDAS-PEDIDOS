@@ -5312,6 +5312,7 @@ Obrigado pela preferência!`;
         onClose={() => setProductModal({ type: ModalType.NONE })}
         onSave={handleSaveProduct}
         initialData={productModal.data}
+        businessType={businessProfile?.businessType || 'GERAL'}
       />
       <ClientForm
         isOpen={clientModal.type !== ModalType.NONE}

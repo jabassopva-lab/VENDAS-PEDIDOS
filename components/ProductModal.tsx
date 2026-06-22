@@ -21,12 +21,47 @@ interface ProductModalProps {
   onClose: () => void;
   onSave: (product: Omit<Product, 'id'>) => void;
   initialData?: Product;
+  businessType?: string;
 }
 
-const CATEGORIES = ['Doces', 'Bebidas', 'Salgados', 'Mercearia', 'Limpeza', 'Outros'];
-const UNITS = ['un', 'kg', 'pct', 'cx', 'lt'];
+const getCategoriesForSegment = (businessType?: string): string[] => {
+  switch (businessType) {
+    case 'COCORA':
+      return ['Cocadas Potes', 'Cocadas Unidade', 'Cocadas Nobre', 'Balas', 'Doces Diversos', 'Outros'];
+    case 'ACAI':
+      return ['Potes Açaí', 'Creme de Ninho', 'Cremes Diversos', 'Caldas', 'Acompanhamentos', 'Outros'];
+    case 'COSMETIC_PERFUME':
+      return ['Perfumes', 'Maquiagem', 'Cabelo', 'Corpo e Banho', 'Artesanal', 'Estojos & Kits', 'Outros'];
+    case 'CLEANING_PRODUCTS':
+      return ['Detergentes', 'Desinfetantes', 'Sabões', 'Acessórios', 'Automotivo', 'Profissional', 'Outros'];
+    case 'FOOD_DISTRIBUTION':
+      return ['Grãos & Farináceos', 'Laticínios', 'Massas', 'Enlatados & Conservas', 'Bebidas', 'Condimentos', 'Outros'];
+    default:
+      return ['Doces', 'Bebidas', 'Salgados', 'Mercearia', 'Limpeza', 'Outros'];
+  }
+};
 
-const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, initialData }) => {
+const getUnitsForSegment = (businessType?: string): string[] => {
+  switch (businessType) {
+    case 'COCORA':
+      return ['un', 'cx', 'pote', 'kg', 'pct'];
+    case 'ACAI':
+      return ['un', 'pote', 'caixa', 'kg', 'litro'];
+    case 'COSMETIC_PERFUME':
+      return ['un', 'ml', 'frasco', 'kit', 'g'];
+    case 'CLEANING_PRODUCTS':
+      return ['un', 'lt', 'gl', 'kg', 'pct'];
+    case 'FOOD_DISTRIBUTION':
+      return ['un', 'kg', 'pct', 'cx', 'fd', 'lt'];
+    default:
+      return ['un', 'kg', 'pct', 'cx', 'lt'];
+  }
+};
+
+const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, initialData, businessType }) => {
+  const segmentCategories = getCategoriesForSegment(businessType);
+  const segmentUnits = getUnitsForSegment(businessType);
+
   const [name, setName] = useState('');
   const [barcode, setBarcode] = useState('');
   const [costPrice, setCostPrice] = useState('');
@@ -51,12 +86,12 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
       setStock(String(initialData.stock ?? ''));
       setDescription(initialData.description || '');
       setImageUrl(initialData.imageUrl || '');
-      setCategory(initialData.category || 'Doces');
-      setUnit(initialData.unit || 'un');
+      setCategory(initialData.category || segmentCategories[0] || 'Outros');
+      setUnit(initialData.unit || segmentUnits[0] || 'un');
     } else {
       resetForm();
     }
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, businessType]);
 
   const resetForm = () => {
     setName('');
@@ -68,8 +103,8 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
     setStock('');
     setDescription('');
     setImageUrl('');
-    setCategory('Doces');
-    setUnit('un');
+    setCategory(segmentCategories[0] || 'Outros');
+    setUnit(segmentUnits[0] || 'un');
   };
 
   const cost = parseFloat(costPrice) || 0;
@@ -81,7 +116,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
     if (!name) return;
     setIsGenerating(true);
     try {
-      const desc = await generateProductDescription(name, category, sell);
+      const desc = await generateProductDescription(name, category, sell, businessType);
       setDescription(desc);
     } catch (e) {
       console.error(e);
@@ -251,7 +286,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
                     onChange={e => setCategory(e.target.value)}
                     className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none font-medium appearance-none"
                   >
-                    {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    {segmentCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                   </select>
                 </div>
                 <div>
@@ -261,7 +296,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, onSave, in
                     onChange={e => setUnit(e.target.value)}
                     className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none font-medium appearance-none"
                   >
-                    {UNITS.map(u => <option key={u} value={u}>{u.toUpperCase()}</option>)}
+                    {segmentUnits.map(u => <option key={u} value={u}>{u.toUpperCase()}</option>)}
                   </select>
                 </div>
               </div>

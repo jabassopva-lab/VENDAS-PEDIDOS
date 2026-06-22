@@ -180,6 +180,9 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }
               <option value="GERAL">Geral / Multivendas</option>
               <option value="COCORA">Cocada (Distribuição)</option>
               <option value="ACAI">Açaí (Vendas e Adicionais)</option>
+              <option value="COSMETIC_PERFUME">Cosméticos e Perfumaria</option>
+              <option value="CLEANING_PRODUCTS">Produtos de Limpeza</option>
+              <option value="FOOD_DISTRIBUTION">Distribuição Alimentícia</option>
             </select>
           </div>
         </div>
