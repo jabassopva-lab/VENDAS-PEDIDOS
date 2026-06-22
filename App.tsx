@@ -323,6 +323,10 @@ const App: React.FC = () => {
     };
   });
 
+  const [saasLogoUrl, setSaasLogoUrl] = useState<string>(() => {
+    return localStorage.getItem("omnivenda_saas_logo_url") || "";
+  });
+
   const getVisualStack = () => {
     const stack = [];
     if (currentScreen !== "HOME") stack.push("screen");
@@ -3125,10 +3129,36 @@ Obrigado pela preferência!`;
               </button>
             ) : (
               <div
-                onClick={() => !isPureAdmin && setCurrentScreen("SETTINGS")}
-                className="w-12 h-12 bg-white rounded-xl shadow-lg border-2 border-yellow-400 flex items-center justify-center overflow-hidden cursor-pointer shrink-0"
+                onClick={() => {
+                  if (currentScreen === "DEVELOPER_PANEL") {
+                    const promptVal = prompt("Insira a URL direta da imagem para o Logotipo do SaaS (ex: https://site.com/sua-logo.png):", saasLogoUrl);
+                    if (promptVal !== null) {
+                      const trimmed = promptVal.trim();
+                      setSaasLogoUrl(trimmed);
+                      localStorage.setItem("omnivenda_saas_logo_url", trimmed);
+                      triggerNotify("Logotipo do SaaS atualizado com sucesso!");
+                    }
+                  } else if (!isPureAdmin) {
+                    setCurrentScreen("SETTINGS");
+                  }
+                }}
+                className="w-12 h-12 bg-white rounded-xl shadow-lg border-2 border-yellow-400 flex items-center justify-center overflow-hidden cursor-pointer shrink-0 hover:scale-105 active:scale-95 transition-all"
+                title={currentScreen === "DEVELOPER_PANEL" ? "Alterar Logotipo do SaaS" : "Configurações"}
               >
-                {businessProfile.logoUrl ? (
+                {currentScreen === "DEVELOPER_PANEL" ? (
+                  saasLogoUrl ? (
+                    <img
+                      src={convertDriveLink(saasLogoUrl)}
+                      className="w-full h-full object-contain p-1"
+                      referrerPolicy="no-referrer"
+                      alt="SaaS Logo"
+                    />
+                  ) : (
+                    <span className="text-[#0ea5e9] font-black text-xl italic leading-none">
+                      D
+                    </span>
+                  )
+                ) : businessProfile.logoUrl ? (
                   <img
                     src={convertDriveLink(businessProfile.logoUrl)}
                     className="w-full h-full object-cover"
@@ -3873,10 +3903,10 @@ Obrigado pela preferência!`;
           <Header title="Painel Admin" showBack={!isPureAdmin} />
           
           {/* Segmented Control Header */}
-          <div className="mx-6 mt-4 flex bg-slate-200/55 p-1 rounded-2xl border border-slate-200">
+          <div className="mx-6 mt-6 flex bg-slate-200/55 p-1.5 rounded-2xl border border-slate-200 shadow-xs">
             <button
               onClick={() => setDevPanelTab("BUSINESSES")}
-              className={`flex-1 py-3 text-center rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+              className={`flex-1 py-4 text-center rounded-xl text-sm sm:text-base font-black uppercase tracking-widest transition-all ${
                 devPanelTab === "BUSINESSES"
                   ? "bg-white text-slate-800 shadow-sm"
                   : "text-slate-500 hover:text-slate-700"
@@ -3886,7 +3916,7 @@ Obrigado pela preferência!`;
             </button>
             <button
               onClick={() => setDevPanelTab("PLANS")}
-              className={`flex-1 py-3 text-center rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+              className={`flex-1 py-4 text-center rounded-xl text-sm sm:text-base font-black uppercase tracking-widest transition-all ${
                 devPanelTab === "PLANS"
                   ? "bg-white text-slate-800 shadow-sm"
                   : "text-slate-500 hover:text-slate-700"
@@ -3900,7 +3930,7 @@ Obrigado pela preferência!`;
             <div className="px-6 py-6 space-y-4 animate-in fade-in duration-200">
               {allBusinessesStats.length === 0 ? (
                 <div className="text-center py-12 bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-                  <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Nenhuma empresa cadastrada no sistema.</p>
+                  <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">Nenhuma empresa cadastrada no sistema.</p>
                 </div>
               ) : (
                 allBusinessesStats.map((biz) => (
@@ -3941,14 +3971,73 @@ Obrigado pela preferência!`;
             </div>
           ) : (
             <div className="px-6 py-6 space-y-6 animate-in fade-in duration-200">
-              <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-[2rem] p-6 shadow-lg relative overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-[2rem] p-8 shadow-lg relative overflow-hidden">
                 <div className="absolute right-4 bottom-4 transform translate-x-1/4 translate-y-1/4 opacity-10 pointer-events-none text-white">
-                  <DollarSign size={144} />
+                  <DollarSign size={180} />
                 </div>
-                <h3 className="font-black text-lg uppercase italic tracking-tighter mb-1">Gestão de Cobrança SaaS</h3>
-                <p className="text-blue-100 text-[10px] font-bold opacity-90 max-w-sm">
+                <h3 className="font-black text-xl sm:text-3xl uppercase italic tracking-tighter mb-2">Gestão de Cobrança SaaS</h3>
+                <p className="text-blue-100 text-xs sm:text-sm font-bold opacity-90 max-w-2xl leading-relaxed">
                   Modifique os preços que os clientes visualizam em suas telas de bloqueio e altere os limites máximos de registros de forma 100% dinâmica.
                 </p>
+              </div>
+
+              {/* Card de Configuração da Logo do SaaS */}
+              <div className="bg-white rounded-[2rem] p-8 shadow-md border-2 border-dashed border-indigo-200/80 space-y-5">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
+                  <div>
+                    <span className="text-[10px] sm:text-xs font-black text-indigo-500 uppercase tracking-widest block mb-1">Identidade do SaaS</span>
+                    <h4 className="font-black text-slate-800 uppercase tracking-tight italic text-lg sm:text-2xl">
+                      Logotipo da Plataforma OmniVenda
+                    </h4>
+                  </div>
+                  <span className="bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-xl text-xs font-black uppercase">
+                    Personalização
+                  </span>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-6 items-center">
+                  <div className="w-24 h-24 bg-slate-50 border border-slate-200 rounded-3xl flex items-center justify-center p-3 shadow-inner shrink-0 group relative overflow-hidden">
+                    {saasLogoUrl ? (
+                      <img src={saasLogoUrl} alt="Preview SaaS Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                    ) : (
+                      <Cloud size={44} className="text-slate-300" />
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 w-full space-y-2">
+                    <label className="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-widest ml-1 block">
+                      URL Direta da Imagem da Logo (.png ou .jpg)
+                    </label>
+                    <div className="flex gap-3">
+                      <input
+                        type="url"
+                        placeholder="Ex: https://i.imgur.com/vossa-logo.png"
+                        value={saasLogoUrl}
+                        onChange={(e) => {
+                          const val = e.target.value.trim();
+                          setSaasLogoUrl(val);
+                          localStorage.setItem("omnivenda_saas_logo_url", val);
+                        }}
+                        className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm sm:text-base font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all shadow-xs"
+                      />
+                      {saasLogoUrl && (
+                        <button
+                          onClick={() => {
+                            setSaasLogoUrl("");
+                            localStorage.removeItem("omnivenda_saas_logo_url");
+                            triggerNotify("Logotipo resetado para o padrão!");
+                          }}
+                          className="bg-red-50 hover:bg-red-100 text-red-650 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all"
+                        >
+                          Limpar
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[10px] sm:text-xs text-slate-400 font-medium">
+                      Cole o link completo da sua imagem de logo ou clique diretamente no círculo da logo no cabeçalho superior esquerdo para alterá-la!
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {["START", "PREMIUM", "ULTRA", "MASTER"].map((planKey) => {
@@ -3956,23 +4045,23 @@ Obrigado pela preferência!`;
                 if (!planValue) return null;
                 
                 return (
-                  <div key={planKey} className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 space-y-4">
-                    <div className="flex justify-between items-center border-b border-slate-50 pb-3">
+                  <div key={planKey} className="bg-white rounded-[2rem] p-8 shadow-md border border-slate-100 space-y-6">
+                    <div className="flex justify-between items-center border-b border-slate-100 pb-4">
                       <div>
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Plano</span>
-                        <h4 className="font-black text-slate-800 uppercase tracking-tight italic text-base">
+                        <span className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest block mb-1">Plano</span>
+                        <h4 className="font-black text-slate-800 uppercase tracking-tight italic text-xl sm:text-3xl">
                           {planValue.label} ({planKey})
                         </h4>
                       </div>
-                      <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-xl text-[10px] font-black uppercase">
+                      <span className="bg-slate-100 text-slate-700 px-4 py-1.5 rounded-xl text-xs font-black uppercase">
                         Configuração
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pb-2">
                       {/* Valor do Plano */}
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">
+                      <div className="space-y-2">
+                        <label className="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-widest ml-1 block">
                           Valor Mensal (R$)
                         </label>
                         <input
@@ -3990,13 +4079,13 @@ Obrigado pela preferência!`;
                               return updated;
                             });
                           }}
-                          className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-base sm:text-lg lg:text-xl font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all shadow-xs"
                         />
                       </div>
 
                       {/* Limite de Vendedores */}
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">
+                      <div className="space-y-2">
+                        <label className="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-widest ml-1 block">
                           Limite Vendedores
                         </label>
                         <input
@@ -4017,13 +4106,13 @@ Obrigado pela preferência!`;
                             });
                           }}
                           placeholder="Ex: 5 ou Ilimitado"
-                          className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-base sm:text-lg lg:text-xl font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all shadow-xs"
                         />
                       </div>
 
                       {/* Limite de Produtos */}
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">
+                      <div className="space-y-2">
+                        <label className="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-widest ml-1 block">
                           Limite Produtos
                         </label>
                         <input
@@ -4044,13 +4133,13 @@ Obrigado pela preferência!`;
                             });
                           }}
                           placeholder="Ex: 15 ou Ilimitado"
-                          className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-base sm:text-lg lg:text-xl font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all shadow-xs"
                         />
                       </div>
 
                       {/* Limite de Clientes */}
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1 block">
+                      <div className="space-y-2">
+                        <label className="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-widest ml-1 block">
                           Limite Clientes
                         </label>
                         <input
@@ -4071,18 +4160,36 @@ Obrigado pela preferência!`;
                             });
                           }}
                           placeholder="Ex: 20 ou Ilimitado"
-                          className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-xs font-black text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-base sm:text-lg lg:text-xl font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all shadow-xs"
                         />
                       </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-5 border-t border-slate-100 gap-4 mt-2">
+                      <div className="flex items-center gap-2 text-emerald-650 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100/55 self-start sm:self-auto">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider">
+                          ✓ Salvo automaticamente
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          triggerNotify(`Ajustes de ${planValue.label} salvos com sucesso!`);
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black uppercase text-xs sm:text-sm tracking-widest px-6 py-4 rounded-2xl shadow-md hover:shadow-lg hover:shadow-blue-100 cursor-pointer transition-all flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle size={16} strokeWidth={3} className="text-white" />
+                        Salvar Plano
+                      </button>
                     </div>
                   </div>
                 );
               })}
 
-              <div className="bg-blue-50 border border-blue-100 p-5 rounded-[2rem] text-center space-y-2">
-                <p className="text-xs font-bold text-blue-800">💡 Dica de Configuração</p>
-                <p className="text-[10px] font-semibold text-blue-600/90 leading-relaxed max-w-sm mx-auto">
-                  Você pode digitar "Ilimitado" em qualquer um dos campos de limite para desativar a verificação de barreira para aquele plano específico. Salvamentos são automáticos e aplicados instantaneamente.
+              <div className="bg-blue-50 border border-blue-100 p-6 rounded-[2rem] text-center space-y-3 shadow-xs">
+                <p className="text-sm sm:text-base font-black text-blue-800">💡 Dica de Configuração de Limites</p>
+                <p className="text-xs sm:text-sm font-semibold text-blue-600/90 leading-relaxed max-w-2xl mx-auto">
+                  Você pode digitar "Ilimitado" em qualquer um dos campos de limite para desativar a verificação de barreira para aquele plano específico. Salvamentos são automáticos e aplicados instantaneamente em todo o ecossistema.
                 </p>
               </div>
             </div>

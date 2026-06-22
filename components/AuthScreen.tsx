@@ -146,6 +146,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
     onAuthSuccess(true, identifier || 'Empresa de Teste');
   };
 
+  const saasLogoUrl = typeof window !== 'undefined' ? (localStorage.getItem("omnivenda_saas_logo_url") || "") : "";
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#fffbeb] relative overflow-hidden">
       <div className="absolute -top-20 -right-20 text-yellow-200/50 rotate-12 opacity-50">
@@ -157,9 +159,15 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
 
       <div className="w-full max-w-md bg-white rounded-[3rem] shadow-2xl p-8 z-10 border-b-8 border-yellow-400">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-20 h-20 bg-[#0ea5e9] rounded-3xl flex items-center justify-center text-white shadow-lg mb-4 transform -rotate-3 border-2 border-yellow-400">
-            <Cloud size={40} strokeWidth={3} className="text-white" />
-          </div>
+          {saasLogoUrl ? (
+            <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center p-2 shadow-lg mb-4 transform -rotate-3 border-2 border-yellow-400 overflow-hidden shrink-0">
+              <img src={saasLogoUrl} alt="SaaS Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+            </div>
+          ) : (
+            <div className="w-20 h-20 bg-[#0ea5e9] rounded-3xl flex items-center justify-center text-white shadow-lg mb-4 transform -rotate-3 border-2 border-yellow-400">
+              <Cloud size={40} strokeWidth={3} className="text-white" />
+            </div>
+          )}
           <h1 className="text-3xl font-black text-slate-800 italic uppercase tracking-tighter">OmniVenda</h1>
           <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mt-1">Gestão Cloud • SaaS Premium</p>
         </div>
