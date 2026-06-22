@@ -299,6 +299,12 @@ const App: React.FC = () => {
     business: any | null;
   }>({ isOpen: false, business: null });
 
+  const [upgradeMessage, setUpgradeMessage] = useState<{
+    isOpen: boolean;
+    message: string;
+    limitName: string;
+  } | null>(null);
+
   const getVisualStack = () => {
     const stack = [];
     if (currentScreen !== "HOME") stack.push("screen");
@@ -466,6 +472,41 @@ const App: React.FC = () => {
     );
   }, [businessProfile, isPureAdmin, isImpersonating, isResettingPassword]);
 
+  const currentPlanLimits = useMemo(() => {
+    const type = (businessProfile.planType || "START").toUpperCase();
+    const limits: Record<string, { maxProducts: number; maxClients: number; label: string }> = {
+      START: { maxProducts: 15, maxClients: 20, label: "Start (Básico)" },
+      PREMIUM: { maxProducts: 50, maxClients: 100, label: "Premium" },
+      ULTRA: { maxProducts: 200, maxClients: 300, label: "Ultra" },
+      MASTER: { maxProducts: Infinity, maxClients: Infinity, label: "Master" },
+    };
+    return limits[type] || limits.START;
+  }, [businessProfile]);
+
+  const isSubscriptionBlocked = useMemo(() => {
+    if (isPureAdmin || isDeveloper) return false;
+    if (isImpersonating) return false;
+
+    const status = (businessProfile.planStatus || "START").toUpperCase();
+    if (status === "BLOQUEADO" || status === "INATIVO") return true;
+
+    if (businessProfile.nextBilling && businessProfile.nextBilling !== "-") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const billingDate = new Date(businessProfile.nextBilling + "T00:00:00");
+      if (!isNaN(billingDate.getTime())) {
+        const toleranceDate = new Date(billingDate);
+        toleranceDate.setDate(toleranceDate.getDate() + 3);
+
+        if (today > toleranceDate && status !== "ATIVO") {
+          return true;
+        }
+      }
+    }
+    return false;
+  }, [businessProfile, isPureAdmin, isDeveloper, isImpersonating]);
+
   useEffect(() => {
     if (
       isProfileIncomplete &&
@@ -613,6 +654,14 @@ const App: React.FC = () => {
     try {
       const isEdit =
         productModal.type === ModalType.EDIT && !!productModal.data;
+      if (!isEdit && products.length >= currentPlanLimits.maxProducts) {
+        setUpgradeMessage({
+          isOpen: true,
+          limitName: "Produtos",
+          message: `Você atingiu o limite de ${currentPlanLimits.maxProducts} produtos cadastrados no plano ${currentPlanLimits.label}.`
+        });
+        return;
+      }
       const editId = productModal.data?.id;
       const payload = isEdit ? { ...data, id: editId } : { ...data };
       const saved = await db.products.upsert(payload);
@@ -632,6 +681,14 @@ const App: React.FC = () => {
   const handleSaveClient = async (data: Omit<Client, "id">) => {
     try {
       const isEdit = clientModal.type === ModalType.EDIT && !!clientModal.data;
+      if (!isEdit && clients.length >= currentPlanLimits.maxClients) {
+        setUpgradeMessage({
+          isOpen: true,
+          limitName: "Clientes",
+          message: `Você atingiu o limite de ${currentPlanLimits.maxClients} clientes cadastrados no plano ${currentPlanLimits.label}.`
+        });
+        return;
+      }
       const editId = clientModal.data?.id;
       const payload = isEdit ? { ...data, id: editId } : { ...data };
       const saved = await db.clients.upsert(payload);
@@ -3201,6 +3258,133 @@ Obrigado pela preferência!`;
     );
   }
 
+  if (isSubscriptionBlocked) {
+    return (
+      <div className="min-h-screen bg-[#fffbeb] flex flex-col justify-between p-6">
+        {/* Top Info Header */}
+        <div className="flex items-center gap-3 bg-[#0ea5e9]/5 border border-[#0ea5e9]/10 p-4 rounded-3xl mt-4 max-w-sm mx-auto w-full">
+          <div className="w-10 h-10 bg-[#0ea5e9] text-white rounded-2xl flex items-center justify-center shrink-0 shadow-md">
+            <Store size={18} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-black text-slate-800 text-xs uppercase tracking-tight italic truncate">
+              {businessProfile.companyName || "Minha Empresa"}
+            </h2>
+            <p className="text-[8px] text-[#0ea5e9] font-black uppercase tracking-widest">
+              Painel do Cliente SaaS
+            </p>
+          </div>
+        </div>
+
+        {/* Central Block Info */}
+        <div className="my-auto max-w-md mx-auto w-full text-center space-y-6 py-10">
+          <div className="relative inline-block">
+            <div className="w-24 h-24 bg-red-50 border border-red-100 rounded-[2rem] flex items-center justify-center mx-auto shadow-inner relative z-10 text-red-500">
+              <Lock size={44} className="animate-pulse" />
+            </div>
+            <div className="absolute inset-0 bg-red-500/10 rounded-[2.5rem] blur-xl scale-120 -z-0"></div>
+          </div>
+
+          <div className="space-y-2">
+            <span className="bg-red-500/10 text-red-600 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest inline-block border border-red-200">
+              Acesso Bloqueado
+            </span>
+            <h1 className="text-3xl font-black text-slate-800 tracking-tight italic uppercase leading-none">
+              Assinatura Expirada
+            </h1>
+            <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-xs mx-auto">
+              Para reativar seu acesso e restabelecer o gerenciamento de vendas, produtos e clientes, regularize sua assinatura mensal de forma simples e segura.
+            </p>
+          </div>
+
+          {/* Current Plan Card */}
+          <div className="bg-white rounded-3xl p-5 shadow-lg border border-slate-100 text-left space-y-3 relative overflow-hidden">
+            <div className="absolute -right-4 -bottom-4 text-slate-50 w-24 h-24 pointer-events-none">
+              <ShieldAlert size={96} />
+            </div>
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100 relative z-10">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Detalhes do Plano</span>
+              <span className="bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-md text-[8px] font-black uppercase">
+                {businessProfile.planType || "START"}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-xs font-bold text-slate-600 relative z-10">
+              <div>
+                <p className="text-[9px] text-slate-400 uppercase font-black">Vencimento</p>
+                <p className="text-slate-700 font-black">{businessProfile.nextBilling && businessProfile.nextBilling !== "-" ? businessProfile.nextBilling : "Expirado"}</p>
+              </div>
+              <div>
+                <p className="text-[9px] text-slate-400 uppercase font-black">Valor do Plano</p>
+                <p className="text-slate-700 font-black">
+                  {(() => {
+                    const t = (businessProfile.planType || "START").toUpperCase();
+                    if (t === "PREMIUM") return "R$ 99,90/mês";
+                    if (t === "ULTRA") return "R$ 149,90/mês";
+                    if (t === "MASTER") return "R$ 199,90/mês";
+                    return "R$ 49,90/mês";
+                  })()}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Pix Key Accordion */}
+          <div className="bg-slate-50 border border-slate-100 rounded-3xl p-5 space-y-3">
+            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest text-center">
+              Chave Pix do SaaS (E-mail)
+            </p>
+            <div className="bg-white border border-slate-100 rounded-2xl p-3 flex items-center justify-between shadow-sm">
+              <span className="font-mono text-xs font-bold text-slate-705 select-all shrink truncate pr-2 text-slate-700">
+                jabasso.pva@gmail.com
+              </span>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText("jabasso.pva@gmail.com");
+                  alert("Chave Pix de e-mail copiada!");
+                }}
+                className="bg-slate-800 text-white hover:bg-slate-900 px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0"
+              >
+                Copiar
+              </button>
+            </div>
+            <p className="text-[8px] text-slate-400 font-bold leading-normal text-center">
+              Efetue o pagamento via Pix acima e envie o comprovante no WhatsApp clicando no botão abaixo para liberação imediata da sua conta.
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="space-y-3">
+            <a
+              href={`https://wa.me/5544999999999?text=${encodeURIComponent(
+                `Olá! Fiz a transferência Pix para regularizar a assinatura do OmniVenda Cloud da minha empresa (${businessProfile.companyName || "Minha Empresa"}). Gostaria de reativar meu plano ${businessProfile.planType || "START"}.`
+              )}`}
+              target="_blank"
+              rel="noreferrer"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-100 flex items-center justify-center gap-2 active:scale-95 transition-all text-center block"
+            >
+              <Smartphone size={16} />
+              Enviar Comprovante ao Suporte
+            </a>
+          </div>
+        </div>
+
+        {/* Bottom Footer & Logout */}
+        <div className="text-center pb-4 space-y-3">
+          <button
+            onClick={handleLogout}
+            className="px-6 py-3 bg-red-50 text-red-650 hover:bg-red-150 text-red-600 hover:bg-red-100 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 inline-flex items-center gap-1.5"
+          >
+            <LogOut size={12} strokeWidth={3} />
+            Sair da Conta (Logout)
+          </button>
+          <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest leading-none">
+            OmniVenda Cloud v2.0 • Todos os direitos reservados
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div
@@ -5660,6 +5844,52 @@ Obrigado pela preferência!`;
                   Salvar Data de Vencimento
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade Alert Modal */}
+      {upgradeMessage && upgradeMessage.isOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-[1000] animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center relative overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="absolute top-0 right-0 transform translate-x-1/3 -translate-y-1/3 w-36 h-36 bg-blue-50 rounded-full -z-10"></div>
+            
+            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-5 border border-blue-100 shadow-inner">
+               <Sparkles size={28} className="animate-pulse" />
+            </div>
+            
+            <h3 className="font-black text-slate-800 text-2xl uppercase tracking-tight italic mb-3">
+              Limite Atingido!
+            </h3>
+            
+            <p className="text-slate-500 font-medium text-xs leading-relaxed mb-6">
+              {upgradeMessage.message}
+              <br />
+              <span className="block mt-3 text-slate-400">
+                Para cadastrar mais <strong>{upgradeMessage.limitName}</strong>, faça o upgrade para um plano superior e libere recursos ilimitados para o seu negócio!
+              </span>
+            </p>
+            
+            <div className="space-y-3">
+              <a
+                href={`https://wa.me/5544999999999?text=${encodeURIComponent(
+                  `Olá! Gostaria de fazer o upgrade da assinatura do OmniVenda Cloud para minha empresa (${businessProfile.companyName || "Minha Empresa"}). Atingimos o limite de cadastros de ${upgradeMessage.limitName}.`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-100 flex items-center justify-center gap-2 active:scale-95 transition-all text-center block"
+              >
+                <Sparkles size={16} />
+                Upgrade via WhatsApp
+              </a>
+              
+              <button
+                onClick={() => setUpgradeMessage(null)}
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95"
+              >
+                Voltar
+              </button>
             </div>
           </div>
         </div>

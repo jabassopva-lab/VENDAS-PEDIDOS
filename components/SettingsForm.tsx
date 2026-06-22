@@ -249,13 +249,58 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }
       {/* Plan Status Card */}
       <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-3xl p-6 text-white shadow-lg shadow-blue-200 relative overflow-hidden">
         <Zap className="absolute -right-4 -bottom-4 text-white/10 w-32 h-32" />
-        <div className="relative z-10">
-          <div className="flex justify-between items-start mb-4">
-            <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase">Seu Plano</span>
+        <div className="relative z-10 space-y-4">
+          <div className="flex justify-between items-start">
+            <span className="bg-white/20 px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase">
+              Assinatura SaaS
+            </span>
             <ShieldCheck size={24} className="text-blue-200" />
           </div>
-          <h3 className="text-2xl font-black mb-1">PLANO {formData.planStatus || 'PREMIUM'}</h3>
-          <p className="text-blue-100 text-sm opacity-80">Próxima renovação: {formData.nextBilling || '15/10/2024'}</p>
+          
+          <div>
+            <h3 className="text-2xl font-black mb-1 flex items-center gap-2">
+              PLANO {(formData.planType || 'START').toUpperCase()}
+              <span className={`text-[10px] px-2.5 py-1 rounded-md font-black uppercase ${
+                (formData.planStatus || 'ATIVO').toUpperCase() === 'ATIVO' 
+                  ? 'bg-emerald-500 text-white' 
+                  : 'bg-amber-500 text-white animate-pulse'
+              }`}>
+                {formData.planStatus || 'ATIVO'}
+              </span>
+            </h3>
+            <p className="text-blue-100 text-sm opacity-85 font-semibold">
+              Próxima renovação: {formData.nextBilling && formData.nextBilling !== '-' ? formData.nextBilling : 'Vencimento não configurado'}
+            </p>
+          </div>
+
+          <div className="border-t border-white/15 pt-3 space-y-1">
+            <p className="text-[10px] uppercase font-black text-blue-200 tracking-wider">
+              Limites do seu Plano:
+            </p>
+            <p className="text-xs font-bold text-white leading-relaxed">
+              {(() => {
+                const t = (formData.planType || 'START').toUpperCase();
+                if (t === 'PREMIUM') return '✓ Limite: 50 Produtos • 100 Clientes • 5 Vendedores';
+                if (t === 'ULTRA') return '✓ Limite: 200 Produtos • 300 Clientes • 10 Vendedores';
+                if (t === 'MASTER') return '✓ Ilimitado: Produtos e Clientes Ilimitados • Suporte Dedicado';
+                return '✓ Limite: 15 Produtos • 20 Clientes • 2 Vendedores';
+              })()}
+            </p>
+          </div>
+
+          <div className="pt-1">
+            <a
+              href={`https://wa.me/5544999999999?text=${encodeURIComponent(
+                `Olá! Sou da empresa ${formData.companyName || 'Minha Empresa'} e gostaria de conversar sobre os planos de assinatura do OmniVenda Cloud.`
+              )}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 bg-white text-indigo-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-md active:scale-95 transition-all text-center block w-fit"
+            >
+              <Zap size={12} className="fill-indigo-600 shrink-0" />
+              Solicitar Upgrade
+            </a>
+          </div>
         </div>
       </div>
 
