@@ -247,27 +247,50 @@ const DeleteAccountScreen: React.FC<DeleteAccountScreenProps> = ({ onBack, curre
           </div>
         ) : (
           <div className="p-6 sm:p-8 space-y-6">
-            <div className="bg-red-50/75 border border-red-100 p-5 rounded-3xl space-y-3">
-              <div className="flex gap-3 text-red-800">
-                <ShieldAlert className="shrink-0 mt-0.5" size={20} />
+            {/* Informações Obrigatórias Google Play / LGPD */}
+            <div className="bg-slate-50 border border-slate-200 p-5 rounded-3xl space-y-4 text-slate-700">
+              <div className="flex gap-3 text-slate-800">
+                <Info className="shrink-0 mt-0.5 text-blue-500" size={20} />
                 <div>
-                  <h4 className="font-black text-sm uppercase tracking-wider">Atenção sobre Exclusão de Conta</h4>
-                  <p className="text-xs text-red-700/90 leading-relaxed mt-1">
-                    Ao confirmar a exclusão da sua conta, os seguintes dados serão **permanentemente apagados**:
+                  <h4 className="font-black text-sm uppercase tracking-wider">Informações de Exclusão (LGPD / Google Play)</h4>
+                  <p className="text-[11px] text-slate-600 leading-relaxed mt-1">
+                    Este portal oficial atende aos requisitos de exclusão de conta e de dados do aplicativo <strong className="text-slate-900">OmniVenda</strong> (desenvolvido por <strong className="text-slate-900">OmniVenda Cloud</strong>).
                   </p>
                 </div>
               </div>
-              <ul className="grid grid-cols-2 gap-2 text-[11px] text-red-700/80 font-bold uppercase tracking-wide list-disc list-inside pl-2">
-                <li>Perfil da Empresa</li>
-                <li>Catálogo de Produtos</li>
-                <li>Registros de Vendas</li>
-                <li>Lista de Clientes</li>
-                <li>Pix e Configurações</li>
-                <li>Acessos de Vendedores</li>
-              </ul>
-              <p className="text-[10px] text-red-500 font-black uppercase tracking-wider text-center pt-2">
-                Esta ação é irreversível e os dados não poderão ser recuperados de forma alguma.
-              </p>
+
+              {/* Etapas */}
+              <div className="space-y-1">
+                <p className="text-xs font-black uppercase text-slate-500 tracking-wider">Etapas para solicitar a exclusão:</p>
+                <ol className="text-[11px] space-y-1 list-decimal list-inside text-slate-600 leading-relaxed pl-1">
+                  <li><strong>Escolha o método:</strong> Utilize a aba <em className="not-italic font-bold text-slate-700">"Solicitação Sem Senha"</em> para preencher o formulário manual (processado em até 24 horas) ou a aba <em className="not-italic font-bold text-slate-700">"Limpeza Direta"</em> para excluir na hora de forma automatizada mediante login.</li>
+                  <li><strong>Envio da solicitação:</strong> Preencha os campos obrigatórios correspondentes ao método escolhido e confirme a operação.</li>
+                  <li><strong>Confirmação de segurança:</strong> Para solicitações sem senha, nossa equipe processará a exclusão completa e enviará um e-mail de notificação. Para exclusão instantânea, a sessão é finalizada imediatamente e os dados são purgados na hora.</li>
+                </ol>
+              </div>
+
+              {/* Tipos de dados e retenção */}
+              <div className="space-y-2 border-t border-slate-200 pt-3">
+                <p className="text-xs font-black uppercase text-slate-500 tracking-wider">Tipos de dados afetados:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
+                  <div>
+                    <span className="font-bold text-red-650 block uppercase tracking-wider text-[10px]">Dados Excluídos Permanentemente:</span>
+                    <ul className="list-disc list-inside text-slate-600 mt-1 space-y-0.5">
+                      <li>Perfil da Empresa</li>
+                      <li>Catálogo de Produtos</li>
+                      <li>Registros de Vendas e Históricos</li>
+                      <li>Informações de Clientes</li>
+                      <li>Chaves Pix e Configurações</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <span className="font-bold text-amber-600 block uppercase tracking-wider text-[10px]">Dados Mantidos Temporariamente:</span>
+                    <p className="text-slate-500 leading-relaxed mt-1 text-[10px]">
+                      Nenhum dado pessoal é retido para uso comercial. De acordo com a legislação fiscal brasileira, dados de transações financeiras e notas poderão ser guardados em arquivos offline seguros sob período de retenção legal obrigatório (até 5 anos) para fins exclusivos de auditoria tributária.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Alternar Abas */}
