@@ -171,7 +171,9 @@ const App: React.FC = () => {
 
   const handleBackFromDeletion = () => {
     setIsDeleteAccountRoute(false);
-    if (window.location.pathname.includes("excluir-conta")) {
+    if (window.location.search.includes("excluir-conta") || window.location.search.includes("delete-account")) {
+      window.location.href = "/";
+    } else if (window.location.pathname.includes("excluir-conta")) {
       window.location.href = "/";
     } else if (window.history.pushState) {
       const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
@@ -183,7 +185,9 @@ const App: React.FC = () => {
 
   const handleBackFromPrivacy = () => {
     setIsPrivacyPolicyRoute(false);
-    if (window.location.pathname.includes("politica-privacidade")) {
+    if (window.location.search.includes("politica-privacidade") || window.location.search.includes("privacy-policy")) {
+      window.location.href = "/";
+    } else if (window.location.pathname.includes("politica-privacidade")) {
       window.location.href = "/";
     } else if (window.history.pushState) {
       const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
