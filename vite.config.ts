@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
           input: {
             main: path.resolve(__dirname, 'index.html'),
             'excluir-conta': path.resolve(__dirname, 'excluir-conta/index.html'),
+            'politica-privacidade': path.resolve(__dirname, 'politica-privacidade/index.html'),
           },
         },
       },

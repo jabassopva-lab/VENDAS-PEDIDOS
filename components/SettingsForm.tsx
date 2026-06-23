@@ -8,6 +8,7 @@ import {
   MapPin, 
   CreditCard, 
   ShieldCheck, 
+  Shield,
   Zap,
   Image as ImageIcon,
   Link as LinkIcon,
@@ -432,10 +433,20 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }
             <div className="space-y-1">
               <p className="font-semibold text-slate-700">De acordo com a LGPD e as diretrizes do Google Play:</p>
               <p className="text-slate-500 text-[11px] leading-relaxed">
-                Você pode solicitar a exclusão de sua conta, de seu perfil de distribuidora e de todos os dados salvos (produtos, clientes, vendas, configurações) a qualquer momento.
+                Você pode visualizar a nossa política de privacidade ou solicitar a exclusão de sua conta, de seu perfil de distribuidora e de todos os dados salvos a qualquer momento.
               </p>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              window.location.href = "/politica-privacidade";
+            }}
+            className="w-full flex items-center justify-center gap-2 py-3 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-700 rounded-xl border border-slate-200 text-xs font-black uppercase tracking-widest cursor-pointer transition-all"
+          >
+            <Shield size={16} className="text-blue-500" />
+            Visualizar Política de Privacidade
+          </button>
           <button
             type="button"
             onClick={() => {

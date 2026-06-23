@@ -80,6 +80,7 @@ import SettingsForm from "./components/SettingsForm.tsx";
 import CostCorrectionTool from "./components/CostCorrectionTool.tsx";
 import AuthScreen from "./components/AuthScreen.tsx";
 import DeleteAccountScreen from "./components/DeleteAccountScreen.tsx";
+import { PrivacyPolicyScreen } from "./components/PrivacyPolicyScreen.tsx";
 import {
   supabase,
   db,
@@ -161,9 +162,28 @@ const App: React.FC = () => {
     return q.includes("excluir-conta") || q.includes("delete-account") || h.includes("excluir-conta") || p.includes("excluir-conta");
   });
 
+  const [isPrivacyPolicyRoute, setIsPrivacyPolicyRoute] = useState(() => {
+    const q = window.location.search;
+    const h = window.location.hash;
+    const p = window.location.pathname;
+    return q.includes("politica-privacidade") || q.includes("privacy-policy") || h.includes("politica-privacidade") || p.includes("politica-privacidade");
+  });
+
   const handleBackFromDeletion = () => {
     setIsDeleteAccountRoute(false);
     if (window.location.pathname.includes("excluir-conta")) {
+      window.location.href = "/";
+    } else if (window.history.pushState) {
+      const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+      window.history.pushState({ path: cleanUrl }, "", cleanUrl);
+    } else {
+      window.location.search = "";
+    }
+  };
+
+  const handleBackFromPrivacy = () => {
+    setIsPrivacyPolicyRoute(false);
+    if (window.location.pathname.includes("politica-privacidade")) {
       window.location.href = "/";
     } else if (window.history.pushState) {
       const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
@@ -3245,6 +3265,14 @@ Obrigado pela preferência!`;
       <DeleteAccountScreen
         currentSession={session}
         onBack={handleBackFromDeletion}
+      />
+    );
+  }
+
+  if (isPrivacyPolicyRoute) {
+    return (
+      <PrivacyPolicyScreen
+        onBack={handleBackFromPrivacy}
       />
     );
   }

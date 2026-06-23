@@ -319,6 +319,15 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             >
               Exclusão de Conta / LGPD
             </button>
+            <button 
+              type="button"
+              onClick={() => {
+                window.location.href = "/politica-privacidade";
+              }}
+              className="text-[10px] font-black text-slate-400 hover:text-slate-600 uppercase tracking-widest transition-colors block w-full text-center"
+            >
+              Política de Privacidade
+            </button>
           </div>
         )}
       </div>
