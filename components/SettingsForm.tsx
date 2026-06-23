@@ -440,7 +440,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }
           <button
             type="button"
             onClick={() => {
-              window.location.href = "/politica-privacidade";
+              window.location.href = "/politica-privacidade/index.html";
             }}
             className="w-full flex items-center justify-center gap-2 py-3 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-700 rounded-xl border border-slate-200 text-xs font-black uppercase tracking-widest cursor-pointer transition-all"
           >
@@ -450,7 +450,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }
           <button
             type="button"
             onClick={() => {
-              window.location.href = "/excluir-conta";
+              window.location.href = "/excluir-conta/index.html";
             }}
             className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 hover:bg-red-100 active:scale-95 text-red-650 rounded-xl border border-red-100 text-xs font-black uppercase tracking-widest cursor-pointer transition-all"
           >

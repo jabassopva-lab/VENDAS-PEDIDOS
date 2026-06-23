@@ -313,7 +313,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             <button 
               type="button"
               onClick={() => {
-                window.location.href = "/excluir-conta";
+                window.location.href = "/excluir-conta/index.html";
               }}
               className="text-[10px] font-black text-red-400 hover:text-red-600 uppercase tracking-widest transition-colors block w-full text-center"
             >
@@ -322,7 +322,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             <button 
               type="button"
               onClick={() => {
-                window.location.href = "/politica-privacidade";
+                window.location.href = "/politica-privacidade/index.html";
               }}
               className="text-[10px] font-black text-slate-400 hover:text-slate-600 uppercase tracking-widest transition-colors block w-full text-center"
             >

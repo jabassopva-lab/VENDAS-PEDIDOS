@@ -168,7 +168,7 @@ export const PrivacyPolicyScreen: React.FC<PrivacyPolicyScreenProps> = ({ onBack
                     Deseja solicitar a exclusão de sua conta agora mesmo?
                   </p>
                   <a
-                    href="/excluir-conta"
+                    href="/excluir-conta/index.html"
                     className="inline-flex items-center gap-2 px-5 py-3 bg-red-500 hover:bg-red-650 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-md hover:scale-[1.02] active:scale-95 cursor-pointer"
                   >
                     Ir para Portal de Exclusão de Conta
