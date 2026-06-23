@@ -158,12 +158,14 @@ const App: React.FC = () => {
     const q = window.location.search;
     const h = window.location.hash;
     const p = window.location.pathname;
-    return q.includes("excluir-conta") || q.includes("delete-account") || h === "#excluir-conta" || p === "/excluir-conta";
+    return q.includes("excluir-conta") || q.includes("delete-account") || h.includes("excluir-conta") || p.includes("excluir-conta");
   });
 
   const handleBackFromDeletion = () => {
     setIsDeleteAccountRoute(false);
-    if (window.history.pushState) {
+    if (window.location.pathname.includes("excluir-conta")) {
+      window.location.href = "/";
+    } else if (window.history.pushState) {
       const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
       window.history.pushState({ path: cleanUrl }, "", cleanUrl);
     } else {

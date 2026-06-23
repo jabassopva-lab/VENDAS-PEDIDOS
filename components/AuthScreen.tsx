@@ -313,7 +313,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             <button 
               type="button"
               onClick={() => {
-                window.dispatchEvent(new CustomEvent('navigate-delete-account'));
+                window.location.href = "/excluir-conta";
               }}
               className="text-[10px] font-black text-red-400 hover:text-red-600 uppercase tracking-widest transition-colors block w-full text-center"
             >
