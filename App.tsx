@@ -79,6 +79,7 @@ import DailyReportModal from "./components/DailyReportModal.tsx";
 import SettingsForm from "./components/SettingsForm.tsx";
 import CostCorrectionTool from "./components/CostCorrectionTool.tsx";
 import AuthScreen from "./components/AuthScreen.tsx";
+import DeleteAccountScreen from "./components/DeleteAccountScreen.tsx";
 import {
   supabase,
   db,
@@ -153,6 +154,23 @@ const EmptyState = ({
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
+  const [isDeleteAccountRoute, setIsDeleteAccountRoute] = useState(() => {
+    const q = window.location.search;
+    const h = window.location.hash;
+    const p = window.location.pathname;
+    return q.includes("excluir-conta") || q.includes("delete-account") || h === "#excluir-conta" || p === "/excluir-conta";
+  });
+
+  const handleBackFromDeletion = () => {
+    setIsDeleteAccountRoute(false);
+    if (window.history.pushState) {
+      const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+      window.history.pushState({ path: cleanUrl }, "", cleanUrl);
+    } else {
+      window.location.search = "";
+    }
+  };
+
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [isTestMode, setIsTestMode] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<Screen>("HOME");
@@ -522,6 +540,16 @@ const App: React.FC = () => {
     }
     return false;
   }, [businessProfile, isPureAdmin, isDeveloper, isImpersonating]);
+
+  useEffect(() => {
+    const handleNavigate = () => {
+      setIsDeleteAccountRoute(true);
+    };
+    window.addEventListener('navigate-delete-account', handleNavigate);
+    return () => {
+      window.removeEventListener('navigate-delete-account', handleNavigate);
+    };
+  }, []);
 
   useEffect(() => {
     if (
@@ -3209,6 +3237,15 @@ Obrigado pela preferência!`;
       </header>
     </div>
   );
+
+  if (isDeleteAccountRoute) {
+    return (
+      <DeleteAccountScreen
+        currentSession={session}
+        onBack={handleBackFromDeletion}
+      />
+    );
+  }
 
   if (isResettingPassword) {
     return (

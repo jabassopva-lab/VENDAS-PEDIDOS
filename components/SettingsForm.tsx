@@ -421,6 +421,34 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }
         </div>
       </div>
 
+      {/* Segurança e Privacidade / Exclusão de Conta */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
+          <ShieldCheck size={18} className="text-red-500" />
+          <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Segurança & Privacidade</h3>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="flex gap-3 text-gray-500 text-xs">
+            <div className="space-y-1">
+              <p className="font-semibold text-slate-700">De acordo com a LGPD e as diretrizes do Google Play:</p>
+              <p className="text-slate-500 text-[11px] leading-relaxed">
+                Você pode solicitar a exclusão de sua conta, de seu perfil de distribuidora e de todos os dados salvos (produtos, clientes, vendas, configurações) a qualquer momento.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('navigate-delete-account'));
+            }}
+            className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 hover:bg-red-100 active:scale-95 text-red-650 rounded-xl border border-red-100 text-xs font-black uppercase tracking-widest cursor-pointer transition-all"
+          >
+            <ShieldCheck size={16} className="text-red-500" />
+            Solicitar Exclusão da Conta e Dados
+          </button>
+        </div>
+      </div>
+
       <button 
         type="submit"
         disabled={isSaving}

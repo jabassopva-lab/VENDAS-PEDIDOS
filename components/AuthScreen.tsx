@@ -302,12 +302,22 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
         </form>
 
         {!isForgotPassword && (
-          <div className="mt-8 text-center border-t border-slate-100 pt-6">
+          <div className="mt-8 text-center border-t border-slate-100 pt-6 space-y-4">
             <button 
+              type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors"
+              className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors block w-full text-center"
             >
               {isLogin ? 'Nova empresa? Criar conta Cloud' : 'Já tem acesso? Fazer login'}
+            </button>
+            <button 
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('navigate-delete-account'));
+              }}
+              className="text-[10px] font-black text-red-400 hover:text-red-600 uppercase tracking-widest transition-colors block w-full text-center"
+            >
+              Exclusão de Conta / LGPD
             </button>
           </div>
         )}
