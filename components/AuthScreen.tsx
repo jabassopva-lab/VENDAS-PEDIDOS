@@ -288,15 +288,20 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
               </button>
             )}
 
-            {!isConfigured && !isForgotPassword && (
-              <button 
-                type="button"
-                onClick={handleTestMode}
-                className="w-full bg-white text-slate-600 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-sm hover:bg-slate-50 active:scale-95 transition-all flex items-center justify-center gap-2 border-2 border-slate-100"
-              >
-                <DatabaseZap size={20} className="text-amber-500" />
-                Acessar Modo de Teste
-              </button>
+            {!isForgotPassword && (
+              <div className="pt-3 mt-1 border-t border-slate-100">
+                <button 
+                  type="button"
+                  onClick={() => onAuthSuccess(true, identifier || 'Distribuidora Demo (Testadores)')}
+                  className="w-full bg-amber-50 hover:bg-amber-100 text-amber-900 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-md hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 border-2 border-amber-300 group"
+                >
+                  <DatabaseZap size={20} className="text-amber-600 group-hover:scale-110 transition-transform" />
+                  Acesso Demo (Testadores / Google Play)
+                </button>
+                <p className="text-[9px] font-bold text-center text-slate-400 uppercase tracking-wider mt-1.5">
+                  ⚡ 1 clique para testar o app com dados prontos (Sem cadastro)
+                </p>
+              </div>
             )}
           </div>
         </form>
