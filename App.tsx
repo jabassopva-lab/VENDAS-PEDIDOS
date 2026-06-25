@@ -529,14 +529,14 @@ const App: React.FC = () => {
   }, [session]);
 
   const isProfileIncomplete = useMemo(() => {
-    if (isPureAdmin || isImpersonating || isResettingPassword) return false;
+    if (isPureAdmin || isImpersonating || isResettingPassword || isTestMode) return false;
     return (
       !businessProfile.companyName ||
       businessProfile.companyName === "MINHA EMPRESA" ||
       !businessProfile.phone ||
       businessProfile.phone.trim() === ""
     );
-  }, [businessProfile, isPureAdmin, isImpersonating, isResettingPassword]);
+  }, [businessProfile, isPureAdmin, isImpersonating, isResettingPassword, isTestMode]);
 
   const currentPlanLimits = useMemo(() => {
     const type = (businessProfile.planType || "START").toUpperCase();
@@ -607,6 +607,7 @@ const App: React.FC = () => {
       setSession({ user: { email: "demo@omnivenda.com" } });
       setIsTestMode(true);
       fetchAllData();
+      setCurrentScreen("MONTHLY_SALES");
       return;
     }
 
@@ -704,6 +705,7 @@ const App: React.FC = () => {
       });
       localStorage.setItem("omnivenda_test_session", "active");
       fetchAllData();
+      setCurrentScreen("MONTHLY_SALES");
     } else {
       const {
         data: { session: currentSession },
