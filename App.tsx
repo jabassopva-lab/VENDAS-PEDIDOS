@@ -82,6 +82,11 @@ import AuthScreen from "./components/AuthScreen.tsx";
 import DeleteAccountScreen from "./components/DeleteAccountScreen.tsx";
 import { PrivacyPolicyScreen } from "./components/PrivacyPolicyScreen.tsx";
 import {
+  getMockProducts,
+  getMockClients,
+  getMockSales,
+} from "./src/utils/mockData.ts";
+import {
   supabase,
   db,
   isConfigured,
@@ -605,8 +610,13 @@ const App: React.FC = () => {
     const savedTest = localStorage.getItem("omnivenda_test_session");
     if (savedTest) {
       setSession({ user: { email: "demo@omnivenda.com" } });
+      setBusinessProfile({
+        ...DEFAULT_PROFILE,
+        companyName: "Empresa Demo",
+        email: "demo@omnivenda.com",
+      });
       setIsTestMode(true);
-      fetchAllData();
+      fetchAllData(true);
       setCurrentScreen("MONTHLY_SALES");
       return;
     }
@@ -646,9 +656,22 @@ const App: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchAllData = async () => {
+  const fetchAllData = async (forceTest = false) => {
     setLoading(true);
     try {
+      if (isTestMode || forceTest) {
+        const mockP = getMockProducts();
+        const mockC = getMockClients();
+        const mockS = getMockSales(mockP, mockC);
+        
+        setProducts(mockP);
+        setClients(mockC);
+        setSalesHistory(mockS);
+        // Profile is handled separately or already set in handleAuthSuccess
+        setLoading(false);
+        return;
+      }
+
       const [p, c, s, prof] = await Promise.all([
         db.products.getAll(),
         db.clients.getAll(),
@@ -703,8 +726,13 @@ const App: React.FC = () => {
           user_metadata: { company_name: testName },
         },
       });
+      setBusinessProfile({
+        ...DEFAULT_PROFILE,
+        companyName: testName || "Empresa Demo",
+        email: "demo@omnivenda.com",
+      });
       localStorage.setItem("omnivenda_test_session", "active");
-      fetchAllData();
+      fetchAllData(true);
       setCurrentScreen("MONTHLY_SALES");
     } else {
       const {
