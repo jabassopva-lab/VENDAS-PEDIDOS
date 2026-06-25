@@ -55,6 +55,7 @@ import {
   Edit3,
   MessageSquare,
   FileSpreadsheet,
+  BookOpen,
 } from "lucide-react";
 import {
   AreaChart,
@@ -79,6 +80,7 @@ import DailyReportModal from "./components/DailyReportModal.tsx";
 import SettingsForm from "./components/SettingsForm.tsx";
 import CostCorrectionTool from "./components/CostCorrectionTool.tsx";
 import AuthScreen from "./components/AuthScreen.tsx";
+import OrientationGuide from "./components/OrientationGuide.tsx";
 import DeleteAccountScreen from "./components/DeleteAccountScreen.tsx";
 import { PrivacyPolicyScreen } from "./components/PrivacyPolicyScreen.tsx";
 import {
@@ -3645,6 +3647,30 @@ Obrigado pela preferência!`;
               </button>
             </div>
 
+            {isTestMode && (
+              <button
+                onClick={() => setCurrentScreen("GUIDE")}
+                className="w-full bg-gradient-to-br from-indigo-600 to-indigo-800 text-white py-4 px-6 rounded-[2rem] shadow-lg flex items-center justify-between border-b-6 border-indigo-900 active:scale-95 transition-all"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white">
+                    <BookOpen size={22} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-sm font-black uppercase italic tracking-tighter leading-none">
+                      Guia de Orientações
+                    </h3>
+                    <p className="text-indigo-200 text-[7px] font-black uppercase mt-1">
+                      Aprenda a usar o sistema agora
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-yellow-400 text-slate-900 px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest animate-pulse">
+                  Novo
+                </div>
+              </button>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setCurrentScreen("CLIENTS")}
@@ -5897,6 +5923,10 @@ Obrigado pela preferência!`;
             )}
           </div>
         </div>
+      )}
+
+      {currentScreen === "GUIDE" && (
+        <OrientationGuide onBack={() => setCurrentScreen("HOME")} />
       )}
 
       {/* Modals */}
