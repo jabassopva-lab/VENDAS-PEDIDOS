@@ -619,7 +619,7 @@ const App: React.FC = () => {
       });
       setIsTestMode(true);
       fetchAllData(true);
-      setCurrentScreen("MONTHLY_SALES");
+      setCurrentScreen("HOME");
       return;
     }
 
@@ -735,7 +735,7 @@ const App: React.FC = () => {
       });
       localStorage.setItem("omnivenda_test_session", "active");
       fetchAllData(true);
-      setCurrentScreen("MONTHLY_SALES");
+      setCurrentScreen("HOME");
     } else {
       const {
         data: { session: currentSession },
