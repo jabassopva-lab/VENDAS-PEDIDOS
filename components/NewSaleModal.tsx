@@ -186,6 +186,17 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
     );
   };
 
+  const updatePrice = (productId: string, newPrice: number) => {
+    setCart((prev) =>
+      prev.map((item) => {
+        if (item.id === productId) {
+          return { ...item, price: Math.max(0, newPrice) };
+        }
+        return item;
+      }),
+    );
+  };
+
   const updateDiscount = (productId: string, discount: number) => {
     setCart((prev) =>
       prev.map((item) => {
@@ -727,7 +738,32 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 bg-blue-50/50 p-2 rounded-xl border border-blue-100 flex-1 group focus-within:border-blue-300 transition-colors">
+                      <span className="text-[8px] font-black text-blue-400 uppercase ml-1 tracking-wider">
+                        Preço Unit.
+                      </span>
+                      <div className="flex items-center gap-1 flex-1 justify-end">
+                        <span className="text-[10px] font-black text-blue-300">
+                          R$
+                        </span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0,00"
+                          className="w-16 bg-transparent outline-none text-[11px] font-black text-blue-600 text-right placeholder:text-blue-200"
+                          value={item.price || ""}
+                          onChange={(e) =>
+                            updatePrice(
+                              item.id,
+                              parseFloat(e.target.value) || 0,
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+
                     <div className="flex items-center gap-2 bg-red-50/50 p-2 rounded-xl border border-red-100 flex-1 group focus-within:border-red-300 transition-colors">
                       <span className="text-[8px] font-black text-red-400 uppercase ml-1 tracking-wider">
                         Desc. Unit.
@@ -759,7 +795,7 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         onClick={() => toggleWholesale(item.id)}
                         className={`text-[9px] font-black px-3 py-2 rounded-xl border transition-all whitespace-nowrap active:scale-95 ${item.useWholesale ? "bg-purple-600 border-purple-600 text-white shadow-md" : "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100"}`}
                       >
-                        {item.useWholesale ? "ATACADO ATIVO" : "USAR ATACADO"}
+                        {item.useWholesale ? "ATACADO ON" : "ATACADO"}
                       </button>
                     )}
                   </div>
