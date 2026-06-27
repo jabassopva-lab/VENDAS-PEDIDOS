@@ -53,8 +53,8 @@ const translateAuthError = (message: string): string => {
 };
 
 const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
+  const [viewState, setViewState] = useState<'SELECT' | 'OFFICIAL' | 'DEMO'>('SELECT');
   const [isLogin, setIsLogin] = useState(true);
-  const [isDemoMode, setIsDemoMode] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [identifier, setIdentifier] = useState('');
   const [email, setEmail] = useState('');
@@ -85,7 +85,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isDemoMode) {
+    if (viewState === 'DEMO') {
       if (!identifier.trim()) {
         setError("Por favor, digite seu nome ou nome da empresa para testar.");
         return;
@@ -178,174 +178,207 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
           <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mt-1">Gestão Cloud • SaaS Premium</p>
         </div>
 
-        {!isForgotPassword && (
-          <div className="flex bg-slate-100 p-1 rounded-2xl mb-6">
-            <button
-              type="button"
-              onClick={() => setIsDemoMode(false)}
-              className={`flex-1 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
-                !isDemoMode ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'
-              }`}
-            >
-              <LogIn size={14} /> Acesso Oficial
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsDemoMode(true);
-                setError(null);
-                setSuccessMsg(null);
-              }}
-              className={`flex-1 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
-                isDemoMode ? 'bg-amber-400 text-amber-950 shadow-sm animate-pulse' : 'text-amber-700 hover:text-amber-800'
-              }`}
-            >
-              <DatabaseZap size={14} /> Modo Demo (Testadores)
-            </button>
-          </div>
+        {!isForgotPassword && viewState !== 'SELECT' && (
+          <button 
+            type="button"
+            onClick={() => {
+              setViewState('SELECT');
+              setError(null);
+              setSuccessMsg(null);
+              setIsForgotPassword(false);
+            }}
+            className="mb-6 flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-800 transition-colors"
+          >
+            ← Voltar para seleção
+          </button>
         )}
 
-        <form onSubmit={handleAuth} className="space-y-4">
-          <div className="relative">
-            <Store className="absolute left-4 top-4 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder={
-                isForgotPassword
-                  ? "Seu E-mail Real de Recuperação"
-                  : isDemoMode
-                  ? "Seu Nome (Apenas para teste demo)"
-                  : "Nome da Empresa ou Usuário"
-              } 
-              className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
-              value={identifier}
-              onChange={e => setIdentifier(e.target.value)}
-              required
-              autoComplete="off"
-            />
-          </div>
-
-          {!isDemoMode && !isLogin && !isForgotPassword && (
-            <div className="relative animate-in slide-in-from-top-2">
-              <Mail className="absolute left-4 top-4 text-slate-400" size={18} />
-              <input 
-                type="email" 
-                placeholder="Seu E-mail Real (Para recuperação)" 
-                className="w-full pl-12 pr-4 py-4 bg-blue-50 border border-blue-100 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold placeholder:text-blue-300"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-              />
+        {viewState === 'SELECT' ? (
+          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-300">
+            <div className="bg-blue-50/50 border-2 border-blue-100 rounded-[2rem] p-6 hover:border-blue-300 transition-all cursor-pointer group" onClick={() => setViewState('OFFICIAL')}>
+              <div className="flex items-center gap-4 mb-3">
+                <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+                  <Cloud size={24} strokeWidth={3} />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-800 uppercase italic text-sm tracking-tight">Acesso Oficial</h3>
+                  <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest">Nuvem • Dados Reais</p>
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-500 font-bold leading-relaxed mb-4">
+                Utilize sua conta profissional para gerenciar vendas, clientes e estoque com sincronização em tempo real.
+              </p>
+              <div className="flex gap-2">
+                <button className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-black text-[9px] uppercase tracking-wider shadow-md active:scale-95 transition-all">
+                  Entrar
+                </button>
+                <button className="flex-1 bg-white border-2 border-blue-100 text-blue-600 py-3 rounded-xl font-black text-[9px] uppercase tracking-wider active:scale-95 transition-all">
+                  Criar Conta
+                </button>
+              </div>
             </div>
-          )}
 
-          {!isDemoMode && isForgotPassword && !identifier.includes('@') && identifier.trim().length > 0 && (
-            <p className="text-[10px] text-amber-600 font-bold px-2 italic">
-              Aviso: Se você usa um nome de usuário, o e-mail será enviado para {identifier.toLowerCase().trim()}@omnivenda.com
-            </p>
-          )}
-
-          {!isDemoMode && !isForgotPassword && (
+            <div className="bg-amber-50/50 border-2 border-amber-100 rounded-[2rem] p-6 hover:border-amber-300 transition-all cursor-pointer group" onClick={() => setViewState('DEMO')}>
+              <div className="flex items-center gap-4 mb-3">
+                <div className="w-12 h-12 bg-amber-400 rounded-2xl flex items-center justify-center text-amber-950 shadow-lg group-hover:scale-110 transition-transform">
+                  <DatabaseZap size={24} strokeWidth={3} />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-800 uppercase italic text-sm tracking-tight">Modo Demo</h3>
+                  <p className="text-[8px] font-black text-amber-600 uppercase tracking-widest">Testes • Sem Senha</p>
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-500 font-bold leading-relaxed mb-4">
+                Experimente todas as funcionalidades do sistema instantaneamente com dados fictícios de exemplo.
+              </p>
+              <button className="w-full bg-amber-400 text-amber-950 py-4 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-md active:scale-95 transition-all animate-pulse">
+                Testar Agora
+              </button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleAuth} className="space-y-4">
             <div className="relative">
-              <Lock className="absolute left-4 top-4 text-slate-400" size={18} />
+              <Store className="absolute left-4 top-4 text-slate-400" size={18} />
               <input 
-                type={showPassword ? "text" : "password"} 
-                placeholder="Senha de acesso (mín. 6 caracteres)" 
-                className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
+                type="text" 
+                placeholder={
+                  isForgotPassword
+                    ? "Seu E-mail Real de Recuperação"
+                    : viewState === 'DEMO'
+                    ? "Seu Nome (Apenas para teste demo)"
+                    : "Nome da Empresa ou Usuário"
+                } 
+                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
+                value={identifier}
+                onChange={e => setIdentifier(e.target.value)}
                 required
-                minLength={6}
-                autoComplete="new-password"
+                autoComplete="off"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 transition-colors"
+            </div>
+
+            {viewState === 'OFFICIAL' && !isLogin && !isForgotPassword && (
+              <div className="relative animate-in slide-in-from-top-2">
+                <Mail className="absolute left-4 top-4 text-slate-400" size={18} />
+                <input 
+                  type="email" 
+                  placeholder="Seu E-mail Real (Para recuperação)" 
+                  className="w-full pl-12 pr-4 py-4 bg-blue-50 border border-blue-100 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold placeholder:text-blue-300"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            {viewState === 'OFFICIAL' && isForgotPassword && !identifier.includes('@') && identifier.trim().length > 0 && (
+              <p className="text-[10px] text-amber-600 font-bold px-2 italic">
+                Aviso: Se você usa um nome de usuário, o e-mail será enviado para {identifier.toLowerCase().trim()}@omnivenda.com
+              </p>
+            )}
+
+            {viewState === 'OFFICIAL' && !isForgotPassword && (
+              <div className="relative">
+                <Lock className="absolute left-4 top-4 text-slate-400" size={18} />
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  placeholder="Senha de acesso (mín. 6 caracteres)" 
+                  className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            )}
+
+            {viewState === 'OFFICIAL' && !isLogin && !isForgotPassword && (
+              <div className="flex items-start gap-3 px-2 py-2 animate-in fade-in slide-in-from-left-2">
+                <input 
+                  type="checkbox" 
+                  id="agreeTerms"
+                  className="mt-1 w-4 h-4 rounded border-slate-200 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  checked={agreeTerms}
+                  onChange={e => setAgreeTerms(e.target.checked)}
+                />
+                <label htmlFor="agreeTerms" className="text-[10px] font-bold text-slate-500 uppercase tracking-wider leading-relaxed cursor-pointer group">
+                  Eu li e concordo com os <button type="button" onClick={() => setShowTermsModal(true)} className="text-blue-500 hover:underline decoration-blue-300">Termos de Uso</button> e <button type="button" onClick={() => setShowTermsModal(true)} className="text-blue-500 hover:underline decoration-blue-300">Política de Privacidade</button> da OmniVenda.
+                </label>
+              </div>
+            )}
+
+            {viewState === 'DEMO' && (
+              <div className="bg-amber-50 border border-amber-200/60 p-3.5 rounded-2xl text-[11px] font-medium text-amber-900 leading-relaxed animate-in fade-in">
+                ⚡ <b>Acesso Rápido para Testadores:</b> Não exige senha ou e-mail. Basta digitar qualquer nome e clicar abaixo para abrir o app preenchido com dados de exemplo.
+              </div>
+            )}
+
+            {error && (
+              <div className="bg-red-50 text-red-600 p-4 rounded-xl text-[10px] font-black uppercase border border-red-100 animate-in fade-in slide-in-from-top-2">
+                {error}
+              </div>
+            )}
+
+            {successMsg && (
+              <div className="bg-green-50 text-green-600 p-4 rounded-xl text-[10px] font-black uppercase border border-green-100 animate-in fade-in slide-in-from-top-2">
+                {successMsg}
+              </div>
+            )}
+
+            <div className="space-y-3 pt-2">
+              <button 
+                type="submit" 
+                disabled={loading}
+                className={`w-full text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 border-b-4 ${
+                  viewState === 'DEMO'
+                    ? 'bg-amber-500 hover:bg-amber-600 border-amber-700 shadow-amber-100 text-amber-950'
+                    : 'bg-[#0ea5e9] hover:bg-blue-600 border-blue-700 shadow-blue-100'
+                }`}
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {loading ? <Loader2 className="animate-spin" size={20} /> : (
+                  isForgotPassword ? <Mail size={20} /> : viewState === 'DEMO' ? <DatabaseZap size={20} /> : (isLogin ? <LogIn size={20} /> : <UserPlus size={20} />)
+                )}
+                {isForgotPassword
+                  ? 'Enviar E-mail de Recuperação'
+                  : viewState === 'DEMO'
+                  ? 'Entrar no Modo Demo'
+                  : isLogin
+                  ? 'Entrar no Sistema'
+                  : 'Cadastrar Empresa'}
               </button>
-            </div>
-          )}
 
-          {!isDemoMode && !isLogin && !isForgotPassword && (
-            <div className="flex items-start gap-3 px-2 py-2 animate-in fade-in slide-in-from-left-2">
-              <input 
-                type="checkbox" 
-                id="agreeTerms"
-                className="mt-1 w-4 h-4 rounded border-slate-200 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                checked={agreeTerms}
-                onChange={e => setAgreeTerms(e.target.checked)}
-              />
-              <label htmlFor="agreeTerms" className="text-[10px] font-bold text-slate-500 uppercase tracking-wider leading-relaxed cursor-pointer group">
-                Eu li e concordo com os <button type="button" onClick={() => setShowTermsModal(true)} className="text-blue-500 hover:underline decoration-blue-300">Termos de Uso</button> e <button type="button" onClick={() => setShowTermsModal(true)} className="text-blue-500 hover:underline decoration-blue-300">Política de Privacidade</button> da OmniVenda.
-              </label>
-            </div>
-          )}
-
-          {isDemoMode && (
-            <div className="bg-amber-50 border border-amber-200/60 p-3.5 rounded-2xl text-[11px] font-medium text-amber-900 leading-relaxed animate-in fade-in">
-              ⚡ <b>Acesso Rápido para Testadores:</b> Não exige senha ou e-mail. Basta digitar qualquer nome e clicar abaixo para abrir o app preenchido com dados de exemplo.
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-xl text-[10px] font-black uppercase border border-red-100 animate-in fade-in slide-in-from-top-2">
-              {error}
-            </div>
-          )}
-
-          {successMsg && (
-            <div className="bg-green-50 text-green-600 p-4 rounded-xl text-[10px] font-black uppercase border border-green-100 animate-in fade-in slide-in-from-top-2">
-              {successMsg}
-            </div>
-          )}
-
-          <div className="space-y-3 pt-2">
-            <button 
-              type="submit" 
-              disabled={loading}
-              className={`w-full text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 border-b-4 ${
-                isDemoMode
-                  ? 'bg-amber-500 hover:bg-amber-600 border-amber-700 shadow-amber-100 text-amber-950'
-                  : 'bg-[#0ea5e9] hover:bg-blue-600 border-blue-700 shadow-blue-100'
-              }`}
-            >
-              {loading ? <Loader2 className="animate-spin" size={20} /> : (
-                isForgotPassword ? <Mail size={20} /> : isDemoMode ? <DatabaseZap size={20} /> : (isLogin ? <LogIn size={20} /> : <UserPlus size={20} />)
+              {viewState === 'OFFICIAL' && isLogin && !isForgotPassword && (
+                <button 
+                  type="button"
+                  onClick={() => setIsForgotPassword(true)}
+                  className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors py-2"
+                >
+                  Esqueceu sua senha?
+                </button>
               )}
-              {isForgotPassword
-                ? 'Enviar E-mail de Recuperação'
-                : isDemoMode
-                ? 'Entrar no Modo Demo'
-                : isLogin
-                ? 'Entrar no Sistema'
-                : 'Cadastrar Empresa'}
-            </button>
 
-            {!isDemoMode && isLogin && !isForgotPassword && (
-              <button 
-                type="button"
-                onClick={() => setIsForgotPassword(true)}
-                className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors py-2"
-              >
-                Esqueceu sua senha?
-              </button>
-            )}
+              {viewState === 'OFFICIAL' && isForgotPassword && (
+                <button 
+                  type="button"
+                  onClick={() => setIsForgotPassword(false)}
+                  className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors py-2"
+                >
+                  Voltar para o login
+                </button>
+              )}
+            </div>
+          </form>
+        )}
 
-            {!isDemoMode && isForgotPassword && (
-              <button 
-                type="button"
-                onClick={() => setIsForgotPassword(false)}
-                className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors py-2"
-              >
-                Voltar para o login
-              </button>
-            )}
-          </div>
-        </form>
-
-        {!isForgotPassword && !isDemoMode && (
+        {!isForgotPassword && viewState === 'OFFICIAL' && (
           <div className="mt-8 text-center border-t border-slate-100 pt-6 space-y-4">
             <button 
               type="button"
@@ -354,6 +387,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             >
               {isLogin ? 'Nova empresa? Criar conta Cloud' : 'Já tem acesso? Fazer login'}
             </button>
+          </div>
+        )}
+
+        {viewState === 'SELECT' && (
+          <div className="mt-8 text-center border-t border-slate-100 pt-6 space-y-4">
             <button 
               type="button"
               onClick={() => {
