@@ -1200,6 +1200,10 @@ const App: React.FC = () => {
   };
 
   const handleFinishSale = async (data: Partial<Sale>) => {
+    if (isTestMode && salesHistory.length >= 10 && !data.id) {
+      alert("No MODO DEMO, você pode realizar no máximo 10 vendas para teste. Crie uma conta real para uso ilimitado!");
+      return;
+    }
     try {
       const isUpdate = !!data.id;
       const client = clients.find((c) => c.id === data.clientId);
@@ -3530,6 +3534,13 @@ Obrigado pela preferência!`;
 
   return (
     <>
+      {isTestMode && (
+        <div className="bg-red-600 text-white py-2 px-4 text-center font-black text-[10px] uppercase tracking-[0.2em] shadow-lg relative z-[9999] flex items-center justify-center gap-2">
+          <span className="animate-pulse">⚠️</span>
+          MODO DEMO - USO NÃO COMERCIAL - LIMITE DE 10 VENDAS
+          <span className="animate-pulse">⚠️</span>
+        </div>
+      )}
       <div
         className={`min-h-screen bg-[#fffbeb] flex flex-col print:hidden ${currentScreen === "HOME" ? "overflow-y-auto pb-10" : "pb-32"}`}
       >
@@ -5964,6 +5975,7 @@ Obrigado pela preferência!`;
         onEdit={handleOpenEditSale}
         onDelete={handleDeleteSale}
         onTogglePaid={handleTogglePaid}
+        isTestMode={isTestMode}
       />
 
       {/* Modal de Contas a Receber Vencendo Hoje */}

@@ -13,6 +13,7 @@ interface SaleDetailModalProps {
   onEdit: (sale: Sale) => void;
   onDelete: (saleId: string) => void;
   onTogglePaid?: (saleId: string, isPaid: boolean) => void;
+  isTestMode?: boolean;
 }
 
 const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ 
@@ -23,7 +24,8 @@ const SaleDetailModal: React.FC<SaleDetailModalProps> = ({
   clients, 
   onEdit, 
   onDelete,
-  onTogglePaid
+  onTogglePaid,
+  isTestMode
 }) => {
   const [showConfirmDelete, setShowConfirmDelete] = React.useState(false);
   const [viewMode, setViewMode] = React.useState<'VIEW' | 'ACTIONS'>('VIEW');
@@ -149,6 +151,14 @@ Obrigado pela preferência!`;
     const orderNum = sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : sale.id.substring(0, 8).toUpperCase();
     doc.text(`PEDIDO N.: #${orderNum}`, 135, y - 5);
     doc.text(`Data: ${sale.date} ${sale.time || ''}`, 135, y);
+
+    if (isTestMode) {
+      doc.setTextColor(239, 68, 68);
+      doc.setFontSize(30);
+      doc.setFont('Helvetica', 'bold');
+      doc.text('DOCUMENTO PARA TESTE - MODO DEMO', 105, 150, { align: 'center', angle: 45 });
+      doc.setTextColor(51, 65, 85);
+    }
 
     y += 5;
     // Divider line

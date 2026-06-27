@@ -61,14 +61,14 @@ const OrientationGuide: React.FC<OrientationGuideProps> = ({ onBack }) => {
           </div>
           <h1 className="text-xl font-black uppercase italic tracking-tighter">Guia de Uso</h1>
         </div>
-        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Aprenda a dominar o OmniVenda Cloud</p>
+        <p className="text-slate-400 text-xs font-black uppercase tracking-widest">Aprenda a dominar o OmniVenda Cloud</p>
       </div>
 
       {/* Content */}
       <div className="px-6 -mt-6 space-y-4 pb-10">
         <div className="bg-white p-6 rounded-[2.5rem] shadow-lg border-b-4 border-slate-100">
-          <h2 className="text-sm font-black text-slate-800 uppercase italic mb-4 flex items-center gap-2">
-            <CheckCircle2 size={16} className="text-green-500" />
+          <h2 className="text-base font-black text-slate-800 uppercase italic mb-4 flex items-center gap-2">
+            <CheckCircle2 size={18} className="text-green-500" />
             Como Funciona?
           </h2>
           <div className="space-y-6">
@@ -78,8 +78,8 @@ const OrientationGuide: React.FC<OrientationGuideProps> = ({ onBack }) => {
                   {step.icon}
                 </div>
                 <div>
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-tight">{step.title}</h3>
-                  <p className="text-[10px] text-slate-500 font-bold leading-relaxed mt-1">{step.description}</p>
+                  <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">{step.title}</h3>
+                  <p className="text-sm text-slate-500 font-bold leading-relaxed mt-1">{step.description}</p>
                 </div>
               </div>
             ))}
@@ -87,15 +87,15 @@ const OrientationGuide: React.FC<OrientationGuideProps> = ({ onBack }) => {
         </div>
 
         <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-6 rounded-[2.5rem] text-white shadow-xl">
-          <h3 className="font-black uppercase italic text-xs mb-2">Dica de Ouro!</h3>
-          <p className="text-[10px] font-bold opacity-90 leading-relaxed">
-            No modo Demo, os dados são fictícios para você testar todas as funcionalidades sem preocupação. Quando estiver pronto, crie sua conta real para salvar seus próprios dados na nuvem!
+          <h3 className="font-black uppercase italic text-sm mb-2">Dica de Ouro!</h3>
+          <p className="text-sm font-bold opacity-90 leading-relaxed">
+            No modo Demo, os dados são fictícios e há um limite de 10 vendas para você testar todas as funcionalidades. Quando estiver pronto, crie sua conta real para uso ilimitado e salvamento na nuvem!
           </p>
         </div>
 
         <button 
           onClick={onBack}
-          className="w-full bg-white text-slate-800 py-4 rounded-[2rem] font-black text-[10px] uppercase tracking-widest border-b-4 border-slate-200 active:scale-95 transition-all shadow-md"
+          className="w-full bg-white text-slate-800 py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest border-b-4 border-slate-200 active:scale-95 transition-all shadow-md"
         >
           Entendi, vamos lá!
         </button>
