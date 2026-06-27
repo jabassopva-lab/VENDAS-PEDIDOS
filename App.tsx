@@ -274,6 +274,15 @@ const App: React.FC = () => {
   const [businessProfile, setBusinessProfile] =
     useState<BusinessProfile>(DEFAULT_PROFILE);
 
+  useEffect(() => {
+    // Control pull-to-refresh on mobile (only allowed on HOME screen)
+    if (session && currentScreen === "HOME") {
+      document.body.style.overscrollBehaviorY = 'auto';
+    } else {
+      document.body.style.overscrollBehaviorY = 'none';
+    }
+  }, [session, currentScreen]);
+
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
