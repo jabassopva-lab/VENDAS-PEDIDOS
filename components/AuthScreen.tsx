@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase, isConfigured } from '../services/supabase';
 import { Sun, Mail, Lock, Loader2, ArrowRight, UserPlus, LogIn, Palmtree, Store, Cloud, DatabaseZap, Eye, EyeOff } from 'lucide-react';
 
@@ -65,6 +65,32 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      // Quando o usuário clica no botão voltar do celular/navegador
+      if (viewState !== 'SELECT') {
+        setViewState('SELECT');
+        setError(null);
+        setSuccessMsg(null);
+        setIsForgotPassword(false);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [viewState]);
+
+  const changeViewState = (newView: 'SELECT' | 'OFFICIAL' | 'DEMO') => {
+    if (newView !== 'SELECT' && viewState === 'SELECT') {
+      // Registra no histórico que entramos em uma sub-tela
+      window.history.pushState({ view: newView }, "");
+    }
+    setViewState(newView);
+    setError(null);
+    setSuccessMsg(null);
+    setIsForgotPassword(false);
+  };
 
   const getLoginEmail = () => {
     const normalizedIdentifier = identifier
@@ -182,10 +208,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
           <button 
             type="button"
             onClick={() => {
-              setViewState('SELECT');
-              setError(null);
-              setSuccessMsg(null);
-              setIsForgotPassword(false);
+              if (window.history.state) {
+                window.history.back();
+              } else {
+                changeViewState('SELECT');
+              }
             }}
             className="mb-6 flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-800 transition-colors"
           >
@@ -195,7 +222,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
 
         {viewState === 'SELECT' ? (
           <div className="space-y-4 animate-in fade-in zoom-in-95 duration-300">
-            <div className="bg-blue-50/50 border-2 border-blue-100 rounded-[2rem] p-6 hover:border-blue-300 transition-all cursor-pointer group" onClick={() => setViewState('OFFICIAL')}>
+            <div className="bg-blue-50/50 border-2 border-blue-100 rounded-[2rem] p-6 hover:border-blue-300 transition-all cursor-pointer group" onClick={() => changeViewState('OFFICIAL')}>
               <div className="flex items-center gap-4 mb-3">
                 <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
                   <Cloud size={24} strokeWidth={3} />
@@ -218,7 +245,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
               </div>
             </div>
 
-            <div className="bg-amber-50/50 border-2 border-amber-100 rounded-[2rem] p-6 hover:border-amber-300 transition-all cursor-pointer group" onClick={() => setViewState('DEMO')}>
+            <div className="bg-amber-50/50 border-2 border-amber-100 rounded-[2rem] p-6 hover:border-amber-300 transition-all cursor-pointer group" onClick={() => changeViewState('DEMO')}>
               <div className="flex items-center gap-4 mb-3">
                 <div className="w-12 h-12 bg-amber-400 rounded-2xl flex items-center justify-center text-amber-950 shadow-lg group-hover:scale-110 transition-transform">
                   <DatabaseZap size={24} strokeWidth={3} />
