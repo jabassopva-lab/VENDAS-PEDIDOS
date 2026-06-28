@@ -206,7 +206,14 @@ const App: React.FC = () => {
 
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [isTestMode, setIsTestMode] = useState(false);
-  const [currentScreen, setCurrentScreen] = useState<Screen>("HOME");
+  const [currentScreen, setCurrentScreen] = useState<Screen>(() => {
+    const saved = localStorage.getItem("omnivenda_current_screen");
+    return (saved as Screen) || "HOME";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("omnivenda_current_screen", currentScreen);
+  }, [currentScreen]);
   const [showDueTodayModal, setShowDueTodayModal] = useState(false);
   const [showDailyReportModal, setShowDailyReportModal] = useState(false);
   const [saveNotify, setSaveNotify] = useState<{ show: boolean; msg: string }>({
@@ -628,7 +635,6 @@ const App: React.FC = () => {
       });
       setIsTestMode(true);
       fetchAllData(true);
-      setCurrentScreen("HOME");
       return;
     }
 
@@ -744,7 +750,6 @@ const App: React.FC = () => {
       });
       localStorage.setItem("omnivenda_test_session", "active");
       fetchAllData(true);
-      setCurrentScreen("HOME");
     } else {
       const {
         data: { session: currentSession },
@@ -1894,9 +1899,11 @@ Obrigado pela preferência!`;
     setLoading(true);
     if (isTestMode) {
       localStorage.removeItem("omnivenda_test_session");
+      localStorage.removeItem("omnivenda_current_screen");
       setIsTestMode(false);
     } else {
       await supabase.auth.signOut();
+      localStorage.removeItem("omnivenda_current_screen");
     }
     resetBusinessData();
     setSession(null);
