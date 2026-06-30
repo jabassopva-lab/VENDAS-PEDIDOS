@@ -3758,6 +3758,7 @@ Obrigado pela preferência!`;
               profile={businessProfile}
               onLogout={handleLogout}
               onManageSubscription={() => setIsPaymentModalOpen(true)}
+              showBilling={businessProfile.planStatus === "ATIVO" || trialDaysRemaining <= 5}
               onSave={async (p) => {
                 const s = await db.profile.update(p);
                 setBusinessProfile(s);
