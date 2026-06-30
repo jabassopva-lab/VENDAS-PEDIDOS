@@ -582,7 +582,7 @@ const App: React.FC = () => {
   const isTrialActive = useMemo(() => {
     if (isTestMode) return false;
     const status = (businessProfile.planStatus || "").toUpperCase();
-    return (status === "TESTE" || status === "START") && trialDaysRemaining > 0;
+    return (status === "TESTE" || status === "START") && trialDaysRemaining > 0 && trialDaysRemaining <= 5;
   }, [businessProfile.planStatus, trialDaysRemaining, isTestMode]);
 
   const isSubscriptionBlocked = useMemo(() => {
