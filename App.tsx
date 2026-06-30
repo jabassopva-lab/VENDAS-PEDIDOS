@@ -78,6 +78,7 @@ import SaleDetailModal from "./components/SaleDetailModal.tsx";
 import ClientReportModal from "./components/ClientReportModal.tsx";
 import DailyReportModal from "./components/DailyReportModal.tsx";
 import SettingsForm from "./components/SettingsForm.tsx";
+import { SaaSCheckout } from "./components/SaaSCheckout.tsx";
 import CostCorrectionTool from "./components/CostCorrectionTool.tsx";
 import AuthScreen from "./components/AuthScreen.tsx";
 import OrientationGuide from "./components/OrientationGuide.tsx";
@@ -216,6 +217,7 @@ const App: React.FC = () => {
   }, [currentScreen]);
   const [showDueTodayModal, setShowDueTodayModal] = useState(false);
   const [showDailyReportModal, setShowDailyReportModal] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [saveNotify, setSaveNotify] = useState<{ show: boolean; msg: string }>({
     show: false,
     msg: "",
@@ -383,8 +385,8 @@ const App: React.FC = () => {
       }
     }
     return {
-      START: { price: 49.90, maxProducts: 15, maxClients: 20, maxSellers: 2, label: "Start (Básico)" },
-      PREMIUM: { price: 99.90, maxProducts: 50, maxClients: 100, maxSellers: 5, label: "Premium" },
+      START: { price: 19.90, maxProducts: 15, maxClients: 20, maxSellers: 1, label: "Essential (R$ 19,90)" },
+      PREMIUM: { price: 49.90, maxProducts: 50, maxClients: 100, maxSellers: 5, label: "Premium (R$ 49,90)" },
       ULTRA: { price: 149.90, maxProducts: 200, maxClients: 300, maxSellers: 10, label: "Ultra" },
       MASTER: { price: 199.90, maxProducts: Infinity, maxClients: Infinity, maxSellers: Infinity, label: "Master" },
     };
@@ -566,6 +568,22 @@ const App: React.FC = () => {
     return plansConfig[type] || plansConfig.START;
   }, [businessProfile, plansConfig]);
 
+  const trialDaysRemaining = useMemo(() => {
+    if (!businessProfile.nextBilling || businessProfile.nextBilling === "-") return 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const billingDate = new Date(businessProfile.nextBilling + "T00:00:00");
+    if (isNaN(billingDate.getTime())) return 0;
+    const diffTime = billingDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  }, [businessProfile.nextBilling]);
+
+  const isTrialActive = useMemo(() => {
+    const status = (businessProfile.planStatus || "").toUpperCase();
+    return (status === "TESTE" || status === "START") && trialDaysRemaining > 0;
+  }, [businessProfile.planStatus, trialDaysRemaining]);
+
   const isSubscriptionBlocked = useMemo(() => {
     if (isPureAdmin || isDeveloper) return false;
     if (isImpersonating) return false;
@@ -700,7 +718,21 @@ const App: React.FC = () => {
       setSalesHistory(s || []);
 
       if (prof) {
-        setBusinessProfile(prof);
+        let updatedProf = { ...prof };
+        let needsUpdate = false;
+        if (!prof.nextBilling || prof.nextBilling === "-") {
+          const trialDate = new Date();
+          trialDate.setDate(trialDate.getDate() + 15);
+          updatedProf.nextBilling = trialDate.toISOString().split("T")[0];
+          updatedProf.planStatus = "TESTE";
+          needsUpdate = true;
+        }
+        setBusinessProfile(updatedProf);
+        if (needsUpdate) {
+          db.profile.update(updatedProf).then((saved) => {
+            if (saved) setBusinessProfile(saved);
+          });
+        }
       } else if (session?.user) {
         const email = session.user.email || "";
         const emailPrefix = email
@@ -712,10 +744,17 @@ const App: React.FC = () => {
           session.user.user_metadata?.username ||
           emailPrefix ||
           "MINHA EMPRESA";
+        
+        const trialDate = new Date();
+        trialDate.setDate(trialDate.getDate() + 15);
+        const trialDateStr = trialDate.toISOString().split("T")[0];
+
         const initialProfile = {
           ...DEFAULT_PROFILE,
           companyName: detectedName,
           email: email,
+          planStatus: "TESTE",
+          nextBilling: trialDateStr,
           role:
             email === "omnvenda_adm@omnivenda.com" ||
             email === "jabasso.pva@gmail.com"
@@ -734,6 +773,21 @@ const App: React.FC = () => {
     }
   };
 
+  const handlePaymentSuccess = async (newExpiryDate: string) => {
+    try {
+      const updated = {
+        ...businessProfile,
+        planStatus: "ATIVO",
+        nextBilling: newExpiryDate,
+      };
+      setBusinessProfile(updated);
+      await db.profile.update(updated);
+      triggerNotify("Assinatura Ativada!");
+    } catch (e) {
+      console.error("Erro ao ativar assinatura:", e);
+    }
+  };
+
   const handleAuthSuccess = async (isTest?: boolean, testName?: string) => {
     if (isTest) {
       setIsTestMode(true);
@@ -743,10 +797,17 @@ const App: React.FC = () => {
           user_metadata: { company_name: testName },
         },
       });
+
+      const demoTrialDate = new Date();
+      demoTrialDate.setDate(demoTrialDate.getDate() + 15);
+      const demoTrialDateStr = demoTrialDate.toISOString().split("T")[0];
+
       setBusinessProfile({
         ...DEFAULT_PROFILE,
         companyName: testName || "Empresa Demo",
         email: "demo@omnivenda.com",
+        planStatus: "TESTE",
+        nextBilling: demoTrialDateStr,
       });
       localStorage.setItem("omnivenda_test_session", "active");
       fetchAllData(true);
@@ -3425,117 +3486,36 @@ Obrigado pela preferência!`;
 
   if (isSubscriptionBlocked) {
     return (
-      <div className="min-h-screen bg-[#fffbeb] flex flex-col justify-between p-6">
+      <div className="min-h-screen bg-[#fffbeb] flex flex-col justify-between p-6 animate-in fade-in duration-300">
         {/* Top Info Header */}
-        <div className="flex items-center gap-3 bg-[#0ea5e9]/5 border border-[#0ea5e9]/10 p-4 rounded-3xl mt-4 max-w-sm mx-auto w-full">
-          <div className="w-10 h-10 bg-[#0ea5e9] text-white rounded-2xl flex items-center justify-center shrink-0 shadow-md">
-            <Store size={18} />
+        <div className="flex items-center gap-3 bg-red-500/5 border border-red-500/10 p-4 rounded-3xl mt-4 max-w-md mx-auto w-full">
+          <div className="w-10 h-10 bg-red-500 text-white rounded-2xl flex items-center justify-center shrink-0 shadow-md">
+            <Lock size={18} className="animate-pulse" />
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="font-black text-slate-800 text-xs uppercase tracking-tight italic truncate">
               {businessProfile.companyName || "Minha Empresa"}
             </h2>
-            <p className="text-[8px] text-[#0ea5e9] font-black uppercase tracking-widest">
-              Painel do Cliente SaaS
+            <p className="text-[8px] text-red-500 font-black uppercase tracking-widest animate-pulse">
+              Acesso Suspenso - Regularize sua Assinatura
             </p>
           </div>
         </div>
 
-        {/* Central Block Info */}
-        <div className="my-auto max-w-md mx-auto w-full text-center space-y-6 py-10">
-          <div className="relative inline-block">
-            <div className="w-24 h-24 bg-red-50 border border-red-100 rounded-[2rem] flex items-center justify-center mx-auto shadow-inner relative z-10 text-red-500">
-              <Lock size={44} className="animate-pulse" />
-            </div>
-            <div className="absolute inset-0 bg-red-500/10 rounded-[2.5rem] blur-xl scale-120 -z-0"></div>
-          </div>
-
-          <div className="space-y-2">
-            <span className="bg-red-500/10 text-red-600 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest inline-block border border-red-200">
-              Acesso Bloqueado
-            </span>
-            <h1 className="text-3xl font-black text-slate-800 tracking-tight italic uppercase leading-none">
-              Assinatura Expirada
-            </h1>
-            <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-xs mx-auto">
-              Para reativar seu acesso e restabelecer o gerenciamento de vendas, produtos e clientes, regularize sua assinatura mensal de forma simples e segura.
-            </p>
-          </div>
-
-          {/* Current Plan Card */}
-          <div className="bg-white rounded-3xl p-5 shadow-lg border border-slate-100 text-left space-y-3 relative overflow-hidden">
-            <div className="absolute -right-4 -bottom-4 text-slate-50 w-24 h-24 pointer-events-none">
-              <ShieldAlert size={96} />
-            </div>
-            <div className="flex justify-between items-center pb-2 border-b border-slate-100 relative z-10">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Detalhes do Plano</span>
-              <span className="bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-md text-[8px] font-black uppercase">
-                {businessProfile.planType || "START"}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-xs font-bold text-slate-600 relative z-10">
-              <div>
-                <p className="text-[9px] text-slate-400 uppercase font-black">Vencimento</p>
-                <p className="text-slate-700 font-black">{businessProfile.nextBilling && businessProfile.nextBilling !== "-" ? businessProfile.nextBilling : "Expirado"}</p>
-              </div>
-              <div>
-                <p className="text-[9px] text-slate-400 uppercase font-black">Valor do Plano</p>
-                <p className="text-slate-700 font-black">
-                  {(() => {
-                  const t = (businessProfile.planType || "START").toUpperCase();
-                  const plan = plansConfig[t] || plansConfig.START;
-                  return `R$ ${plan.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}/mês`;
-                })()}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Pix Key Accordion */}
-          <div className="bg-slate-50 border border-slate-100 rounded-3xl p-5 space-y-3">
-            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest text-center">
-              Chave Pix do SaaS (E-mail)
-            </p>
-            <div className="bg-white border border-slate-100 rounded-2xl p-3 flex items-center justify-between shadow-sm">
-              <span className="font-mono text-xs font-bold text-slate-705 select-all shrink truncate pr-2 text-slate-700">
-                jabasso.pva@gmail.com
-              </span>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText("jabasso.pva@gmail.com");
-                  alert("Chave Pix de e-mail copiada!");
-                }}
-                className="bg-slate-800 text-white hover:bg-slate-900 px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0"
-              >
-                Copiar
-              </button>
-            </div>
-            <p className="text-[8px] text-slate-400 font-bold leading-normal text-center">
-              Efetue o pagamento via Pix acima e envie o comprovante no WhatsApp clicando no botão abaixo para liberação imediata da sua conta.
-            </p>
-          </div>
-
-          {/* Actions */}
-          <div className="space-y-3">
-            <a
-              href={`https://wa.me/5544999999999?text=${encodeURIComponent(
-                `Olá! Fiz a transferência Pix para regularizar a assinatura do OmniVenda Cloud da minha empresa (${businessProfile.companyName || "Minha Empresa"}). Gostaria de reativar meu plano ${businessProfile.planType || "START"}.`
-              )}`}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-100 flex items-center justify-center gap-2 active:scale-95 transition-all text-center block"
-            >
-              <Smartphone size={16} />
-              Enviar Comprovante ao Suporte
-            </a>
-          </div>
+        {/* Central Block Info with SaaS Checkout */}
+        <div className="my-auto max-w-md mx-auto w-full py-6">
+          <SaaSCheckout
+            profile={businessProfile}
+            onPaymentSuccess={handlePaymentSuccess}
+            isBlockedMode
+          />
         </div>
 
         {/* Bottom Footer & Logout */}
         <div className="text-center pb-4 space-y-3">
           <button
             onClick={handleLogout}
-            className="px-6 py-3 bg-red-50 text-red-650 hover:bg-red-150 text-red-600 hover:bg-red-100 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 inline-flex items-center gap-1.5"
+            className="px-6 py-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95 inline-flex items-center gap-1.5"
           >
             <LogOut size={12} strokeWidth={3} />
             Sair da Conta (Logout)
@@ -3570,6 +3550,27 @@ Obrigado pela preferência!`;
         <>
           <Header title={businessProfile.companyName} />
           <main className="px-6 mt-6 relative z-30 space-y-4 flex-1">
+            {isTrialActive && (
+              <div className="bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-[2rem] p-5 shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2 animate-in fade-in duration-300">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-white/15 rounded-xl text-white shrink-0 shadow-md">
+                    <Sparkles size={18} className="animate-pulse" />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-white text-xs uppercase italic tracking-tight">Período de Testes Ativo!</h4>
+                    <p className="text-[10px] text-sky-100 font-extrabold uppercase mt-0.5 leading-snug">
+                      Sua empresa possui {trialDaysRemaining} {trialDaysRemaining === 1 ? 'dia grátis' : 'dias grátis'} restantes para testar.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsPaymentModalOpen(true)}
+                  className="px-4 py-2.5 bg-white text-blue-650 hover:bg-sky-50 text-blue-600 hover:text-blue-700 font-black text-[9px] uppercase tracking-widest rounded-xl shadow-md active:scale-95 transition-all self-stretch sm:self-auto text-center cursor-pointer"
+                >
+                  Ativar Assinatura (R$ 19,90)
+                </button>
+              </div>
+            )}
             {dueTodaySales.length > 0 && (
               <div className="bg-amber-50 border-2 border-amber-300 rounded-[2rem] p-5 shadow-lg flex items-start gap-4 mb-2 animate-in fade-in duration-300">
                 <div className="p-3 bg-amber-500 rounded-2xl text-white shrink-0 shadow-md">
@@ -3755,6 +3756,7 @@ Obrigado pela preferência!`;
             <SettingsForm
               profile={businessProfile}
               onLogout={handleLogout}
+              onManageSubscription={() => setIsPaymentModalOpen(true)}
               onSave={async (p) => {
                 const s = await db.profile.update(p);
                 setBusinessProfile(s);
@@ -5957,6 +5959,24 @@ Obrigado pela preferência!`;
       )}
 
       {/* Modals */}
+      {isPaymentModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-300">
+          <div className="relative w-full max-w-md my-8">
+            <button
+              onClick={() => setIsPaymentModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 z-[100] p-2 bg-slate-50 hover:bg-slate-100 rounded-full transition-all cursor-pointer shadow-sm"
+              type="button"
+            >
+              <X size={16} strokeWidth={3} />
+            </button>
+            <SaaSCheckout
+              profile={businessProfile}
+              onPaymentSuccess={handlePaymentSuccess}
+              onClose={() => setIsPaymentModalOpen(false)}
+            />
+          </div>
+        </div>
+      )}
       <ProductModal
         isOpen={productModal.type !== ModalType.NONE}
         onClose={() => setProductModal({ type: ModalType.NONE })}

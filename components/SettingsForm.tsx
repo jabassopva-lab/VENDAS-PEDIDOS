@@ -27,9 +27,10 @@ interface SettingsFormProps {
   profile: BusinessProfile;
   onSave: (profile: BusinessProfile) => Promise<void>;
   onLogout?: () => void;
+  onManageSubscription?: () => void;
 }
 
-const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }) => {
+const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, onManageSubscription }) => {
   const [formData, setFormData] = useState<BusinessProfile>(profile);
   const [logoPreviewError, setLogoPreviewError] = useState(false);
   const [isLoadingLogo, setIsLoadingLogo] = useState(false);
@@ -419,6 +420,46 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout }
                 </p>
               </div>
            </div>
+        </div>
+      </div>
+
+      {/* Assinatura & Cobrança */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CreditCard size={18} className="text-sky-500" />
+            <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Assinatura & Cobrança</h3>
+          </div>
+          <span className={`px-2.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider ${
+            (formData.planStatus || "TESTE").toUpperCase() === "ATIVO"
+              ? "bg-emerald-50 text-emerald-600 border border-emerald-100 animate-pulse"
+              : "bg-amber-50 text-amber-600 border border-amber-100"
+          }`}>
+            {(formData.planStatus || "TESTE").toUpperCase() === "ATIVO" ? "Assinatura Ativa" : "Período de Testes"}
+          </span>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+              <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest">Plano do SaaS</p>
+              <p className="text-xs font-black text-slate-700 uppercase mt-0.5">Essential (R$ 19,90)</p>
+            </div>
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+              <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest">Vencimento</p>
+              <p className="text-xs font-black text-slate-700 uppercase mt-0.5">
+                {formData.nextBilling && formData.nextBilling !== "-" ? formData.nextBilling : "Expirado"}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onManageSubscription}
+            className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white rounded-xl shadow-md text-xs font-black uppercase tracking-widest cursor-pointer transition-all active:scale-95"
+          >
+            <Zap size={14} className="animate-pulse" />
+            {(formData.planStatus || "TESTE").toUpperCase() === "ATIVO" ? "Estender Assinatura (R$ 19,90)" : "Ativar Assinatura (R$ 19,90)"}
+          </button>
         </div>
       </div>
 
