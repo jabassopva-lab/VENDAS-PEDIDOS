@@ -41,8 +41,52 @@ export const SaaSCheckout: React.FC<SaaSCheckoutProps> = ({
 
   const planPrice = 19.90;
 
-  // Generate a realistic dynamic Pix "Copia e Cola" code
-  const pixCode = `00020101021226830014br.gov.bcb.pix2561api.asaas.com/v3/pix/t/omnivenda1990_${profile.id || "user"}_${Date.now()}`;
+  // Generate a fully valid BR Code (Pix Static QR Code) with custom cell key
+  const pixCode = React.useMemo(() => {
+    const key = "66992442998";
+    const cleanKey = key.replace(/\D/g, "");
+    
+    // Merchant account info (ID 26)
+    const gui = "0014br.gov.bcb.pix";
+    // For cell phone numbers, the standard Pix key is formatted as "+55..." or clean with 11 digits
+    // Since it's a Brazilian phone key, usually stored as +5566992442998 in BCB (central bank) but let's write what was requested
+    // If the user specified exactly "66992442998", let's make sure we prefix +55 or use as is. Brazilian phone keys in DICT MUST be in international format e.g. +5566992442998
+    const standardKey = cleanKey.length === 11 ? `+55${cleanKey}` : cleanKey;
+    const keyField = `01${standardKey.length.toString().padStart(2, "0")}${standardKey}`;
+    const merchantAccountInfo = `${gui}${keyField}`;
+    const id26 = `26${merchantAccountInfo.length.toString().padStart(2, "0")}${merchantAccountInfo}`;
+    
+    const id52 = "52040000";
+    const id53 = "5303986";
+    
+    const formattedAmount = planPrice.toFixed(2);
+    const id54 = `54${formattedAmount.length.toString().padStart(2, "0")}${formattedAmount}`;
+    
+    const id58 = "5802BR";
+    const id59 = "5909OMNIVENDA";
+    const id60 = "6009SAO PAULO";
+    const id62 = "62070503PIX"; // simple TxID
+    
+    const payloadBeforeCRC = `000201${id26}${id52}${id53}${id54}${id58}${id59}${id60}${id62}6304`;
+    
+    // CRC16 Calculation
+    let crc = 0xFFFF;
+    for (let i = 0; i < payloadBeforeCRC.length; i++) {
+      const charCode = payloadBeforeCRC.charCodeAt(i);
+      crc ^= (charCode << 8);
+      for (let j = 0; j < 8; j++) {
+        if (crc & 0x8000) {
+          crc = (crc << 1) ^ 0x1021;
+        } else {
+          crc = crc << 1;
+        }
+        crc &= 0xFFFF;
+      }
+    }
+    const crcHex = crc.toString(16).toUpperCase().padStart(4, "0");
+    return `${payloadBeforeCRC}${crcHex}`;
+  }, []);
+
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&color=0f172a&data=${encodeURIComponent(pixCode)}`;
 
   const handleCopyPix = () => {
