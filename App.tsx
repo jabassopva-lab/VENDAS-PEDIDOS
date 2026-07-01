@@ -57,6 +57,7 @@ import {
   FileSpreadsheet,
   BookOpen,
   Save,
+  Settings,
 } from "lucide-react";
 import {
   AreaChart,
@@ -3340,17 +3341,30 @@ Obrigado pela preferência!`;
                 )}
               </div>
             )}
-            <div className="flex flex-col justify-center min-w-0">
-              <h1 className="text-[24px] sm:text-[38px] font-black tracking-tighter uppercase italic leading-none truncate" title={title}>
+            <div className="flex flex-col justify-center min-w-0 pr-1">
+              <h1 className="text-[14px] xs:text-[16px] sm:text-[24px] md:text-[32px] font-black tracking-tight uppercase leading-tight" title={title}>
                 {title}
               </h1>
-              <p className="text-yellow-300 text-[8px] sm:text-[12px] font-black uppercase tracking-[0.12em] mt-0.5 leading-none truncate">
+              <p className="text-yellow-300 text-[8px] sm:text-[10px] font-extrabold uppercase tracking-wider mt-0.5 leading-none whitespace-nowrap">
                 Conectado OmniVenda Cloud
               </p>
             </div>
           </div>
           <div className="flex gap-2 shrink-0 items-center">
             {rightAction}
+            {session && !isPureAdmin && (
+              <button
+                onClick={() => setCurrentScreen("SETTINGS")}
+                className={`p-2 rounded-xl transition-all border border-white/10 ${
+                  currentScreen === "SETTINGS"
+                    ? "bg-yellow-400 text-slate-900 border-2 border-yellow-300 font-bold"
+                    : "bg-white/20 hover:bg-white/30 text-white"
+                }`}
+                title="Configurações da Empresa (Cadastro)"
+              >
+                <Settings size={18} />
+              </button>
+            )}
             <button
               onClick={() => setShowDueTodayModal(true)}
               className={`p-2 rounded-xl transition-all relative ${
@@ -3799,7 +3813,7 @@ Obrigado pela preferência!`;
             </div>
 
             {/* Menu Inferior: Módulos de Gestão Rápida */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
               <button
                 onClick={() => setCurrentScreen("CLIENTS")}
                 className="bg-white p-3.5 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-2 md:gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
@@ -3845,6 +3859,18 @@ Obrigado pela preferência!`;
                 </div>
                 <p className="font-black text-slate-800 uppercase text-[9px] sm:text-xs tracking-widest text-center">
                   Relatório
+                </p>
+              </button>
+
+              <button
+                onClick={() => setCurrentScreen("SETTINGS")}
+                className="bg-white p-3.5 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-2 md:gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer col-span-2 sm:col-span-1 md:col-span-1"
+              >
+                <div className="w-10 h-10 md:w-14 md:h-14 bg-indigo-50 rounded-xl md:rounded-2xl flex items-center justify-center text-indigo-500">
+                  <Settings size={20} className="sm:size-[28px]" />
+                </div>
+                <p className="font-black text-slate-800 uppercase text-[9px] sm:text-xs tracking-widest text-center">
+                  Minha Empresa
                 </p>
               </button>
             </div>
