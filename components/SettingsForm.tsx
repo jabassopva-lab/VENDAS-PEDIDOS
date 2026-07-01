@@ -487,41 +487,31 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              window.location.href = "/?page=politica-privacidade";
-            }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-700 rounded-xl border border-slate-200 text-xs font-black uppercase tracking-widest cursor-pointer transition-all"
-          >
-            <Shield size={14} className="text-blue-500" />
-            Visualizar Política de Privacidade
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              window.location.href = "/?page=excluir-conta";
-            }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-50 hover:bg-red-100 active:scale-95 text-red-650 rounded-xl border border-red-100 text-xs font-black uppercase tracking-widest cursor-pointer transition-all"
-          >
-            <ShieldCheck size={14} className="text-red-500" />
-            Solicitar Exclusão da Conta e Dados
-          </button>
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = "/?page=politica-privacidade";
+              }}
+              className="w-full flex items-center justify-center gap-1.5 py-2 px-1 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-700 rounded-xl border border-slate-200 text-[10px] sm:text-xs font-black uppercase tracking-wider cursor-pointer transition-all text-center"
+            >
+              <Shield size={13} className="text-blue-500 shrink-0" />
+              <span>Política de Privacidade</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = "/?page=excluir-conta";
+              }}
+              className="w-full flex items-center justify-center gap-1.5 py-2 px-1 bg-red-50 hover:bg-red-100 active:scale-95 text-red-650 rounded-xl border border-red-100 text-[10px] sm:text-xs font-black uppercase tracking-wider cursor-pointer transition-all text-center"
+            >
+              <ShieldCheck size={13} className="text-red-500 shrink-0" />
+              <span>Excluir Conta & Dados</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <button 
-        type="submit"
-        disabled={isSaving}
-        className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isSaving ? (
-          <Loader2 className="animate-spin" size={18} />
-        ) : (
-          <Save size={18} />
-        )}
-        {isSaving ? 'SALVANDO...' : 'SALVAR CONFIGURAÇÕES'}
-      </button>
 
     </form>
   );

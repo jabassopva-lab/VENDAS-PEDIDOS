@@ -80,7 +80,6 @@ import ClientReportModal from "./components/ClientReportModal.tsx";
 import DailyReportModal from "./components/DailyReportModal.tsx";
 import SettingsForm from "./components/SettingsForm.tsx";
 import { SaaSCheckout } from "./components/SaaSCheckout.tsx";
-import CostCorrectionTool from "./components/CostCorrectionTool.tsx";
 import AuthScreen from "./components/AuthScreen.tsx";
 import OrientationGuide from "./components/OrientationGuide.tsx";
 import DeleteAccountScreen from "./components/DeleteAccountScreen.tsx";
@@ -3854,7 +3853,7 @@ Obrigado pela preferência!`;
       )}
 
       {currentScreen === "SETTINGS" && (!isPureAdmin || isImpersonating) && (
-        <div className="min-h-screen bg-slate-50 pb-20">
+        <div className="bg-slate-50 pb-2">
           <Header 
             title="Configurações" 
             showBack={!isProfileIncomplete} 
@@ -3890,11 +3889,6 @@ Obrigado pela preferência!`;
                   setIsSavingSettings(false);
                 }
               }}
-            />
-            <CostCorrectionTool
-              products={products}
-              salesHistory={salesHistory}
-              onUpdateSales={handleRetroactiveCostUpdate}
             />
           </div>
         </div>
@@ -6514,7 +6508,7 @@ Obrigado pela preferência!`;
         </div>
       )}
 
-      <footer className="py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
+      <footer className="pt-1 pb-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
         © {new Date().getFullYear()} JABASSO
       </footer>
     </div>
