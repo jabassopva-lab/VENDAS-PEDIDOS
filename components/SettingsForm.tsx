@@ -260,72 +260,80 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
       </div>
 
       {/* Plan Status Card */}
-      <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-3xl p-4 sm:p-5 text-white shadow-lg shadow-blue-200 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-2xl p-3 sm:p-4 text-white shadow-lg shadow-blue-200 relative overflow-hidden">
         <Zap className="absolute -right-4 -bottom-4 text-white/10 w-24 h-24" />
-        <div className="relative z-10 space-y-3">
-          <div className="flex justify-between items-start">
-            <span className="bg-white/20 px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase">
+        <div className="relative z-10 space-y-2">
+          
+          <div className="flex justify-between items-center border-b border-white/10 pb-1">
+            <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-[8px] font-black tracking-widest uppercase">
               Assinatura SaaS
             </span>
-            <ShieldCheck size={20} className="text-blue-200" />
+            <ShieldCheck size={16} className="text-blue-200" />
           </div>
           
-          <div>
-            <h3 className="text-xl font-black mb-1 flex items-center gap-2">
-              PLANO {(formData.planType || 'START').toUpperCase()}
-              <span className={`text-[9px] px-2 py-0.5 rounded-md font-black uppercase ${
-                (formData.planStatus || 'ATIVO').toUpperCase() === 'ATIVO' 
-                  ? 'bg-emerald-500 text-white' 
-                  : 'bg-amber-500 text-white animate-pulse'
-              }`}>
-                {formData.planStatus || 'ATIVO'}
-              </span>
-            </h3>
-            <p className="text-blue-100 text-xs opacity-85 font-semibold">
-              Próxima renovação: {formData.nextBilling && formData.nextBilling !== '-' ? formData.nextBilling : 'Vencimento não configurado'}
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 items-center">
+            {/* Coluna 1: Nome do Plano e Botão de Upgrade */}
+            <div className="space-y-1.5">
+              <div>
+                <h3 className="text-base font-black flex items-center gap-1.5 flex-wrap">
+                  PLANO {(formData.planType || 'START').toUpperCase()}
+                  <span className={`text-[8px] px-1.5 py-0.5 rounded-md font-black uppercase ${
+                    (formData.planStatus || 'ATIVO').toUpperCase() === 'ATIVO' 
+                      ? 'bg-emerald-500 text-white' 
+                      : 'bg-amber-500 text-white animate-pulse'
+                  }`}>
+                    {formData.planStatus || 'ATIVO'}
+                  </span>
+                </h3>
+                <p className="text-blue-100 text-[10px] opacity-85 font-semibold">
+                  Próxima renovação: {formData.nextBilling && formData.nextBilling !== '-' ? formData.nextBilling : 'Vencimento não configurado'}
+                </p>
+              </div>
+
+              <div className="pt-0.5">
+                <button
+                  type="button"
+                  onClick={onManageSubscription}
+                  className="inline-flex items-center gap-1.5 bg-white text-indigo-700 hover:bg-slate-50 px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest shadow-md active:scale-95 transition-all text-center cursor-pointer"
+                >
+                  <Zap size={10} className="fill-indigo-600 shrink-0" />
+                  Solicitar Upgrade
+                </button>
+              </div>
+            </div>
+
+            {/* Coluna 2: Limites */}
+            <div className="border-t md:border-t-0 md:border-l border-white/15 pt-2 md:pt-0 md:pl-4 space-y-1">
+              <p className="text-[8px] uppercase font-black text-blue-200 tracking-wider">
+                Limites do seu Plano:
+              </p>
+              <p className="text-[10px] font-bold text-white leading-snug">
+                {(() => {
+                  const t = (formData.planType || 'START').toUpperCase();
+                  const saved = localStorage.getItem("omnivenda_plan_configs");
+                  let plans: any = {
+                    START: { maxProducts: 15, maxClients: 20, maxSellers: 2 },
+                    PREMIUM: { maxProducts: 50, maxClients: 100, maxSellers: 5 },
+                    ULTRA: { maxProducts: 200, maxClients: 300, maxSellers: 10 },
+                    MASTER: { maxProducts: Infinity, maxClients: Infinity, maxSellers: Infinity },
+                  };
+                  if (saved) {
+                    try { plans = JSON.parse(saved); } catch (e) {}
+                  }
+                  const planValue = plans[t] || plans.START;
+                  const prodStr = planValue.maxProducts === Infinity || !isFinite(planValue.maxProducts) ? 'Ilimitados' : planValue.maxProducts;
+                  const clientStr = planValue.maxClients === Infinity || !isFinite(planValue.maxClients) ? 'Ilimitados' : planValue.maxClients;
+                  const sellerStr = planValue.maxSellers === Infinity || !isFinite(planValue.maxSellers) ? 'Ilimitados' : planValue.maxSellers;
+
+                  if (t === 'MASTER') {
+                    return '✓ Ilimitado: Produtos, Clientes e Vendedores • Suporte Dedicado';
+                  }
+                  return `✓ Limite atual de uso: ${prodStr} Produtos • ${clientStr} Clientes • ${sellerStr} Vendedores`;
+                })()}
+              </p>
+            </div>
           </div>
 
-          <div className="border-t border-white/15 pt-2 space-y-0.5">
-            <p className="text-[9px] uppercase font-black text-blue-200 tracking-wider">
-              Limites do seu Plano:
-            </p>
-            <p className="text-[11px] font-bold text-white leading-tight">
-              {(() => {
-                const t = (formData.planType || 'START').toUpperCase();
-                const saved = localStorage.getItem("omnivenda_plan_configs");
-                let plans: any = {
-                  START: { maxProducts: 15, maxClients: 20, maxSellers: 2 },
-                  PREMIUM: { maxProducts: 50, maxClients: 100, maxSellers: 5 },
-                  ULTRA: { maxProducts: 200, maxClients: 300, maxSellers: 10 },
-                  MASTER: { maxProducts: Infinity, maxClients: Infinity, maxSellers: Infinity },
-                };
-                if (saved) {
-                  try { plans = JSON.parse(saved); } catch (e) {}
-                }
-                const planValue = plans[t] || plans.START;
-                const prodStr = planValue.maxProducts === Infinity || !isFinite(planValue.maxProducts) ? 'Ilimitados' : planValue.maxProducts;
-                const clientStr = planValue.maxClients === Infinity || !isFinite(planValue.maxClients) ? 'Ilimitados' : planValue.maxClients;
-                const sellerStr = planValue.maxSellers === Infinity || !isFinite(planValue.maxSellers) ? 'Ilimitados' : planValue.maxSellers;
-
-                if (t === 'MASTER') {
-                  return '✓ Ilimitado: Produtos, Clientes e Vendedores • Suporte Dedicado';
-                }
-                return `✓ Limite atual de uso: ${prodStr} Produtos • ${clientStr} Clientes • ${sellerStr} Vendedores`;
-              })()}
-            </p>
-          </div>
-
-          <div className="pt-0.5">
-            <button
-              type="button"
-              onClick={onManageSubscription}
-              className="inline-flex items-center gap-1.5 bg-white text-indigo-700 hover:bg-slate-50 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-md active:scale-95 transition-all text-center cursor-pointer"
-            >
-              <Zap size={10} className="fill-indigo-600 shrink-0" />
-              Solicitar Upgrade
-            </button>
-          </div>
         </div>
       </div>
 
