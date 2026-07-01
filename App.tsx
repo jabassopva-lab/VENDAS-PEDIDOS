@@ -3550,44 +3550,44 @@ Obrigado pela preferência!`;
       {currentScreen === "HOME" && (!isPureAdmin || isImpersonating) && (
         <>
           <Header title={businessProfile.companyName} />
-          <main className="px-6 mt-6 relative z-30 space-y-6 flex-1 max-w-5xl mx-auto w-full">
+          <main className="px-4 md:px-6 mt-3 md:mt-6 relative z-30 space-y-3.5 md:space-y-6 flex-1 max-w-5xl mx-auto w-full">
             {isTrialActive && (
-              <div className="bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-[2rem] p-5 shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2 animate-in fade-in duration-300">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-white/15 rounded-xl text-white shrink-0 shadow-md">
-                    <Sparkles size={18} className="animate-pulse" />
+              <div className="bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-[1.5rem] md:rounded-[2rem] p-3.5 md:p-5 shadow-md md:shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4 mb-1 md:mb-2 animate-in fade-in duration-300">
+                <div className="flex items-center gap-2.5 md:gap-3">
+                  <div className="p-2 bg-white/15 rounded-lg text-white shrink-0 shadow-sm">
+                    <Sparkles size={16} className="animate-pulse" />
                   </div>
                   <div>
-                    <h4 className="font-black text-white text-xs uppercase italic tracking-tight">Período de Testes Ativo!</h4>
-                    <p className="text-[10px] text-sky-100 font-extrabold uppercase mt-0.5 leading-snug">
+                    <h4 className="font-black text-white text-[11px] md:text-xs uppercase italic tracking-tight">Período de Testes Ativo!</h4>
+                    <p className="text-[9px] md:text-[10px] text-sky-100 font-extrabold uppercase mt-0.5 leading-snug">
                       Sua empresa possui {trialDaysRemaining} {trialDaysRemaining === 1 ? 'dia grátis' : 'dias grátis'} restantes para testar.
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsPaymentModalOpen(true)}
-                  className="px-4 py-2.5 bg-white text-blue-650 hover:bg-sky-50 text-blue-600 hover:text-blue-700 font-black text-[9px] uppercase tracking-widest rounded-xl shadow-md active:scale-95 transition-all self-stretch sm:self-auto text-center cursor-pointer"
+                  className="px-3 py-1.5 md:px-4 md:py-2.5 bg-white text-blue-650 hover:bg-sky-50 text-blue-600 hover:text-blue-700 font-black text-[8px] md:text-[9px] uppercase tracking-widest rounded-lg md:rounded-xl shadow-md active:scale-95 transition-all self-stretch sm:self-auto text-center cursor-pointer"
                 >
                   Ativar Assinatura (R$ 19,90)
                 </button>
               </div>
             )}
             {dueTodaySales.length > 0 && (
-              <div className="bg-amber-50 border-2 border-amber-300 rounded-[2rem] p-5 shadow-lg flex items-start gap-4 mb-2 animate-in fade-in duration-300">
-                <div className="p-3 bg-amber-500 rounded-2xl text-white shrink-0 shadow-md">
-                  <Bell size={20} className="animate-bounce" />
+              <div className="bg-amber-50 border-2 border-amber-300 rounded-[1.5rem] md:rounded-[2rem] p-3.5 md:p-5 shadow-md md:shadow-lg flex items-start gap-3 md:gap-4 mb-1 md:mb-2 animate-in fade-in duration-300">
+                <div className="p-2.5 bg-amber-500 rounded-xl text-white shrink-0 shadow-sm">
+                  <Bell size={18} className="animate-bounce" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-black text-amber-900 text-xs uppercase italic tracking-tight">Vencimentos Pendentes de Hoje!</h4>
-                  <p className="text-[10px] text-amber-700 font-extrabold uppercase mt-1 leading-snug">
+                  <h4 className="font-black text-amber-900 text-[11px] md:text-xs uppercase italic tracking-tight">Vencimentos Pendentes de Hoje!</h4>
+                  <p className="text-[9px] md:text-[10px] text-amber-700 font-extrabold uppercase mt-0.5 leading-snug">
                     Você possui {dueTodaySales.length} {dueTodaySales.length === 1 ? 'venda que vence' : 'vendas que vencem'} hoje no sistema.
                   </p>
                   <button 
                     onClick={() => setShowDueTodayModal(true)}
-                    className="mt-3 px-4 py-2 bg-[#0ea5e9] text-white hover:bg-blue-600 font-extrabold text-[9px] uppercase italic rounded-xl border-b-4 border-blue-700 shadow-md active:scale-95 transition-all flex items-center gap-1.5"
+                    className="mt-2 px-3 py-1.5 bg-[#0ea5e9] text-white hover:bg-blue-600 font-extrabold text-[8px] md:text-[9px] uppercase italic rounded-lg md:rounded-xl border-b-2 md:border-b-4 border-blue-700 shadow-md active:scale-95 transition-all flex items-center gap-1"
                   >
                     <span>Ver Contas a Receber</span>
-                    <ArrowRight size={12} strokeWidth={3} />
+                    <ArrowRight size={10} strokeWidth={3} />
                   </button>
                 </div>
               </div>
@@ -3595,39 +3595,39 @@ Obrigado pela preferência!`;
             {isDeveloper && (
               <button
                 onClick={() => setCurrentScreen("DEVELOPER_PANEL")}
-                className="w-full bg-slate-800 text-white py-3 px-6 rounded-2xl shadow-lg flex items-center justify-between border-b-4 border-slate-950"
+                className="w-full bg-slate-800 text-white py-2 px-4 md:py-3 md:px-6 rounded-xl md:rounded-2xl shadow-md md:shadow-lg flex items-center justify-between border-b-2 md:border-b-4 border-slate-950"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center text-blue-400">
-                    <Database size={18} />
+                <div className="flex items-center gap-2.5 md:gap-3">
+                  <div className="w-7 h-7 md:w-8 md:h-8 bg-slate-700 rounded-lg flex items-center justify-center text-blue-400">
+                    <Database size={16} />
                   </div>
-                  <h3 className="text-sm font-black uppercase italic tracking-tighter">
+                  <h3 className="text-xs md:text-sm font-black uppercase italic tracking-tighter">
                     Painel do Desenvolvedor
                   </h3>
                 </div>
-                <ArrowRight size={18} className="text-slate-600" />
+                <ArrowRight size={16} className="text-slate-600" />
               </button>
             )}
 
             {/* Layout em Grid Responsivo para Desktop (Evita barra de rolagem e preenche melhor o espaço) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6 items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 md:gap-6 items-stretch">
               {/* Lado Esquerdo: Seletor de Período + Novo Pedido */}
-              <div className="lg:col-span-7 flex flex-col justify-between gap-4 md:gap-5">
+              <div className="lg:col-span-7 flex flex-col justify-between gap-3.5 md:gap-5">
                 
                 {/* Seletor de Período e Navegação de Data na Home com Fontes Aumentadas */}
-                <div className="bg-white p-5 rounded-[2.2rem] shadow-lg border-b-4 border-slate-100 flex flex-col justify-between flex-1 gap-4">
-                  <div className="flex justify-between items-center flex-wrap gap-3">
+                <div className="bg-white p-3.5 md:p-5 rounded-[1.8rem] md:rounded-[2.2rem] shadow-md md:shadow-lg border-b-4 border-slate-100 flex flex-col justify-between flex-1 gap-3 md:gap-4">
+                  <div className="flex justify-between items-center flex-wrap gap-2 md:gap-3">
                     <div className="flex items-center gap-2">
-                      <Calendar size={22} className="text-[#0ea5e9]" />
-                      <span className="text-[12px] sm:text-sm md:text-base font-black uppercase tracking-wider text-slate-600">
+                      <Calendar size={18} className="text-[#0ea5e9] md:size-[22px]" />
+                      <span className="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-slate-600">
                         Período do Painel
                       </span>
                     </div>
-                    <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
+                    <div className="flex gap-0.5 bg-slate-100 p-0.5 md:p-1 rounded-lg md:rounded-xl">
                       <button
                         type="button"
                         onClick={() => setReportTab("DIARIO")}
-                        className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs md:text-sm lg:text-base font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        className={`px-2.5 py-1 md:px-4 md:py-2 rounded-md md:rounded-xl text-[10px] sm:text-xs md:text-sm lg:text-base font-black uppercase tracking-wider transition-all cursor-pointer ${
                           reportTab === "DIARIO"
                             ? "bg-[#0ea5e9] text-white shadow-md scale-105"
                             : "text-slate-500 hover:text-slate-800"
@@ -3638,7 +3638,7 @@ Obrigado pela preferência!`;
                       <button
                         type="button"
                         onClick={() => setReportTab("MENSAL")}
-                        className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs md:text-sm lg:text-base font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        className={`px-2.5 py-1 md:px-4 md:py-2 rounded-md md:rounded-xl text-[10px] sm:text-xs md:text-sm lg:text-base font-black uppercase tracking-wider transition-all cursor-pointer ${
                           reportTab === "MENSAL"
                             ? "bg-[#0ea5e9] text-white shadow-md scale-105"
                             : "text-slate-500 hover:text-slate-800"
@@ -3649,7 +3649,7 @@ Obrigado pela preferência!`;
                       <button
                         type="button"
                         onClick={() => setReportTab("ANUAL")}
-                        className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs md:text-sm lg:text-base font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        className={`px-2.5 py-1 md:px-4 md:py-2 rounded-md md:rounded-xl text-[10px] sm:text-xs md:text-sm lg:text-base font-black uppercase tracking-wider transition-all cursor-pointer ${
                           reportTab === "ANUAL"
                             ? "bg-[#0ea5e9] text-white shadow-md scale-105"
                             : "text-slate-500 hover:text-slate-800"
@@ -3660,7 +3660,7 @@ Obrigado pela preferência!`;
                       <button
                         type="button"
                         onClick={() => setReportTab("TOTAL")}
-                        className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs md:text-sm lg:text-base font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        className={`px-2.5 py-1 md:px-4 md:py-2 rounded-md md:rounded-xl text-[10px] sm:text-xs md:text-sm lg:text-base font-black uppercase tracking-wider transition-all cursor-pointer ${
                           reportTab === "TOTAL"
                             ? "bg-[#0ea5e9] text-white shadow-md scale-105"
                             : "text-slate-500 hover:text-slate-800"
@@ -3671,16 +3671,16 @@ Obrigado pela preferência!`;
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between bg-slate-50 rounded-2xl p-2.5 border border-slate-100">
+                  <div className="flex items-center justify-between bg-slate-50 rounded-xl md:rounded-2xl p-1.5 md:p-2.5 border border-slate-100">
                     <button
                       type="button"
                       onClick={() => changeDate(-1)}
-                      className="p-2 hover:bg-slate-200 active:scale-90 text-slate-700 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                      className="p-1.5 hover:bg-slate-200 active:scale-90 text-slate-700 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
                       disabled={reportTab === "TOTAL"}
                     >
-                      <ChevronLeft size={20} className="stroke-[3]" />
+                      <ChevronLeft size={16} className="stroke-[3] md:size-5" />
                     </button>
-                    <span className="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl font-black uppercase tracking-widest text-[#0ea5e9] italic">
+                    <span className="text-[11px] sm:text-sm md:text-base lg:text-lg xl:text-xl font-black uppercase tracking-widest text-[#0ea5e9] italic">
                       {reportTab === "DIARIO"
                         ? currentDate.toLocaleDateString("pt-BR")
                         : reportTab === "MENSAL"
@@ -3692,48 +3692,48 @@ Obrigado pela preferência!`;
                     <button
                       type="button"
                       onClick={() => changeDate(1)}
-                      className="p-2 hover:bg-slate-200 active:scale-90 text-slate-700 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                      className="p-1.5 hover:bg-slate-200 active:scale-90 text-slate-700 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
                       disabled={reportTab === "TOTAL"}
                     >
-                      <ChevronRight size={20} className="stroke-[3]" />
+                      <ChevronRight size={16} className="stroke-[3] md:size-5" />
                     </button>
                   </div>
                 </div>
 
                 {/* Botões de Ação Principais: Novo Pedido e Dia */}
-                <div className="flex gap-4">
+                <div className="flex gap-3 md:gap-4">
                   <button
                     onClick={() => {
                       setEditingSale(null);
                       setSaleModal(true);
                     }}
-                    className="flex-1 bg-yellow-400 text-[#1e293b] py-3.5 sm:py-4 px-6 sm:px-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-xl flex items-center justify-between border-b-6 border-yellow-600 active:scale-95 hover:bg-yellow-350 transition-all cursor-pointer"
+                    className="flex-1 bg-yellow-400 text-[#1e293b] py-2.5 md:py-4 px-4 md:px-8 rounded-[1.5rem] md:rounded-[2.5rem] shadow-md md:shadow-xl flex items-center justify-between border-b-4 md:border-b-6 border-yellow-600 active:scale-95 hover:bg-yellow-350 transition-all cursor-pointer"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-yellow-500 shrink-0 shadow-sm">
-                        <Plus size={24} strokeWidth={4} />
+                    <div className="flex items-center gap-2.5 md:gap-4">
+                      <div className="w-8 h-8 md:w-10 md:h-10 bg-white rounded-lg flex items-center justify-center text-yellow-500 shrink-0 shadow-sm">
+                        <Plus size={20} className="md:w-6 md:h-6" strokeWidth={4} />
                       </div>
                       <div className="text-left">
-                        <h3 className="text-base sm:text-lg md:text-xl font-black uppercase italic tracking-tighter leading-none">
+                        <h3 className="text-sm md:text-xl font-black uppercase italic tracking-tighter leading-none">
                           Novo Pedido
                         </h3>
-                        <p className="text-amber-900/60 text-[8px] sm:text-[9px] md:text-xs font-black uppercase mt-1">
+                        <p className="text-amber-900/60 text-[7px] md:text-xs font-black uppercase mt-0.5">
                           Sincronizado na Nuvem
                         </p>
                       </div>
                     </div>
-                    <ChevronRight size={22} className="text-amber-900/20" />
+                    <ChevronRight size={18} className="text-amber-900/20 md:size-6" />
                   </button>
 
                   <button
                     onClick={() => setShowDailyReportModal(true)}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 sm:py-4 px-5 sm:px-7 rounded-[2rem] sm:rounded-[2.5rem] shadow-xl flex flex-col items-center justify-center border-b-6 border-indigo-900 active:scale-95 transition-all min-w-[76px] sm:min-w-[90px] md:min-w-[100px] cursor-pointer"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 md:py-4 px-3 md:px-7 rounded-[1.5rem] md:rounded-[2.5rem] shadow-md md:shadow-xl flex flex-col items-center justify-center border-b-4 md:border-b-6 border-indigo-900 active:scale-95 transition-all min-w-[64px] md:min-w-[100px] cursor-pointer"
                     title="Relatório da Venda do Dia"
                   >
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/20 rounded-xl flex items-center justify-center text-white">
-                      <FileSpreadsheet size={20} className="text-yellow-300" />
+                    <div className="w-7 h-7 md:w-10 md:h-10 bg-white/20 rounded-lg flex items-center justify-center text-white">
+                      <FileSpreadsheet size={16} className="text-yellow-300 md:size-6" />
                     </div>
-                    <span className="text-[8px] sm:text-[10px] md:text-xs font-black uppercase tracking-widest mt-1 text-indigo-100">
+                    <span className="text-[7.5px] md:text-xs font-black uppercase tracking-widest mt-0.5 text-indigo-100">
                       Dia
                     </span>
                   </button>
@@ -3743,22 +3743,22 @@ Obrigado pela preferência!`;
                 {isTestMode && (
                   <button
                     onClick={() => setCurrentScreen("GUIDE")}
-                    className="w-full bg-gradient-to-br from-indigo-600 to-indigo-800 text-white py-3 px-6 rounded-[1.8rem] shadow-lg flex items-center justify-between border-b-4 border-indigo-900 active:scale-95 transition-all cursor-pointer"
+                    className="w-full bg-gradient-to-br from-indigo-600 to-indigo-800 text-white py-2 px-4 rounded-[1.2rem] md:rounded-[1.8rem] shadow-md flex items-center justify-between border-b-2 md:border-b-4 border-indigo-900 active:scale-95 transition-all cursor-pointer"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-white shrink-0">
-                        <BookOpen size={20} />
+                    <div className="flex items-center gap-2.5 md:gap-4">
+                      <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center text-white shrink-0">
+                        <BookOpen size={16} />
                       </div>
                       <div className="text-left">
-                        <h3 className="text-xs sm:text-sm font-black uppercase italic tracking-tighter leading-none">
+                        <h3 className="text-[11px] md:text-sm font-black uppercase italic tracking-tighter leading-none">
                           Guia de Orientações
                         </h3>
-                        <p className="text-indigo-200 text-[8px] font-black uppercase mt-1">
+                        <p className="text-indigo-200 text-[7px] md:text-[8px] font-black uppercase mt-0.5">
                           Aprenda a usar o sistema agora
                         </p>
                       </div>
                     </div>
-                    <div className="bg-yellow-400 text-slate-900 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest animate-pulse">
+                    <div className="bg-yellow-400 text-slate-900 px-1.5 py-0.5 rounded-md text-[7px] md:text-[8px] font-black uppercase tracking-widest animate-pulse">
                       Novo
                     </div>
                   </button>
@@ -3766,30 +3766,30 @@ Obrigado pela preferência!`;
               </div>
 
               {/* Lado Direito: Principais Indicadores Financeiros */}
-              <div className="lg:col-span-5 flex flex-col justify-between gap-4 md:gap-5">
-                <div className="bg-white p-5 sm:p-6 rounded-[2.2rem] shadow-lg border-b-4 border-slate-100 flex flex-col justify-between flex-1 min-h-[110px] sm:min-h-[120px] transition-all duration-200">
-                  <div className="bg-[#0ea5e9] w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-white shadow-sm shadow-sky-100">
-                    <Wallet size={20} className="stroke-[2.5]" />
+              <div className="lg:col-span-5 flex flex-col justify-between gap-3 md:gap-5">
+                <div className="bg-white p-3.5 md:p-6 rounded-[1.8rem] md:rounded-[2.2rem] shadow-md md:shadow-lg border-b-4 border-slate-100 flex flex-col justify-between flex-1 min-h-[85px] md:min-h-[120px] transition-all duration-200">
+                  <div className="bg-[#0ea5e9] w-8 h-8 md:w-11 md:h-11 rounded-lg flex items-center justify-center text-white shadow-sm shadow-sky-100 shrink-0">
+                    <Wallet size={16} className="stroke-[2.5] md:size-5" />
                   </div>
-                  <div className="mt-4">
-                    <p className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest">
+                  <div className="mt-2 md:mt-4">
+                    <p className="text-[9px] md:text-xs font-black text-slate-400 uppercase tracking-widest">
                       Total Vendas
                     </p>
-                    <h4 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#0ea5e9] leading-tight mt-0.5">
+                    <h4 className="text-xl md:text-4xl font-black text-[#0ea5e9] leading-tight mt-0.5">
                       R$ {currentSummary.vendasTotal.toFixed(2)}
                     </h4>
                   </div>
                 </div>
 
-                <div className="bg-white p-5 sm:p-6 rounded-[2.2rem] shadow-lg border-b-4 border-slate-100 flex flex-col justify-between flex-1 min-h-[110px] sm:min-h-[120px] transition-all duration-200">
-                  <div className="bg-green-500 w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-white shadow-sm shadow-green-100">
-                    <TrendingUp size={20} className="stroke-[2.5]" />
+                <div className="bg-white p-3.5 md:p-6 rounded-[1.8rem] md:rounded-[2.2rem] shadow-md md:shadow-lg border-b-4 border-slate-100 flex flex-col justify-between flex-1 min-h-[85px] md:min-h-[120px] transition-all duration-200">
+                  <div className="bg-green-500 w-8 h-8 md:w-11 md:h-11 rounded-lg flex items-center justify-center text-white shadow-sm shadow-green-100 shrink-0">
+                    <TrendingUp size={16} className="stroke-[2.5] md:size-5" />
                   </div>
-                  <div className="mt-4">
-                    <p className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest">
+                  <div className="mt-2 md:mt-4">
+                    <p className="text-[9px] md:text-xs font-black text-slate-400 uppercase tracking-widest">
                       Lucro Líquido
                     </p>
-                    <h4 className="text-2xl sm:text-3xl lg:text-4xl font-black text-green-600 leading-tight mt-0.5">
+                    <h4 className="text-xl md:text-4xl font-black text-green-600 leading-tight mt-0.5">
                       R$ {currentSummary.lucro.toFixed(2)}
                     </h4>
                   </div>
@@ -3798,13 +3798,13 @@ Obrigado pela preferência!`;
             </div>
 
             {/* Menu Inferior: Módulos de Gestão Rápida */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               <button
                 onClick={() => setCurrentScreen("CLIENTS")}
-                className="bg-white p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
+                className="bg-white p-3.5 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-2 md:gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
               >
-                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-500">
-                  <Users size={24} className="sm:size-[28px]" />
+                <div className="w-10 h-10 md:w-14 md:h-14 bg-sky-50 rounded-xl md:rounded-2xl flex items-center justify-center text-sky-500">
+                  <Users size={20} className="md:size-[28px]" />
                 </div>
                 <p className="font-black text-slate-800 uppercase text-[9px] sm:text-xs tracking-widest text-center">
                   Clientes ({clients.length})
@@ -3813,10 +3813,10 @@ Obrigado pela preferência!`;
 
               <button
                 onClick={() => setCurrentScreen("PRODUCTS")}
-                className="bg-white p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
+                className="bg-white p-3.5 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-2 md:gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
               >
-                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-red-50 rounded-2xl flex items-center justify-center text-red-500">
-                  <Package size={24} className="sm:size-[28px]" />
+                <div className="w-10 h-10 md:w-14 md:h-14 bg-red-50 rounded-xl md:rounded-2xl flex items-center justify-center text-red-500">
+                  <Package size={20} className="md:size-[28px]" />
                 </div>
                 <p className="font-black text-slate-800 uppercase text-[9px] sm:text-xs tracking-widest text-center">
                   Produtos ({products.length})
@@ -3825,10 +3825,10 @@ Obrigado pela preferência!`;
 
               <button
                 onClick={() => setCurrentScreen("MONTHLY_SALES")}
-                className="bg-white p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
+                className="bg-white p-3.5 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-2 md:gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
               >
-                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-500">
-                  <ClipboardList size={24} className="sm:size-[28px]" />
+                <div className="w-10 h-10 md:w-14 md:h-14 bg-green-50 rounded-xl md:rounded-2xl flex items-center justify-center text-green-500">
+                  <ClipboardList size={20} className="sm:size-[28px]" />
                 </div>
                 <p className="font-black text-slate-800 uppercase text-[9px] sm:text-xs tracking-widest text-center">
                   Histórico
@@ -3837,10 +3837,10 @@ Obrigado pela preferência!`;
 
               <button
                 onClick={() => setCurrentScreen("REPORTS")}
-                className="bg-white p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
+                className="bg-white p-3.5 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-2 md:gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
               >
-                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500">
-                  <BarChart3 size={24} className="sm:size-[28px]" />
+                <div className="w-10 h-10 md:w-14 md:h-14 bg-amber-50 rounded-xl md:rounded-2xl flex items-center justify-center text-amber-500">
+                  <BarChart3 size={20} className="sm:size-[28px]" />
                 </div>
                 <p className="font-black text-slate-800 uppercase text-[9px] sm:text-xs tracking-widest text-center">
                   Relatório
