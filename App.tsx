@@ -3550,7 +3550,7 @@ Obrigado pela preferência!`;
       {currentScreen === "HOME" && (!isPureAdmin || isImpersonating) && (
         <>
           <Header title={businessProfile.companyName} />
-          <main className="px-6 mt-6 relative z-30 space-y-4 flex-1">
+          <main className="px-6 mt-6 relative z-30 space-y-6 flex-1 max-w-5xl mx-auto w-full">
             {isTrialActive && (
               <div className="bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-[2rem] p-5 shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2 animate-in fade-in duration-300">
                 <div className="flex items-center gap-3">
@@ -3695,52 +3695,52 @@ Obrigado pela preferência!`;
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white p-5 rounded-[2.2rem] shadow-lg border-b-4 border-slate-100 flex flex-col h-32 justify-between">
-                <div className="bg-[#0ea5e9] w-10 h-10 rounded-xl flex items-center justify-center text-white">
-                  <Wallet size={20} />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white p-5 md:p-6 rounded-[2.2rem] shadow-lg border-b-4 border-slate-100 flex flex-col h-32 md:h-36 justify-between transition-all duration-200">
+                <div className="bg-[#0ea5e9] w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center text-white">
+                  <Wallet size={20} className="md:w-6 md:h-6" />
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                  <p className="text-[9px] sm:text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest">
                     Total Vendas
                   </p>
-                  <h4 className="text-lg font-black text-[#0ea5e9]">
+                  <h4 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black text-[#0ea5e9] leading-tight">
                     R$ {currentSummary.vendasTotal.toFixed(2)}
                   </h4>
                 </div>
               </div>
-              <div className="bg-white p-5 rounded-[2.2rem] shadow-lg border-b-4 border-slate-100 flex flex-col h-32 justify-between">
-                <div className="bg-green-500 w-10 h-10 rounded-xl flex items-center justify-center text-white">
-                  <TrendingUp size={20} />
+              <div className="bg-white p-5 md:p-6 rounded-[2.2rem] shadow-lg border-b-4 border-slate-100 flex flex-col h-32 md:h-36 justify-between transition-all duration-200">
+                <div className="bg-green-500 w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center text-white">
+                  <TrendingUp size={20} className="md:w-6 md:h-6" />
                 </div>
                 <div>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                  <p className="text-[9px] sm:text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest">
                     Lucro Líquido
                   </p>
-                  <h4 className="text-lg font-black text-green-600">
+                  <h4 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black text-green-600 leading-tight">
                     R$ {currentSummary.lucro.toFixed(2)}
                   </h4>
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <button
                 onClick={() => {
                   setEditingSale(null);
                   setSaleModal(true);
                 }}
-                className="flex-1 bg-yellow-400 text-[#1e293b] py-4 px-6 rounded-[2.5rem] shadow-xl flex items-center justify-between border-b-6 border-yellow-600 active:scale-95 transition-all"
+                className="flex-1 bg-yellow-400 text-[#1e293b] py-4 md:py-5 px-6 md:px-8 rounded-[2.5rem] shadow-xl flex items-center justify-between border-b-6 border-yellow-600 active:scale-95 hover:bg-yellow-350 transition-all cursor-pointer"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-yellow-500">
-                    <Plus size={24} strokeWidth={4} />
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl flex items-center justify-center text-yellow-500 shrink-0">
+                    <Plus size={24} className="md:w-7 md:h-7" strokeWidth={4} />
                   </div>
                   <div className="text-left">
-                    <h3 className="text-lg font-black uppercase italic tracking-tighter leading-none">
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-black uppercase italic tracking-tighter leading-none">
                       Novo Pedido
                     </h3>
-                    <p className="text-amber-900/60 text-[7px] font-black uppercase mt-1">
+                    <p className="text-amber-900/60 text-[8px] sm:text-[9px] md:text-xs font-black uppercase mt-1">
                       Sincronizado na Nuvem
                     </p>
                   </div>
@@ -3750,13 +3750,13 @@ Obrigado pela preferência!`;
 
               <button
                 onClick={() => setShowDailyReportModal(true)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white py-4 px-5 rounded-[2.5rem] shadow-xl flex flex-col items-center justify-center border-b-6 border-indigo-900 active:scale-95 transition-all min-w-[76px] sm:min-w-[90px]"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white py-4 md:py-5 px-5 md:px-7 rounded-[2.5rem] shadow-xl flex flex-col items-center justify-center border-b-6 border-indigo-900 active:scale-95 transition-all min-w-[76px] sm:min-w-[90px] md:min-w-[110px] cursor-pointer"
                 title="Relatório da Venda do Dia"
               >
-                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white">
-                  <FileSpreadsheet size={22} className="text-yellow-300" />
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-xl flex items-center justify-center text-white">
+                  <FileSpreadsheet size={22} className="text-yellow-300 md:w-6 md:h-6" />
                 </div>
-                <span className="text-[7.5px] font-black uppercase tracking-widest mt-1 text-indigo-100">
+                <span className="text-[8px] sm:text-[10px] md:text-xs font-black uppercase tracking-widest mt-1 text-indigo-100">
                   Dia
                 </span>
               </button>
@@ -3765,69 +3765,69 @@ Obrigado pela preferência!`;
             {isTestMode && (
               <button
                 onClick={() => setCurrentScreen("GUIDE")}
-                className="w-full bg-gradient-to-br from-indigo-600 to-indigo-800 text-white py-4 px-6 rounded-[2rem] shadow-lg flex items-center justify-between border-b-6 border-indigo-900 active:scale-95 transition-all"
+                className="w-full bg-gradient-to-br from-indigo-600 to-indigo-800 text-white py-4 md:py-5 px-6 md:px-8 rounded-[2rem] shadow-lg flex items-center justify-between border-b-6 border-indigo-900 active:scale-95 transition-all cursor-pointer"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white">
-                    <BookOpen size={22} />
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-xl flex items-center justify-center text-white shrink-0">
+                    <BookOpen size={22} className="md:w-6 md:h-6" />
                   </div>
                   <div className="text-left">
-                    <h3 className="text-sm font-black uppercase italic tracking-tighter leading-none">
+                    <h3 className="text-sm sm:text-base md:text-lg font-black uppercase italic tracking-tighter leading-none">
                       Guia de Orientações
                     </h3>
-                    <p className="text-indigo-200 text-[7px] font-black uppercase mt-1">
+                    <p className="text-indigo-200 text-[8px] sm:text-[9px] md:text-xs font-black uppercase mt-1">
                       Aprenda a usar o sistema agora
                     </p>
                   </div>
                 </div>
-                <div className="bg-yellow-400 text-slate-900 px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest animate-pulse">
+                <div className="bg-yellow-400 text-slate-900 px-2 py-1 rounded-lg text-[8px] sm:text-[10px] md:text-xs font-black uppercase tracking-widest animate-pulse">
                   Novo
                 </div>
               </button>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <button
                 onClick={() => setCurrentScreen("CLIENTS")}
-                className="bg-white p-6 rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-2 active:scale-95 transition-all"
+                className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
               >
-                <div className="w-14 h-14 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-500">
-                  <Users size={28} />
+                <div className="w-14 h-14 md:w-16 md:h-16 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-500">
+                  <Users size={28} className="md:w-8 md:h-8" />
                 </div>
-                <p className="font-black text-slate-800 uppercase text-[10px] tracking-widest">
+                <p className="font-black text-slate-800 uppercase text-[10px] sm:text-xs md:text-sm tracking-widest">
                   Clientes ({clients.length})
                 </p>
               </button>
               <button
                 onClick={() => setCurrentScreen("PRODUCTS")}
-                className="bg-white p-6 rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-2 active:scale-95 transition-all"
+                className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
               >
-                <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center text-red-500">
-                  <Package size={28} />
+                <div className="w-14 h-14 md:w-16 md:h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-500">
+                  <Package size={28} className="md:w-8 md:h-8" />
                 </div>
-                <p className="font-black text-slate-800 uppercase text-[10px] tracking-widest">
+                <p className="font-black text-slate-800 uppercase text-[10px] sm:text-xs md:text-sm tracking-widest">
                   Produtos ({products.length})
                 </p>
               </button>
               <button
                 onClick={() => setCurrentScreen("MONTHLY_SALES")}
-                className="bg-white p-6 rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-2 active:scale-95 transition-all"
+                className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
               >
-                <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-500">
-                  <ClipboardList size={28} />
+                <div className="w-14 h-14 md:w-16 md:h-16 bg-green-50 rounded-2xl flex items-center justify-center text-green-500">
+                  <ClipboardList size={28} className="md:w-8 md:h-8" />
                 </div>
-                <p className="font-black text-slate-800 uppercase text-[10px] tracking-widest">
+                <p className="font-black text-slate-800 uppercase text-[10px] sm:text-xs md:text-sm tracking-widest">
                   Histórico
                 </p>
               </button>
               <button
                 onClick={() => setCurrentScreen("REPORTS")}
-                className="bg-white p-6 rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-2 active:scale-95 transition-all"
+                className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
               >
-                <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500">
-                  <BarChart3 size={28} />
+                <div className="w-14 h-14 md:w-16 md:h-16 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500">
+                  <BarChart3 size={28} className="md:w-8 md:h-8" />
                 </div>
-                <p className="font-black text-slate-800 uppercase text-[10px] tracking-widest">
+                <p className="font-black text-slate-800 uppercase text-[10px] sm:text-xs md:text-sm tracking-widest">
                   Relatório
                 </p>
               </button>
@@ -3839,7 +3839,7 @@ Obrigado pela preferência!`;
       {currentScreen === "SETTINGS" && (!isPureAdmin || isImpersonating) && (
         <div className="min-h-screen bg-slate-50 pb-20">
           <Header title="Configurações" showBack={!isProfileIncomplete} />
-          <div className="px-6 py-6 space-y-6">
+          <div className="max-w-4xl mx-auto w-full px-6 py-6 space-y-6">
             <SettingsForm
               profile={businessProfile}
               onLogout={handleLogout}
@@ -3874,52 +3874,54 @@ Obrigado pela preferência!`;
               </button>
             }
           />
-          <div className="px-6 pt-4">
-            <div className="relative">
-              <Search
-                className="absolute left-3 top-3 text-gray-400"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder="Buscar cliente..."
-                value={clientSearch}
-                onChange={(e) => setClientSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none"
-              />
+          <div className="max-w-4xl mx-auto w-full">
+            <div className="px-6 pt-4">
+              <div className="relative">
+                <Search
+                  className="absolute left-3 top-3 text-gray-400"
+                  size={18}
+                />
+                <input
+                  type="text"
+                  placeholder="Buscar cliente..."
+                  value={clientSearch}
+                  onChange={(e) => setClientSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none"
+                />
+              </div>
             </div>
-          </div>
-          <div className="px-6 py-6 space-y-3">
-            {clients
-              .filter((c) =>
-                c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
-                (c.phone && c.phone.includes(clientSearch))
-              )
-              .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
-              .map((c) => (
-                <div
-                  key={c.id}
-                  onClick={() =>
-                    setClientModal({ type: ModalType.EDIT, data: c })
-                  }
-                  className="bg-white p-4 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 transition-all cursor-pointer"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center text-sky-600 font-black text-xl">
-                      {c.name.charAt(0)}
+            <div className="px-6 py-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {clients
+                .filter((c) =>
+                  c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+                  (c.phone && c.phone.includes(clientSearch))
+                )
+                .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+                .map((c) => (
+                  <div
+                    key={c.id}
+                    onClick={() =>
+                      setClientModal({ type: ModalType.EDIT, data: c })
+                    }
+                    className="bg-white p-4 rounded-[2rem] shadow-md border-b-4 border-slate-100 flex items-center justify-between active:scale-95 hover:shadow-lg hover:border-blue-200 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center text-sky-600 font-black text-xl shrink-0">
+                        {c.name.charAt(0)}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-black text-slate-800 text-base uppercase italic leading-tight truncate">
+                          {c.name}
+                        </h4>
+                        <p className="text-[9px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mt-0.5 sm:mt-1 truncate">
+                          {c.phone || "Sem Telefone"}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-black text-slate-800 text-base uppercase italic leading-tight">
-                        {c.name}
-                      </h4>
-                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
-                        {c.phone}
-                      </p>
-                    </div>
+                    <ChevronRight size={20} className="text-slate-200 shrink-0" />
                   </div>
-                  <ChevronRight size={20} className="text-slate-200" />
-                </div>
-              ))}
+                ))}
+            </div>
           </div>
         </div>
       )}
@@ -3938,57 +3940,59 @@ Obrigado pela preferência!`;
               </button>
             }
           />
-          <div className="px-6 pt-4">
-            <div className="relative">
-              <Search
-                className="absolute left-3 top-3 text-gray-400"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder="Buscar..."
-                value={catalogSearch}
-                onChange={(e) => setCatalogSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none"
-              />
+          <div className="max-w-5xl mx-auto w-full">
+            <div className="px-6 pt-4">
+              <div className="relative">
+                <Search
+                  className="absolute left-3 top-3 text-gray-400"
+                  size={18}
+                />
+                <input
+                  type="text"
+                  placeholder="Buscar..."
+                  value={catalogSearch}
+                  onChange={(e) => setCatalogSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none"
+                />
+              </div>
             </div>
-          </div>
-          <div className="px-6 py-6 space-y-3">
-            {products
-              .filter((p) =>
-                p.name.toLowerCase().includes(catalogSearch.toLowerCase()),
-              )
-              .map((p) => (
-                <div
-                  key={p.id}
-                  onClick={() =>
-                    setProductModal({ type: ModalType.EDIT, data: p })
-                  }
-                  className="bg-white p-3 rounded-2xl shadow-lg flex items-center gap-3 active:scale-95 transition-all cursor-pointer border-b-4 border-slate-100"
-                >
-                  <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0">
-                    {p.imageUrl ? (
-                      <img
-                        src={p.imageUrl}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Package className="text-red-200" size={28} />
-                    )}
+            <div className="px-6 py-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {products
+                .filter((p) =>
+                  p.name.toLowerCase().includes(catalogSearch.toLowerCase()),
+                )
+                .map((p) => (
+                  <div
+                    key={p.id}
+                    onClick={() =>
+                      setProductModal({ type: ModalType.EDIT, data: p })
+                    }
+                    className="bg-white p-3 rounded-2xl shadow-lg flex items-center gap-3 active:scale-95 hover:shadow-xl hover:border-blue-200 transition-all cursor-pointer border-b-4 border-slate-100"
+                  >
+                    <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {p.imageUrl ? (
+                        <img
+                          src={p.imageUrl}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Package className="text-red-200" size={28} />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-lg text-[8px] sm:text-[10px] font-black uppercase inline-block mb-1">
+                        QTD: {p.stock}
+                      </span>
+                      <h3 className="font-black text-slate-800 text-sm sm:text-base uppercase italic leading-none truncate mb-1">
+                        {p.name}
+                      </h3>
+                      <p className="text-lg sm:text-xl font-black text-[#0ea5e9]">
+                        R$ {Number(p.price).toFixed(2)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-lg text-[8px] font-black uppercase">
-                      QTD: {p.stock}
-                    </span>
-                    <h3 className="font-black text-slate-800 text-sm uppercase italic leading-none">
-                      {p.name}
-                    </h3>
-                    <p className="text-lg font-black text-[#0ea5e9]">
-                      R$ {Number(p.price).toFixed(2)}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                ))}
+            </div>
           </div>
         </div>
       )}
@@ -3997,7 +4001,7 @@ Obrigado pela preferência!`;
         (!isPureAdmin || isImpersonating) && (
           <div className="min-h-screen">
             <Header title="Histórico" showBack />
-            <div className="px-3 sm:px-6 py-3 sm:py-6 space-y-3 sm:space-y-4">
+            <div className="max-w-5xl mx-auto w-full px-3 sm:px-6 py-3 sm:py-6 grid grid-cols-1 md:grid-cols-2 gap-4">
               {salesHistoryWithNumbers.map((sale) => {
                 const dateMatch = sale.paymentTerms?.match(/\d{2}\/\d{2}\/\d{4}/);
                 const dueDateExtracted = dateMatch ? dateMatch[0] : null;
@@ -4444,7 +4448,7 @@ Obrigado pela preferência!`;
       {currentScreen === "REPORTS" && (!isPureAdmin || isImpersonating) && (
         <div className="min-h-screen bg-[#f8fafc] pb-32">
           <Header title="Relatórios" showBack />
-          <div className="p-4 space-y-4">
+          <div className="max-w-5xl mx-auto w-full p-4 space-y-4">
             {/* Period Filter card */}
             <div className="bg-gradient-to-br from-[#0ea5e9] to-[#0284c7] text-white rounded-[2rem] p-4.5 sm:p-5 shadow-xl border-b-4 border-[#0369a1] space-y-4 relative overflow-hidden shadow-sky-100/40">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none"></div>
@@ -5021,7 +5025,7 @@ Obrigado pela preferência!`;
             </div>
           </div>
 
-          <div className="p-4 space-y-4">
+          <div className="max-w-5xl mx-auto w-full p-4 space-y-4">
             {/* Banner de Impressão Rápida / Resumo Executivo */}
             <div
               onClick={handlePrintDashboard}
@@ -5835,7 +5839,7 @@ Obrigado pela preferência!`;
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-3 pb-24">
+          <div className="flex-1 overflow-y-auto p-6 space-y-3 pb-24 max-w-5xl mx-auto w-full">
             {(currentScreen === "CLIENT_REPORT" ||
               currentScreen === "PRODUCT_REPORT") && (
               <div className="bg-blue-600 p-5 rounded-[2rem] shadow-lg border-b-4 border-blue-800 text-white flex flex-col gap-4 mb-4 animate-in fade-in slide-in-from-top-4">
