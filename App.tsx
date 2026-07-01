@@ -3291,11 +3291,11 @@ Obrigado pela preferência!`;
                     ? handleExitImpersonation()
                     : setCurrentScreen("HOME")
                 }
-                className="bg-white text-blue-600 hover:bg-yellow-400 hover:text-slate-900 border-2 border-yellow-300 px-3 py-2 rounded-2xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-1.5 font-black text-[10px] uppercase tracking-wider shrink-0"
+                className="bg-white text-blue-600 hover:bg-yellow-400 hover:text-slate-900 border-2 border-yellow-300 p-2 sm:px-3 sm:py-2 rounded-2xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-1.5 font-black text-[10px] uppercase tracking-wider shrink-0"
                 title="Voltar"
               >
                 <ArrowLeft size={18} strokeWidth={3.5} />
-                <span>Voltar</span>
+                <span className="hidden sm:inline">Voltar</span>
               </button>
             ) : (
               <div
@@ -3350,12 +3350,12 @@ Obrigado pela preferência!`;
               </p>
             </div>
           </div>
-          <div className="flex gap-2 shrink-0 items-center">
+          <div className="flex gap-1.5 sm:gap-2 shrink-0 items-center">
             {rightAction}
-            {session && !isPureAdmin && (
+            {session && !isPureAdmin && currentScreen !== "SETTINGS" && (
               <button
                 onClick={() => setCurrentScreen("SETTINGS")}
-                className={`p-2 rounded-xl transition-all border border-white/10 ${
+                className={`p-1.5 sm:p-2 rounded-xl transition-all border border-white/10 ${
                   currentScreen === "SETTINGS"
                     ? "bg-yellow-400 text-slate-900 border-2 border-yellow-300 font-bold"
                     : "bg-white/20 hover:bg-white/30 text-white"
@@ -3367,7 +3367,7 @@ Obrigado pela preferência!`;
             )}
             <button
               onClick={() => setShowDueTodayModal(true)}
-              className={`p-2 rounded-xl transition-all relative ${
+              className={`p-1.5 sm:p-2 rounded-xl transition-all relative ${
                 dueTodaySales.length > 0
                   ? "bg-amber-400 text-slate-900 border-2 border-yellow-300 animate-pulse font-bold"
                   : "bg-white/20 hover:bg-white/30 text-white border border-white/10"
@@ -3383,7 +3383,8 @@ Obrigado pela preferência!`;
             </button>
             <button
               onClick={handleLogout}
-              className="p-2 bg-red-500/20 rounded-xl border border-white/10"
+              className="p-1.5 sm:p-2 bg-red-500/20 rounded-xl border border-white/10 text-white hover:bg-red-500/30 active:scale-95 transition-all flex items-center justify-center"
+              title="Sair"
             >
               <LogOut size={18} />
             </button>
@@ -3888,14 +3889,15 @@ Obrigado pela preferência!`;
                 type="submit"
                 form="settings-form"
                 disabled={isSavingSettings}
-                className="bg-yellow-400 text-[#1e293b] border-2 border-yellow-500 hover:bg-yellow-300 font-black px-3 py-1.5 rounded-xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 text-[11px] uppercase tracking-wider cursor-pointer disabled:opacity-50 shrink-0"
+                className="bg-yellow-400 text-[#1e293b] border-2 border-yellow-500 hover:bg-yellow-300 font-black p-2 sm:px-3 sm:py-1.5 rounded-xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 text-[11px] uppercase tracking-wider cursor-pointer disabled:opacity-50 shrink-0"
+                title="Salvar Cadastro"
               >
                 {isSavingSettings ? (
                   <Loader2 className="animate-spin text-[#1e293b]" size={14} />
                 ) : (
                   <Save size={14} className="stroke-[3]" />
                 )}
-                <span>Salvar Cadastro</span>
+                <span className="hidden sm:inline">Salvar Cadastro</span>
               </button>
             }
           />
