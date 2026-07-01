@@ -306,25 +306,27 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
           <>
             <div className="p-4 bg-white border-b border-gray-100 space-y-3">
               <div className="relative">
-                <User
-                  className="absolute left-3 top-3 text-gray-400"
-                  size={18}
-                />
-                <input
-                  type="text"
-                  placeholder="-- Buscar ou Selecionar Cliente --"
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 text-gray-700 font-bold italic uppercase"
-                  value={clientSearchQuery}
-                  onChange={(e) => {
-                    setClientSearchQuery(e.target.value);
-                    setIsClientDropdownOpen(true);
-                    if (!e.target.value) setSelectedClientId("");
-                  }}
-                  onFocus={() => setIsClientDropdownOpen(true)}
-                  onBlur={() =>
-                    setTimeout(() => setIsClientDropdownOpen(false), 200)
-                  }
-                />
+                {/* Caixa de Busca de Cliente Destacada/Evidenciada */}
+                <div className="flex items-center border-2 border-[#0ea5e9] bg-sky-50/40 rounded-2xl overflow-hidden shadow-md focus-within:ring-4 focus-within:ring-sky-100 focus-within:border-sky-600 transition-all duration-200">
+                  <div className="bg-[#0ea5e9] text-white px-3.5 py-3 flex items-center justify-center shrink-0">
+                    <User size={18} className="animate-pulse" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="-- Buscar ou Selecionar Cliente --"
+                    className="w-full pl-3 pr-4 py-3 bg-transparent outline-none text-slate-800 font-black italic uppercase tracking-wider placeholder:text-slate-400/80 text-[11px] sm:text-xs"
+                    value={clientSearchQuery}
+                    onChange={(e) => {
+                      setClientSearchQuery(e.target.value);
+                      setIsClientDropdownOpen(true);
+                      if (!e.target.value) setSelectedClientId("");
+                    }}
+                    onFocus={() => setIsClientDropdownOpen(true)}
+                    onBlur={() =>
+                      setTimeout(() => setIsClientDropdownOpen(false), 200)
+                    }
+                  />
+                </div>
                 {isClientDropdownOpen && clientSearchQuery && (
                   <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl mt-1 shadow-2xl z-50 max-h-60 overflow-y-auto">
                     {filteredClients.map((c) => (
@@ -828,7 +830,7 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
               className="flex-1 bg-slate-100 text-slate-600 font-black py-4 rounded-2xl uppercase text-xs italic"
               disabled={cart.length === 0}
             >
-              Revisar Alterações
+              Salvar Pedido
             </button>
           ) : (
             <>
