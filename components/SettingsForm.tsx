@@ -307,17 +307,14 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
           </div>
 
           <div className="pt-1">
-            <a
-              href={`https://wa.me/5544999999999?text=${encodeURIComponent(
-                `Olá! Sou da empresa ${formData.companyName || 'Minha Empresa'} e gostaria de conversar sobre os planos de assinatura do OmniVenda Cloud.`
-              )}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 bg-white text-indigo-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-md active:scale-95 transition-all text-center block w-fit"
+            <button
+              type="button"
+              onClick={onManageSubscription}
+              className="inline-flex items-center gap-1.5 bg-white text-indigo-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-md active:scale-95 transition-all text-center cursor-pointer"
             >
               <Zap size={12} className="fill-indigo-600 shrink-0" />
               Solicitar Upgrade
-            </a>
+            </button>
           </div>
         </div>
       </div>
