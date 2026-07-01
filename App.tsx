@@ -3609,6 +3609,92 @@ Obrigado pela preferência!`;
               </button>
             )}
 
+            {/* Seletor de Período e Navegação de Data na Home */}
+            <div className="bg-white p-4.5 rounded-[2.2rem] shadow-lg border-b-4 border-slate-100 space-y-3">
+              <div className="flex justify-between items-center flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <Calendar size={18} className="text-[#0ea5e9]" />
+                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">
+                    Período do Painel
+                  </span>
+                </div>
+                <div className="flex gap-1 bg-slate-100 p-0.5 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setReportTab("DIARIO")}
+                    className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      reportTab === "DIARIO"
+                        ? "bg-[#0ea5e9] text-white shadow-sm"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    Dia
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReportTab("MENSAL")}
+                    className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      reportTab === "MENSAL"
+                        ? "bg-[#0ea5e9] text-white shadow-sm"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    Mês
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReportTab("ANUAL")}
+                    className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      reportTab === "ANUAL"
+                        ? "bg-[#0ea5e9] text-white shadow-sm"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    Ano
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReportTab("TOTAL")}
+                    className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      reportTab === "TOTAL"
+                        ? "bg-[#0ea5e9] text-white shadow-sm"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    Tudo
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between bg-slate-50 rounded-2xl p-2 border border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => changeDate(-1)}
+                  className="p-1.5 hover:bg-slate-200 active:scale-90 text-slate-700 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                  disabled={reportTab === "TOTAL"}
+                >
+                  <ChevronLeft size={16} className="stroke-[2.5]" />
+                </button>
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#0ea5e9] italic">
+                  {reportTab === "DIARIO"
+                    ? currentDate.toLocaleDateString("pt-BR")
+                    : reportTab === "MENSAL"
+                      ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`
+                      : reportTab === "ANUAL"
+                        ? currentDate.getFullYear()
+                        : "Todo o Período"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => changeDate(1)}
+                  className="p-1.5 hover:bg-slate-200 active:scale-90 text-slate-700 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                  disabled={reportTab === "TOTAL"}
+                >
+                  <ChevronRight size={16} className="stroke-[2.5]" />
+                </button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white p-5 rounded-[2.2rem] shadow-lg border-b-4 border-slate-100 flex flex-col h-32 justify-between">
                 <div className="bg-[#0ea5e9] w-10 h-10 rounded-xl flex items-center justify-center text-white">
