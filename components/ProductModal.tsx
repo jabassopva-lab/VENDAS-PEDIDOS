@@ -36,6 +36,26 @@ const getCategoriesForSegment = (businessType?: string): string[] => {
       return ['Detergentes', 'Desinfetantes', 'Sabões', 'Acessórios', 'Automotivo', 'Profissional', 'Outros'];
     case 'FOOD_DISTRIBUTION':
       return ['Grãos & Farináceos', 'Laticínios', 'Massas', 'Enlatados & Conservas', 'Bebidas', 'Condimentos', 'Outros'];
+    case 'FASHION_APPAREL':
+      return ['Camisetas & Polos', 'Calças & Bermudas', 'Vestidos & Saias', 'Roupas Íntimas', 'Acessórios', 'Inverno / Casacos', 'Outros'];
+    case 'FOOTWEAR':
+      return ['Tênis', 'Sapatos Sociais', 'Sandálias & Chinelos', 'Botas', 'Bolsas & Mochilas', 'Meias & Palmilhas', 'Outros'];
+    case 'ELECTRONICS_TECH':
+      return ['Smartphones & Acessórios', 'Computadores & Notebooks', 'Periféricos & Cabos', 'Áudio & Fones de Ouvido', 'Casa Inteligente', 'Wearables / Smartwatches', 'Outros'];
+    case 'TOYS_GIFTS':
+      return ['Brinquedos Educativos', 'Jogos de Tabuleiro', 'Papelaria & Material Escolar', 'Presentes Criativos', 'Embalagens & Cartões', 'Decorações Festivas', 'Outros'];
+    case 'AUTO_PARTS':
+      return ['Motor & Transmissão', 'Freios & Suspensão', 'Iluminação & Faróis', 'Acessórios Internos', 'Óleos & Lubrificantes', 'Ferramentas', 'Outros'];
+    case 'PET_SHOP':
+      return ['Rações & Alimentos', 'Petiscos & Ossos', 'Higiene & Banho', 'Brinquedos & Acessórios', 'Medicamentos / Saúde', 'Camas & Casinhas', 'Outros'];
+    case 'CONSTRUCTION':
+      return ['Ferramentas Manuais', 'Materiais Elétricos', 'Conexões & Hidráulica', 'Tintas & Acabamento', 'Iluminação / Lâmpadas', 'Decoração & Jardinagem', 'Outros'];
+    case 'PHARMACY_WELLNESS':
+      return ['Medicamentos Isentos', 'Suplementos & Vitaminas', 'Higiene Pessoal', 'Cuidados com a Pele', 'Ortopédicos & Bem-estar', 'Primeiros Socorros', 'Outros'];
+    case 'JEWELRY_ACCESSORIES':
+      return ['Anéis & Alianças', 'Colares & Pingentes', 'Brincos', 'Pulseiras & Tornozeleiras', 'Relógios', 'Óculos de Sol', 'Outros'];
+    case 'CRAFTS_ART':
+      return ['Fios, Lãs & Linhas', 'Tecidos & Retalhos', 'Pincéis & Tintas', 'Agulhas & Acessórios', 'MDF & Madeira', 'Papéis de Arte', 'Outros'];
     default:
       return ['Doces', 'Bebidas', 'Salgados', 'Mercearia', 'Limpeza', 'Outros'];
   }
@@ -53,6 +73,26 @@ const getUnitsForSegment = (businessType?: string): string[] => {
       return ['un', 'lt', 'gl', 'kg', 'pct'];
     case 'FOOD_DISTRIBUTION':
       return ['un', 'kg', 'pct', 'cx', 'fd', 'lt'];
+    case 'FASHION_APPAREL':
+      return ['un', 'par', 'kit', 'lote'];
+    case 'FOOTWEAR':
+      return ['par', 'un', 'cx'];
+    case 'ELECTRONICS_TECH':
+      return ['un', 'kit', 'metro', 'par'];
+    case 'TOYS_GIFTS':
+      return ['un', 'kit', 'pct', 'cx'];
+    case 'AUTO_PARTS':
+      return ['un', 'par', 'kit', 'lt', 'jogo'];
+    case 'PET_SHOP':
+      return ['un', 'kg', 'pct', 'cx', 'lt'];
+    case 'CONSTRUCTION':
+      return ['un', 'metro', 'kg', 'lt', 'pct', 'saco'];
+    case 'PHARMACY_WELLNESS':
+      return ['un', 'cx', 'frasco', 'g', 'ml'];
+    case 'JEWELRY_ACCESSORIES':
+      return ['un', 'par', 'grama', 'kit'];
+    case 'CRAFTS_ART':
+      return ['un', 'metro', 'rolo', 'pct', 'g', 'kit'];
     default:
       return ['un', 'kg', 'pct', 'cx', 'lt'];
   }

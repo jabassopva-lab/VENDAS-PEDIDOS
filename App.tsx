@@ -56,6 +56,7 @@ import {
   MessageSquare,
   FileSpreadsheet,
   BookOpen,
+  Save,
 } from "lucide-react";
 import {
   AreaChart,
@@ -218,6 +219,7 @@ const App: React.FC = () => {
   const [showDueTodayModal, setShowDueTodayModal] = useState(false);
   const [showDailyReportModal, setShowDailyReportModal] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [saveNotify, setSaveNotify] = useState<{ show: boolean; msg: string }>({
     show: false,
     msg: "",
@@ -3853,17 +3855,40 @@ Obrigado pela preferência!`;
 
       {currentScreen === "SETTINGS" && (!isPureAdmin || isImpersonating) && (
         <div className="min-h-screen bg-slate-50 pb-20">
-          <Header title="Configurações" showBack={!isProfileIncomplete} />
-          <div className="max-w-4xl mx-auto w-full px-6 py-6 space-y-6">
+          <Header 
+            title="Configurações" 
+            showBack={!isProfileIncomplete} 
+            rightAction={
+              <button
+                type="submit"
+                form="settings-form"
+                disabled={isSavingSettings}
+                className="bg-yellow-400 text-[#1e293b] border-2 border-yellow-500 hover:bg-yellow-300 font-black px-3 py-1.5 rounded-xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 text-[11px] uppercase tracking-wider cursor-pointer disabled:opacity-50 shrink-0"
+              >
+                {isSavingSettings ? (
+                  <Loader2 className="animate-spin text-[#1e293b]" size={14} />
+                ) : (
+                  <Save size={14} className="stroke-[3]" />
+                )}
+                <span>Salvar Cadastro</span>
+              </button>
+            }
+          />
+          <div className="max-w-4xl mx-auto w-full px-3 sm:px-6 py-2 space-y-3">
             <SettingsForm
               profile={businessProfile}
               onLogout={handleLogout}
               onManageSubscription={() => setIsPaymentModalOpen(true)}
               showBilling={businessProfile.planStatus === "ATIVO" || trialDaysRemaining <= 5}
               onSave={async (p) => {
-                const s = await db.profile.update(p);
-                setBusinessProfile(s);
-                triggerNotify("Salvo!");
+                setIsSavingSettings(true);
+                try {
+                  const s = await db.profile.update(p);
+                  setBusinessProfile(s);
+                  triggerNotify("Salvo!");
+                } finally {
+                  setIsSavingSettings(false);
+                }
               }}
             />
             <CostCorrectionTool

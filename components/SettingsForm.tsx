@@ -120,7 +120,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
   const currentLogo = convertDriveLink(formData.logoUrl || '');
 
   return (
-    <form onSubmit={handleSubmit} className="p-6 space-y-6 pb-24">
+    <form id="settings-form" onSubmit={handleSubmit} className="p-2.5 sm:p-4 space-y-3 pb-24">
       
       {/* Alerta de Cadastro Incompleto */}
       {(!formData.companyName || formData.companyName === 'MINHA EMPRESA' || !formData.phone) && (
@@ -147,18 +147,18 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
       )}
 
       {/* Business Data */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-          <Building2 size={18} className="text-blue-600" />
-          <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Dados da Empresa</h3>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-100 flex items-center gap-2">
+          <Building2 size={14} className="text-blue-600" />
+          <h3 className="font-bold text-gray-800 text-[11px] sm:text-xs uppercase tracking-wider">Dados da Empresa</h3>
         </div>
-        <div className="p-5 space-y-4">
+        <div className="p-3 space-y-2">
           <div>
             <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
               Nome Fantasia / Razão Social <span className="text-red-500">*</span>
             </label>
             <input 
-              className={`w-full mt-1 px-4 py-3 bg-gray-50 border rounded-xl focus:border-blue-500 outline-none transition-all font-bold text-gray-800 ${!formData.companyName || formData.companyName === 'MINHA EMPRESA' ? 'border-red-200' : 'border-gray-200'}`}
+              className={`w-full mt-0.5 px-4 py-2 bg-gray-50 border rounded-xl focus:border-blue-500 outline-none transition-all font-bold text-gray-800 ${!formData.companyName || formData.companyName === 'MINHA EMPRESA' ? 'border-red-200' : 'border-gray-200'}`}
               value={formData.companyName || ''}
               onChange={e => setFormData({...formData, companyName: e.target.value})}
               placeholder="Ex: Minha Loja de Doces"
@@ -167,16 +167,16 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
           <div>
             <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">CNPJ / CPF</label>
             <input 
-              className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all"
+              className="w-full mt-0.5 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all"
               value={formData.document || ''}
               onChange={e => setFormData({...formData, document: e.target.value})}
               placeholder="00.000.000/0001-00"
             />
           </div>
           <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Segmento do SaaS</label>
+            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Segmentos ou Categorias de Produtos</label>
             <select 
-              className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all font-bold text-slate-700 appearance-none"
+              className="w-full mt-0.5 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all font-bold text-slate-700 appearance-none"
               value={formData.businessType || 'GERAL'}
               onChange={e => setFormData({...formData, businessType: e.target.value as any})}
             >
@@ -186,25 +186,35 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
               <option value="COSMETIC_PERFUME">Cosméticos e Perfumaria</option>
               <option value="CLEANING_PRODUCTS">Produtos de Limpeza</option>
               <option value="FOOD_DISTRIBUTION">Distribuição Alimentícia</option>
+              <option value="FASHION_APPAREL">Moda / Vestuário & Acessórios</option>
+              <option value="FOOTWEAR">Calçados e Bolsas</option>
+              <option value="ELECTRONICS_TECH">Eletrônicos e Tecnologia</option>
+              <option value="TOYS_GIFTS">Brinquedos, Papelaria e Presentes</option>
+              <option value="AUTO_PARTS">Autopeças, Mecânica e Moto</option>
+              <option value="PET_SHOP">Pet Shop e Agropecuária</option>
+              <option value="CONSTRUCTION">Material de Construção & Decoração</option>
+              <option value="PHARMACY_WELLNESS">Farmácia, Suplementos e Bem-estar</option>
+              <option value="JEWELRY_ACCESSORIES">Joalheria, Semijoias e Relógios</option>
+              <option value="CRAFTS_ART">Artesanato, Costura e Pintura</option>
             </select>
           </div>
         </div>
       </div>
 
       {/* Contact & Address */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-          <Smartphone size={18} className="text-green-600" />
-          <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Contato e Localização</h3>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-100 flex items-center gap-2">
+          <Smartphone size={14} className="text-green-600" />
+          <h3 className="font-bold text-gray-800 text-[11px] sm:text-xs uppercase tracking-wider">Contato e Localização</h3>
         </div>
-        <div className="p-5 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="p-3 space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
                 WhatsApp <span className="text-red-500">*</span>
               </label>
               <input 
-                className={`w-full mt-1 px-4 py-3 bg-gray-50 border rounded-xl focus:border-blue-500 outline-none ${!formData.phone ? 'border-red-200' : 'border-gray-200'}`}
+                className={`w-full mt-0.5 px-4 py-2 bg-gray-50 border rounded-xl focus:border-blue-500 outline-none ${!formData.phone ? 'border-red-200' : 'border-gray-200'}`}
                 value={formData.phone || ''}
                 onChange={e => setFormData({...formData, phone: e.target.value})}
               />
@@ -212,7 +222,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
             <div>
               <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">E-mail</label>
               <input 
-                className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none"
+                className="w-full mt-0.5 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none"
                 value={formData.email || ''}
                 onChange={e => setFormData({...formData, email: e.target.value})}
               />
@@ -222,7 +232,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
             <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Endereço Completo</label>
             <textarea 
               rows={2}
-              className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none resize-none"
+              className="w-full mt-0.5 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none resize-none"
               value={formData.address || ''}
               onChange={e => setFormData({...formData, address: e.target.value})}
             />
@@ -231,16 +241,16 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
       </div>
 
       {/* Payment Keys */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-          <CreditCard size={18} className="text-purple-600" />
-          <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Cobrança e Recebimento</h3>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-100 flex items-center gap-2">
+          <CreditCard size={14} className="text-purple-600" />
+          <h3 className="font-bold text-gray-800 text-[11px] sm:text-xs uppercase tracking-wider">Cobrança e Recebimento</h3>
         </div>
-        <div className="p-5">
+        <div className="p-3">
           <div>
             <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Chave Pix (Para Comprovantes)</label>
             <input 
-              className="w-full mt-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none font-mono"
+              className="w-full mt-0.5 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none font-mono"
               value={formData.pixKey || ''}
               onChange={e => setFormData({...formData, pixKey: e.target.value})}
               placeholder="CNPJ, E-mail ou Celular"
@@ -250,20 +260,20 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
       </div>
 
       {/* Plan Status Card */}
-      <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-3xl p-6 text-white shadow-lg shadow-blue-200 relative overflow-hidden">
-        <Zap className="absolute -right-4 -bottom-4 text-white/10 w-32 h-32" />
-        <div className="relative z-10 space-y-4">
+      <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-3xl p-4 sm:p-5 text-white shadow-lg shadow-blue-200 relative overflow-hidden">
+        <Zap className="absolute -right-4 -bottom-4 text-white/10 w-24 h-24" />
+        <div className="relative z-10 space-y-3">
           <div className="flex justify-between items-start">
             <span className="bg-white/20 px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase">
               Assinatura SaaS
             </span>
-            <ShieldCheck size={24} className="text-blue-200" />
+            <ShieldCheck size={20} className="text-blue-200" />
           </div>
           
           <div>
-            <h3 className="text-2xl font-black mb-1 flex items-center gap-2">
+            <h3 className="text-xl font-black mb-1 flex items-center gap-2">
               PLANO {(formData.planType || 'START').toUpperCase()}
-              <span className={`text-[10px] px-2.5 py-1 rounded-md font-black uppercase ${
+              <span className={`text-[9px] px-2 py-0.5 rounded-md font-black uppercase ${
                 (formData.planStatus || 'ATIVO').toUpperCase() === 'ATIVO' 
                   ? 'bg-emerald-500 text-white' 
                   : 'bg-amber-500 text-white animate-pulse'
@@ -271,16 +281,16 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
                 {formData.planStatus || 'ATIVO'}
               </span>
             </h3>
-            <p className="text-blue-100 text-sm opacity-85 font-semibold">
+            <p className="text-blue-100 text-xs opacity-85 font-semibold">
               Próxima renovação: {formData.nextBilling && formData.nextBilling !== '-' ? formData.nextBilling : 'Vencimento não configurado'}
             </p>
           </div>
 
-          <div className="border-t border-white/15 pt-3 space-y-1">
-            <p className="text-[10px] uppercase font-black text-blue-200 tracking-wider">
+          <div className="border-t border-white/15 pt-2 space-y-0.5">
+            <p className="text-[9px] uppercase font-black text-blue-200 tracking-wider">
               Limites do seu Plano:
             </p>
-            <p className="text-xs font-bold text-white leading-relaxed">
+            <p className="text-[11px] font-bold text-white leading-tight">
               {(() => {
                 const t = (formData.planType || 'START').toUpperCase();
                 const saved = localStorage.getItem("omnivenda_plan_configs");
@@ -306,13 +316,13 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
             </p>
           </div>
 
-          <div className="pt-1">
+          <div className="pt-0.5">
             <button
               type="button"
               onClick={onManageSubscription}
-              className="inline-flex items-center gap-1.5 bg-white text-indigo-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-md active:scale-95 transition-all text-center cursor-pointer"
+              className="inline-flex items-center gap-1.5 bg-white text-indigo-700 hover:bg-slate-50 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-md active:scale-95 transition-all text-center cursor-pointer"
             >
-              <Zap size={12} className="fill-indigo-600 shrink-0" />
+              <Zap size={10} className="fill-indigo-600 shrink-0" />
               Solicitar Upgrade
             </button>
           </div>
@@ -320,17 +330,17 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
       </div>
 
       {/* Identidade Visual */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-          <ImageIcon size={18} className="text-blue-600" />
-          <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Identidade Visual</h3>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-100 flex items-center gap-2">
+          <ImageIcon size={14} className="text-blue-600" />
+          <h3 className="font-bold text-gray-800 text-[11px] sm:text-xs uppercase tracking-wider">Identidade Visual</h3>
         </div>
-        <div className="p-5 space-y-4">
-           <div className="flex flex-col items-center gap-6">
-              <div className="w-48 h-48 bg-gray-50 rounded-[2.5rem] border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden relative shadow-inner group">
+        <div className="p-3 space-y-2">
+           <div className="flex flex-col items-center gap-4 md:flex-row">
+              <div className="w-32 h-32 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden relative shadow-inner group shrink-0">
                   {isLoadingLogo && !logoPreviewError && (
                     <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
-                      <Loader2 className="animate-spin text-blue-500" size={32} />
+                      <Loader2 className="animate-spin text-blue-500" size={24} />
                     </div>
                   )}
                   
@@ -351,18 +361,18 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
                         onClick={handleRemoveLogo}
                         className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <span className="bg-white text-red-600 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest">Remover Logo</span>
+                        <span className="bg-white text-red-600 px-3 py-1 rounded-xl text-[8px] font-black uppercase tracking-widest">Remover Logo</span>
                       </button>
                     </>
                   ) : (
                     <div className="flex flex-col items-center justify-center text-gray-300">
-                      <ImageOff size={48} />
-                      <span className="text-[10px] mt-2 font-black uppercase italic">Sem Logo</span>
+                      <ImageOff size={36} />
+                      <span className="text-[10px] mt-1 font-black uppercase italic">Sem Logo</span>
                     </div>
                   )}
               </div>
-              <div className="flex-1 w-full space-y-4">
-                <div className="flex flex-col gap-2">
+              <div className="flex-1 w-full space-y-3">
+                <div className="flex flex-col gap-1">
                   <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Subir Logo do Dispositivo</label>
                   <label className="relative cursor-pointer group">
                     <input 
@@ -372,18 +382,18 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
                       onChange={handleFileUpload}
                       disabled={isUploading}
                     />
-                    <div className="flex items-center justify-center gap-2 w-full py-4 bg-blue-50 border-2 border-dashed border-blue-200 rounded-2xl text-blue-600 font-black text-[10px] uppercase tracking-widest group-hover:bg-blue-100 group-hover:border-blue-300 transition-all">
+                    <div className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-50 border-2 border-dashed border-blue-200 rounded-xl text-blue-600 font-black text-[10px] uppercase tracking-widest group-hover:bg-blue-100 group-hover:border-blue-300 transition-all">
                       {isUploading ? (
-                        <Loader2 className="animate-spin" size={16} />
+                        <Loader2 className="animate-spin" size={14} />
                       ) : (
-                        <Upload size={16} />
+                        <Upload size={14} />
                       )}
                       {isUploading ? 'SUBINDO...' : 'ESCOLHER ARQUIVO'}
                     </div>
                   </label>
                 </div>
 
-                <div className="relative flex items-center gap-2 py-2">
+                <div className="relative flex items-center gap-2 py-1">
                   <div className="h-[1px] bg-gray-100 flex-1"></div>
                   <span className="text-[8px] font-black text-gray-300 uppercase">Ou use um link</span>
                   <div className="h-[1px] bg-gray-100 flex-1"></div>
@@ -392,9 +402,9 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
                 <div>
                   <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">URL da Logo (Google Drive ou Direto)</label>
                   <div className="relative">
-                    <LinkIcon className="absolute left-3 top-3.5 text-gray-400" size={16} />
+                    <LinkIcon className="absolute left-3 top-2.5 text-gray-400" size={14} />
                     <input 
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all text-xs font-mono"
+                      className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all text-xs font-mono"
                       value={formData.logoUrl || ''}
                       onChange={e => setFormData({...formData, logoUrl: e.target.value})}
                       placeholder="Cole aqui o link de compartilhamento"
@@ -413,7 +423,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
                     <span className="text-[9px] font-bold text-red-600 uppercase italic">Verifique o acesso do link</span>
                   </div>
                 )}
-                <p className="text-[9px] text-gray-400 leading-tight px-1 italic text-center md:text-left mt-2">
+                <p className="text-[9px] text-gray-400 leading-tight px-1 italic text-center md:text-left">
                   {"* No Drive: botão direito > Compartilhar > Qualquer pessoa com o link."}
                 </p>
               </div>
@@ -423,13 +433,13 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
 
       {/* Assinatura & Cobrança */}
       {showBilling && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <CreditCard size={18} className="text-sky-500" />
-              <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Assinatura & Cobrança</h3>
+              <CreditCard size={14} className="text-sky-500" />
+              <h3 className="font-bold text-gray-800 text-[11px] sm:text-xs uppercase tracking-wider">Assinatura & Cobrança</h3>
             </div>
-            <span className={`px-2.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider ${
+            <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider ${
               (formData.planStatus || "TESTE").toUpperCase() === "ATIVO"
                 ? "bg-emerald-50 text-emerald-600 border border-emerald-100 animate-pulse"
                 : "bg-amber-50 text-amber-600 border border-amber-100"
@@ -437,13 +447,13 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
               {(formData.planStatus || "TESTE").toUpperCase() === "ATIVO" ? "Assinatura Ativa" : "Período de Testes"}
             </span>
           </div>
-          <div className="p-5 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+          <div className="p-3 space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100">
                 <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest">Plano do SaaS</p>
                 <p className="text-xs font-black text-slate-700 uppercase mt-0.5">Essential (R$ 19,90)</p>
               </div>
-              <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+              <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100">
                 <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest">Vencimento</p>
                 <p className="text-xs font-black text-slate-700 uppercase mt-0.5">
                   {formData.nextBilling && formData.nextBilling !== "-" ? formData.nextBilling : "Expirado"}
@@ -454,7 +464,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
             <button
               type="button"
               onClick={onManageSubscription}
-              className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white rounded-xl shadow-md text-xs font-black uppercase tracking-widest cursor-pointer transition-all active:scale-95"
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white rounded-xl shadow-md text-xs font-black uppercase tracking-widest cursor-pointer transition-all active:scale-95"
             >
               <Zap size={14} className="animate-pulse" />
               {(formData.planStatus || "TESTE").toUpperCase() === "ATIVO" ? "Estender Assinatura (R$ 19,90)" : "Ativar Assinatura (R$ 19,90)"}
@@ -464,16 +474,16 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
       )}
 
       {/* Segurança e Privacidade / Exclusão de Conta */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-          <ShieldCheck size={18} className="text-red-500" />
-          <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Segurança & Privacidade</h3>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-100 flex items-center gap-2">
+          <ShieldCheck size={14} className="text-red-500" />
+          <h3 className="font-bold text-gray-800 text-[11px] sm:text-xs uppercase tracking-wider">Segurança & Privacidade</h3>
         </div>
-        <div className="p-5 space-y-4">
-          <div className="flex gap-3 text-gray-500 text-xs">
-            <div className="space-y-1">
+        <div className="p-3 space-y-2">
+          <div className="flex gap-2 text-gray-500 text-xs">
+            <div className="space-y-0.5">
               <p className="font-semibold text-slate-700">De acordo com a LGPD e as diretrizes do Google Play:</p>
-              <p className="text-slate-500 text-[11px] leading-relaxed">
+              <p className="text-slate-500 text-[10px] leading-snug">
                 Você pode visualizar a nossa política de privacidade ou solicitar a exclusão de sua conta, de seu perfil de distribuidora e de todos os dados salvos a qualquer momento.
               </p>
             </div>
@@ -483,9 +493,9 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
             onClick={() => {
               window.location.href = "/?page=politica-privacidade";
             }}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-700 rounded-xl border border-slate-200 text-xs font-black uppercase tracking-widest cursor-pointer transition-all"
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-700 rounded-xl border border-slate-200 text-xs font-black uppercase tracking-widest cursor-pointer transition-all"
           >
-            <Shield size={16} className="text-blue-500" />
+            <Shield size={14} className="text-blue-500" />
             Visualizar Política de Privacidade
           </button>
           <button
@@ -493,9 +503,9 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
             onClick={() => {
               window.location.href = "/?page=excluir-conta";
             }}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 hover:bg-red-100 active:scale-95 text-red-650 rounded-xl border border-red-100 text-xs font-black uppercase tracking-widest cursor-pointer transition-all"
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-50 hover:bg-red-100 active:scale-95 text-red-650 rounded-xl border border-red-100 text-xs font-black uppercase tracking-widest cursor-pointer transition-all"
           >
-            <ShieldCheck size={16} className="text-red-500" />
+            <ShieldCheck size={14} className="text-red-500" />
             Solicitar Exclusão da Conta e Dados
           </button>
         </div>
@@ -504,12 +514,12 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
       <button 
         type="submit"
         disabled={isSaving}
-        className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isSaving ? (
-          <Loader2 className="animate-spin" size={20} />
+          <Loader2 className="animate-spin" size={18} />
         ) : (
-          <Save size={20} />
+          <Save size={18} />
         )}
         {isSaving ? 'SALVANDO...' : 'SALVAR CONFIGURAÇÕES'}
       </button>

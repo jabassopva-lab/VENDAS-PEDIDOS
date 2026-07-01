@@ -45,7 +45,7 @@ export interface BusinessProfile {
   nextBilling: string;
   pixKey?: string;
   role?: 'USER' | 'ADMIN' | 'DEVELOPER';
-  businessType?: 'COCORA' | 'ACAI' | 'GERAL' | 'COSMETIC_PERFUME' | 'CLEANING_PRODUCTS' | 'FOOD_DISTRIBUTION';
+  businessType?: 'COCORA' | 'ACAI' | 'GERAL' | 'COSMETIC_PERFUME' | 'CLEANING_PRODUCTS' | 'FOOD_DISTRIBUTION' | 'FASHION_APPAREL' | 'FOOTWEAR' | 'ELECTRONICS_TECH' | 'TOYS_GIFTS' | 'AUTO_PARTS' | 'PET_SHOP' | 'CONSTRUCTION' | 'PHARMACY_WELLNESS' | 'JEWELRY_ACCESSORIES' | 'CRAFTS_ART';
 }
 
 export interface BusinessStats {
