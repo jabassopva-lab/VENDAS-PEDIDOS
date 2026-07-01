@@ -3609,225 +3609,240 @@ Obrigado pela preferência!`;
               </button>
             )}
 
-            {/* Seletor de Período e Navegação de Data na Home */}
-            <div className="bg-white p-4.5 rounded-[2.2rem] shadow-lg border-b-4 border-slate-100 space-y-3">
-              <div className="flex justify-between items-center flex-wrap gap-2">
-                <div className="flex items-center gap-2">
-                  <Calendar size={18} className="text-[#0ea5e9]" />
-                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">
-                    Período do Painel
-                  </span>
-                </div>
-                <div className="flex gap-1 bg-slate-100 p-0.5 rounded-xl">
-                  <button
-                    type="button"
-                    onClick={() => setReportTab("DIARIO")}
-                    className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                      reportTab === "DIARIO"
-                        ? "bg-[#0ea5e9] text-white shadow-sm"
-                        : "text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    Dia
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setReportTab("MENSAL")}
-                    className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                      reportTab === "MENSAL"
-                        ? "bg-[#0ea5e9] text-white shadow-sm"
-                        : "text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    Mês
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setReportTab("ANUAL")}
-                    className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                      reportTab === "ANUAL"
-                        ? "bg-[#0ea5e9] text-white shadow-sm"
-                        : "text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    Ano
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setReportTab("TOTAL")}
-                    className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                      reportTab === "TOTAL"
-                        ? "bg-[#0ea5e9] text-white shadow-sm"
-                        : "text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    Tudo
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between bg-slate-50 rounded-2xl p-2 border border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => changeDate(-1)}
-                  className="p-1.5 hover:bg-slate-200 active:scale-90 text-slate-700 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
-                  disabled={reportTab === "TOTAL"}
-                >
-                  <ChevronLeft size={16} className="stroke-[2.5]" />
-                </button>
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#0ea5e9] italic">
-                  {reportTab === "DIARIO"
-                    ? currentDate.toLocaleDateString("pt-BR")
-                    : reportTab === "MENSAL"
-                      ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`
-                      : reportTab === "ANUAL"
-                        ? currentDate.getFullYear()
-                        : "Todo o Período"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => changeDate(1)}
-                  className="p-1.5 hover:bg-slate-200 active:scale-90 text-slate-700 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
-                  disabled={reportTab === "TOTAL"}
-                >
-                  <ChevronRight size={16} className="stroke-[2.5]" />
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white p-5 md:p-6 rounded-[2.2rem] shadow-lg border-b-4 border-slate-100 flex flex-col h-32 md:h-36 justify-between transition-all duration-200">
-                <div className="bg-[#0ea5e9] w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center text-white">
-                  <Wallet size={20} className="md:w-6 md:h-6" />
-                </div>
-                <div>
-                  <p className="text-[9px] sm:text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest">
-                    Total Vendas
-                  </p>
-                  <h4 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black text-[#0ea5e9] leading-tight">
-                    R$ {currentSummary.vendasTotal.toFixed(2)}
-                  </h4>
-                </div>
-              </div>
-              <div className="bg-white p-5 md:p-6 rounded-[2.2rem] shadow-lg border-b-4 border-slate-100 flex flex-col h-32 md:h-36 justify-between transition-all duration-200">
-                <div className="bg-green-500 w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center text-white">
-                  <TrendingUp size={20} className="md:w-6 md:h-6" />
-                </div>
-                <div>
-                  <p className="text-[9px] sm:text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest">
-                    Lucro Líquido
-                  </p>
-                  <h4 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black text-green-600 leading-tight">
-                    R$ {currentSummary.lucro.toFixed(2)}
-                  </h4>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => {
-                  setEditingSale(null);
-                  setSaleModal(true);
-                }}
-                className="flex-1 bg-yellow-400 text-[#1e293b] py-4 md:py-5 px-6 md:px-8 rounded-[2.5rem] shadow-xl flex items-center justify-between border-b-6 border-yellow-600 active:scale-95 hover:bg-yellow-350 transition-all cursor-pointer"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl flex items-center justify-center text-yellow-500 shrink-0">
-                    <Plus size={24} className="md:w-7 md:h-7" strokeWidth={4} />
+            {/* Layout em Grid Responsivo para Desktop (Evita barra de rolagem e preenche melhor o espaço) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6 items-stretch">
+              {/* Lado Esquerdo: Seletor de Período + Novo Pedido */}
+              <div className="lg:col-span-7 flex flex-col justify-between gap-4 md:gap-5">
+                
+                {/* Seletor de Período e Navegação de Data na Home com Fontes Aumentadas */}
+                <div className="bg-white p-5 rounded-[2.2rem] shadow-lg border-b-4 border-slate-100 flex flex-col justify-between flex-1 gap-4">
+                  <div className="flex justify-between items-center flex-wrap gap-3">
+                    <div className="flex items-center gap-2">
+                      <Calendar size={22} className="text-[#0ea5e9]" />
+                      <span className="text-[12px] sm:text-sm md:text-base font-black uppercase tracking-wider text-slate-600">
+                        Período do Painel
+                      </span>
+                    </div>
+                    <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => setReportTab("DIARIO")}
+                        className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs md:text-sm lg:text-base font-black uppercase tracking-wider transition-all cursor-pointer ${
+                          reportTab === "DIARIO"
+                            ? "bg-[#0ea5e9] text-white shadow-md scale-105"
+                            : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        Dia
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setReportTab("MENSAL")}
+                        className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs md:text-sm lg:text-base font-black uppercase tracking-wider transition-all cursor-pointer ${
+                          reportTab === "MENSAL"
+                            ? "bg-[#0ea5e9] text-white shadow-md scale-105"
+                            : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        Mês
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setReportTab("ANUAL")}
+                        className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs md:text-sm lg:text-base font-black uppercase tracking-wider transition-all cursor-pointer ${
+                          reportTab === "ANUAL"
+                            ? "bg-[#0ea5e9] text-white shadow-md scale-105"
+                            : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        Ano
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setReportTab("TOTAL")}
+                        className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs md:text-sm lg:text-base font-black uppercase tracking-wider transition-all cursor-pointer ${
+                          reportTab === "TOTAL"
+                            ? "bg-[#0ea5e9] text-white shadow-md scale-105"
+                            : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        Tudo
+                      </button>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <h3 className="text-lg sm:text-xl md:text-2xl font-black uppercase italic tracking-tighter leading-none">
-                      Novo Pedido
-                    </h3>
-                    <p className="text-amber-900/60 text-[8px] sm:text-[9px] md:text-xs font-black uppercase mt-1">
-                      Sincronizado na Nuvem
+
+                  <div className="flex items-center justify-between bg-slate-50 rounded-2xl p-2.5 border border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => changeDate(-1)}
+                      className="p-2 hover:bg-slate-200 active:scale-90 text-slate-700 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                      disabled={reportTab === "TOTAL"}
+                    >
+                      <ChevronLeft size={20} className="stroke-[3]" />
+                    </button>
+                    <span className="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl font-black uppercase tracking-widest text-[#0ea5e9] italic">
+                      {reportTab === "DIARIO"
+                        ? currentDate.toLocaleDateString("pt-BR")
+                        : reportTab === "MENSAL"
+                          ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`
+                          : reportTab === "ANUAL"
+                            ? currentDate.getFullYear()
+                            : "Todo o Período"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => changeDate(1)}
+                      className="p-2 hover:bg-slate-200 active:scale-90 text-slate-700 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                      disabled={reportTab === "TOTAL"}
+                    >
+                      <ChevronRight size={20} className="stroke-[3]" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Botões de Ação Principais: Novo Pedido e Dia */}
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => {
+                      setEditingSale(null);
+                      setSaleModal(true);
+                    }}
+                    className="flex-1 bg-yellow-400 text-[#1e293b] py-3.5 sm:py-4 px-6 sm:px-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-xl flex items-center justify-between border-b-6 border-yellow-600 active:scale-95 hover:bg-yellow-350 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-yellow-500 shrink-0 shadow-sm">
+                        <Plus size={24} strokeWidth={4} />
+                      </div>
+                      <div className="text-left">
+                        <h3 className="text-base sm:text-lg md:text-xl font-black uppercase italic tracking-tighter leading-none">
+                          Novo Pedido
+                        </h3>
+                        <p className="text-amber-900/60 text-[8px] sm:text-[9px] md:text-xs font-black uppercase mt-1">
+                          Sincronizado na Nuvem
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight size={22} className="text-amber-900/20" />
+                  </button>
+
+                  <button
+                    onClick={() => setShowDailyReportModal(true)}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 sm:py-4 px-5 sm:px-7 rounded-[2rem] sm:rounded-[2.5rem] shadow-xl flex flex-col items-center justify-center border-b-6 border-indigo-900 active:scale-95 transition-all min-w-[76px] sm:min-w-[90px] md:min-w-[100px] cursor-pointer"
+                    title="Relatório da Venda do Dia"
+                  >
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/20 rounded-xl flex items-center justify-center text-white">
+                      <FileSpreadsheet size={20} className="text-yellow-300" />
+                    </div>
+                    <span className="text-[8px] sm:text-[10px] md:text-xs font-black uppercase tracking-widest mt-1 text-indigo-100">
+                      Dia
+                    </span>
+                  </button>
+                </div>
+
+                {/* Guia de Orientações se ativo */}
+                {isTestMode && (
+                  <button
+                    onClick={() => setCurrentScreen("GUIDE")}
+                    className="w-full bg-gradient-to-br from-indigo-600 to-indigo-800 text-white py-3 px-6 rounded-[1.8rem] shadow-lg flex items-center justify-between border-b-4 border-indigo-900 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-white shrink-0">
+                        <BookOpen size={20} />
+                      </div>
+                      <div className="text-left">
+                        <h3 className="text-xs sm:text-sm font-black uppercase italic tracking-tighter leading-none">
+                          Guia de Orientações
+                        </h3>
+                        <p className="text-indigo-200 text-[8px] font-black uppercase mt-1">
+                          Aprenda a usar o sistema agora
+                        </p>
+                      </div>
+                    </div>
+                    <div className="bg-yellow-400 text-slate-900 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest animate-pulse">
+                      Novo
+                    </div>
+                  </button>
+                )}
+              </div>
+
+              {/* Lado Direito: Principais Indicadores Financeiros */}
+              <div className="lg:col-span-5 flex flex-col justify-between gap-4 md:gap-5">
+                <div className="bg-white p-5 sm:p-6 rounded-[2.2rem] shadow-lg border-b-4 border-slate-100 flex flex-col justify-between flex-1 min-h-[110px] sm:min-h-[120px] transition-all duration-200">
+                  <div className="bg-[#0ea5e9] w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-white shadow-sm shadow-sky-100">
+                    <Wallet size={20} className="stroke-[2.5]" />
+                  </div>
+                  <div className="mt-4">
+                    <p className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest">
+                      Total Vendas
                     </p>
+                    <h4 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#0ea5e9] leading-tight mt-0.5">
+                      R$ {currentSummary.vendasTotal.toFixed(2)}
+                    </h4>
                   </div>
                 </div>
-                <ChevronRight size={24} className="text-amber-900/20" />
-              </button>
 
-              <button
-                onClick={() => setShowDailyReportModal(true)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white py-4 md:py-5 px-5 md:px-7 rounded-[2.5rem] shadow-xl flex flex-col items-center justify-center border-b-6 border-indigo-900 active:scale-95 transition-all min-w-[76px] sm:min-w-[90px] md:min-w-[110px] cursor-pointer"
-                title="Relatório da Venda do Dia"
-              >
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-xl flex items-center justify-center text-white">
-                  <FileSpreadsheet size={22} className="text-yellow-300 md:w-6 md:h-6" />
+                <div className="bg-white p-5 sm:p-6 rounded-[2.2rem] shadow-lg border-b-4 border-slate-100 flex flex-col justify-between flex-1 min-h-[110px] sm:min-h-[120px] transition-all duration-200">
+                  <div className="bg-green-500 w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-white shadow-sm shadow-green-100">
+                    <TrendingUp size={20} className="stroke-[2.5]" />
+                  </div>
+                  <div className="mt-4">
+                    <p className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest">
+                      Lucro Líquido
+                    </p>
+                    <h4 className="text-2xl sm:text-3xl lg:text-4xl font-black text-green-600 leading-tight mt-0.5">
+                      R$ {currentSummary.lucro.toFixed(2)}
+                    </h4>
+                  </div>
                 </div>
-                <span className="text-[8px] sm:text-[10px] md:text-xs font-black uppercase tracking-widest mt-1 text-indigo-100">
-                  Dia
-                </span>
-              </button>
+              </div>
             </div>
 
-            {isTestMode && (
-              <button
-                onClick={() => setCurrentScreen("GUIDE")}
-                className="w-full bg-gradient-to-br from-indigo-600 to-indigo-800 text-white py-4 md:py-5 px-6 md:px-8 rounded-[2rem] shadow-lg flex items-center justify-between border-b-6 border-indigo-900 active:scale-95 transition-all cursor-pointer"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-xl flex items-center justify-center text-white shrink-0">
-                    <BookOpen size={22} className="md:w-6 md:h-6" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="text-sm sm:text-base md:text-lg font-black uppercase italic tracking-tighter leading-none">
-                      Guia de Orientações
-                    </h3>
-                    <p className="text-indigo-200 text-[8px] sm:text-[9px] md:text-xs font-black uppercase mt-1">
-                      Aprenda a usar o sistema agora
-                    </p>
-                  </div>
-                </div>
-                <div className="bg-yellow-400 text-slate-900 px-2 py-1 rounded-lg text-[8px] sm:text-[10px] md:text-xs font-black uppercase tracking-widest animate-pulse">
-                  Novo
-                </div>
-              </button>
-            )}
-
+            {/* Menu Inferior: Módulos de Gestão Rápida */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <button
                 onClick={() => setCurrentScreen("CLIENTS")}
-                className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
+                className="bg-white p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
               >
-                <div className="w-14 h-14 md:w-16 md:h-16 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-500">
-                  <Users size={28} className="md:w-8 md:h-8" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-500">
+                  <Users size={24} className="sm:size-[28px]" />
                 </div>
-                <p className="font-black text-slate-800 uppercase text-[10px] sm:text-xs md:text-sm tracking-widest">
+                <p className="font-black text-slate-800 uppercase text-[9px] sm:text-xs tracking-widest text-center">
                   Clientes ({clients.length})
                 </p>
               </button>
+
               <button
                 onClick={() => setCurrentScreen("PRODUCTS")}
-                className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
+                className="bg-white p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
               >
-                <div className="w-14 h-14 md:w-16 md:h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-500">
-                  <Package size={28} className="md:w-8 md:h-8" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-red-50 rounded-2xl flex items-center justify-center text-red-500">
+                  <Package size={24} className="sm:size-[28px]" />
                 </div>
-                <p className="font-black text-slate-800 uppercase text-[10px] sm:text-xs md:text-sm tracking-widest">
+                <p className="font-black text-slate-800 uppercase text-[9px] sm:text-xs tracking-widest text-center">
                   Produtos ({products.length})
                 </p>
               </button>
+
               <button
                 onClick={() => setCurrentScreen("MONTHLY_SALES")}
-                className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
+                className="bg-white p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
               >
-                <div className="w-14 h-14 md:w-16 md:h-16 bg-green-50 rounded-2xl flex items-center justify-center text-green-500">
-                  <ClipboardList size={28} className="md:w-8 md:h-8" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-green-50 rounded-2xl flex items-center justify-center text-green-500">
+                  <ClipboardList size={24} className="sm:size-[28px]" />
                 </div>
-                <p className="font-black text-slate-800 uppercase text-[10px] sm:text-xs md:text-sm tracking-widest">
+                <p className="font-black text-slate-800 uppercase text-[9px] sm:text-xs tracking-widest text-center">
                   Histórico
                 </p>
               </button>
+
               <button
                 onClick={() => setCurrentScreen("REPORTS")}
-                className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
+                className="bg-white p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-md border-b-4 border-slate-100 flex flex-col items-center gap-3 active:scale-95 hover:shadow-lg transition-all cursor-pointer"
               >
-                <div className="w-14 h-14 md:w-16 md:h-16 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500">
-                  <BarChart3 size={28} className="md:w-8 md:h-8" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500">
+                  <BarChart3 size={24} className="sm:size-[28px]" />
                 </div>
-                <p className="font-black text-slate-800 uppercase text-[10px] sm:text-xs md:text-sm tracking-widest">
+                <p className="font-black text-slate-800 uppercase text-[9px] sm:text-xs tracking-widest text-center">
                   Relatório
                 </p>
               </button>
