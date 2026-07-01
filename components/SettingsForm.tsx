@@ -120,7 +120,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
   const currentLogo = convertDriveLink(formData.logoUrl || '');
 
   return (
-    <form id="settings-form" onSubmit={handleSubmit} className="p-2.5 sm:p-4 space-y-3 pb-24">
+    <form id="settings-form" onSubmit={handleSubmit} className="p-1 sm:p-2 space-y-2 pb-20">
       
       {/* Alerta de Cadastro Incompleto */}
       {(!formData.companyName || formData.companyName === 'MINHA EMPRESA' || !formData.phone) && (
@@ -148,35 +148,35 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
 
       {/* Business Data */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-100 flex items-center gap-2">
-          <Building2 size={14} className="text-blue-600" />
-          <h3 className="font-bold text-gray-800 text-[11px] sm:text-xs uppercase tracking-wider">Dados da Empresa</h3>
+        <div className="bg-gray-50 px-2.5 py-1 border-b border-gray-100 flex items-center gap-2">
+          <Building2 size={13} className="text-blue-600" />
+          <h3 className="font-bold text-gray-800 text-[10px] uppercase tracking-wider">Dados da Empresa</h3>
         </div>
-        <div className="p-3 space-y-2">
+        <div className="p-2.5 space-y-1.5">
           <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
+            <label className="text-[9px] font-bold text-gray-400 uppercase ml-0.5">
               Nome Fantasia / Razão Social <span className="text-red-500">*</span>
             </label>
             <input 
-              className={`w-full mt-0.5 px-4 py-2 bg-gray-50 border rounded-xl focus:border-blue-500 outline-none transition-all font-bold text-gray-800 ${!formData.companyName || formData.companyName === 'MINHA EMPRESA' ? 'border-red-200' : 'border-gray-200'}`}
+              className={`w-full mt-0 px-3 py-1 bg-gray-50 border rounded-lg focus:border-blue-500 outline-none transition-all font-bold text-xs text-gray-800 ${!formData.companyName || formData.companyName === 'MINHA EMPRESA' ? 'border-red-200' : 'border-gray-200'}`}
               value={formData.companyName || ''}
               onChange={e => setFormData({...formData, companyName: e.target.value})}
               placeholder="Ex: Minha Loja de Doces"
             />
           </div>
           <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">CNPJ / CPF</label>
+            <label className="text-[9px] font-bold text-gray-400 uppercase ml-0.5">CNPJ / CPF</label>
             <input 
-              className="w-full mt-0.5 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all"
+              className="w-full mt-0 px-3 py-1 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 outline-none transition-all text-xs font-semibold"
               value={formData.document || ''}
               onChange={e => setFormData({...formData, document: e.target.value})}
               placeholder="00.000.000/0001-00"
             />
           </div>
           <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Segmentos ou Categorias de Produtos</label>
+            <label className="text-[9px] font-bold text-gray-400 uppercase ml-0.5">Segmentos ou Categorias de Produtos</label>
             <select 
-              className="w-full mt-0.5 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all font-bold text-slate-700 appearance-none"
+              className="w-full mt-0 px-3 py-1 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 outline-none transition-all font-bold text-xs text-slate-700 appearance-none"
               value={formData.businessType || 'GERAL'}
               onChange={e => setFormData({...formData, businessType: e.target.value as any})}
             >
@@ -203,36 +203,36 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
 
       {/* Contact & Address */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-100 flex items-center gap-2">
-          <Smartphone size={14} className="text-green-600" />
-          <h3 className="font-bold text-gray-800 text-[11px] sm:text-xs uppercase tracking-wider">Contato e Localização</h3>
+        <div className="bg-gray-50 px-2.5 py-1 border-b border-gray-100 flex items-center gap-2">
+          <Smartphone size={13} className="text-green-600" />
+          <h3 className="font-bold text-gray-800 text-[10px] uppercase tracking-wider">Contato e Localização</h3>
         </div>
-        <div className="p-3 space-y-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="p-2.5 space-y-1.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
+              <label className="text-[9px] font-bold text-gray-400 uppercase ml-0.5">
                 WhatsApp <span className="text-red-500">*</span>
               </label>
               <input 
-                className={`w-full mt-0.5 px-4 py-2 bg-gray-50 border rounded-xl focus:border-blue-500 outline-none ${!formData.phone ? 'border-red-200' : 'border-gray-200'}`}
+                className={`w-full mt-0 px-3 py-1 bg-gray-50 border rounded-lg focus:border-blue-500 outline-none text-xs font-semibold ${!formData.phone ? 'border-red-200' : 'border-gray-200'}`}
                 value={formData.phone || ''}
                 onChange={e => setFormData({...formData, phone: e.target.value})}
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">E-mail</label>
+              <label className="text-[9px] font-bold text-gray-400 uppercase ml-0.5">E-mail</label>
               <input 
-                className="w-full mt-0.5 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none"
+                className="w-full mt-0 px-3 py-1 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 outline-none text-xs font-semibold"
                 value={formData.email || ''}
                 onChange={e => setFormData({...formData, email: e.target.value})}
               />
             </div>
           </div>
           <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Endereço Completo</label>
+            <label className="text-[9px] font-bold text-gray-400 uppercase ml-0.5">Endereço Completo</label>
             <textarea 
-              rows={2}
-              className="w-full mt-0.5 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none resize-none"
+              rows={1}
+              className="w-full mt-0 px-3 py-1 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 outline-none resize-none text-xs font-semibold min-h-[32px] sm:min-h-[36px]"
               value={formData.address || ''}
               onChange={e => setFormData({...formData, address: e.target.value})}
             />
@@ -242,15 +242,15 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
 
       {/* Payment Keys */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-100 flex items-center gap-2">
-          <CreditCard size={14} className="text-purple-600" />
-          <h3 className="font-bold text-gray-800 text-[11px] sm:text-xs uppercase tracking-wider">Cobrança e Recebimento</h3>
+        <div className="bg-gray-50 px-2.5 py-1 border-b border-gray-100 flex items-center gap-2">
+          <CreditCard size={13} className="text-purple-600" />
+          <h3 className="font-bold text-gray-800 text-[10px] uppercase tracking-wider">Cobrança e Recebimento</h3>
         </div>
-        <div className="p-3">
+        <div className="p-2.5">
           <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Chave Pix (Para Comprovantes)</label>
+            <label className="text-[9px] font-bold text-gray-400 uppercase ml-0.5">Chave Pix (Para Comprovantes)</label>
             <input 
-              className="w-full mt-0.5 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none font-mono"
+              className="w-full mt-0 px-3 py-1 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 outline-none font-mono text-xs font-semibold"
               value={formData.pixKey || ''}
               onChange={e => setFormData({...formData, pixKey: e.target.value})}
               placeholder="CNPJ, E-mail ou Celular"
@@ -371,9 +371,9 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
                     </div>
                   )}
               </div>
-              <div className="flex-1 w-full space-y-3">
+              <div className="flex-1 w-full space-y-2">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Subir Logo do Dispositivo</label>
+                  <label className="text-[9px] font-bold text-gray-400 uppercase ml-0.5">Subir Logo do Dispositivo</label>
                   <label className="relative cursor-pointer group">
                     <input 
                       type="file" 
@@ -382,11 +382,11 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
                       onChange={handleFileUpload}
                       disabled={isUploading}
                     />
-                    <div className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-50 border-2 border-dashed border-blue-200 rounded-xl text-blue-600 font-black text-[10px] uppercase tracking-widest group-hover:bg-blue-100 group-hover:border-blue-300 transition-all">
+                    <div className="flex items-center justify-center gap-2 w-full py-1.5 bg-blue-50 border-2 border-dashed border-blue-200 rounded-lg text-blue-600 font-black text-[9px] uppercase tracking-widest group-hover:bg-blue-100 group-hover:border-blue-300 transition-all">
                       {isUploading ? (
-                        <Loader2 className="animate-spin" size={14} />
+                        <Loader2 className="animate-spin" size={12} />
                       ) : (
-                        <Upload size={14} />
+                        <Upload size={12} />
                       )}
                       {isUploading ? 'SUBINDO...' : 'ESCOLHER ARQUIVO'}
                     </div>
@@ -400,11 +400,11 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">URL da Logo (Google Drive ou Direto)</label>
+                  <label className="text-[9px] font-bold text-gray-400 uppercase ml-0.5">URL da Logo (Google Drive ou Direto)</label>
                   <div className="relative">
-                    <LinkIcon className="absolute left-3 top-2.5 text-gray-400" size={14} />
+                    <LinkIcon className="absolute left-3 top-2 text-gray-400" size={12} />
                     <input 
-                      className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:border-blue-500 outline-none transition-all text-xs font-mono"
+                      className="w-full pl-8 pr-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 outline-none transition-all text-xs font-mono"
                       value={formData.logoUrl || ''}
                       onChange={e => setFormData({...formData, logoUrl: e.target.value})}
                       placeholder="Cole aqui o link de compartilhamento"
