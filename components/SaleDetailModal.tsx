@@ -983,20 +983,6 @@ Obrigado pela preferência!`;
                  </div>
               </button>
 
-              {/* Send PDF on WhatsApp */}
-              <button 
-                onClick={handleSharePDFWhatsApp}
-                className="bg-white p-5 rounded-[2rem] border border-slate-150 flex flex-col justify-between items-stretch text-left active:scale-98 transition-all group hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-50 shadow-sm"
-              >
-                 <div className="w-11 h-11 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform mb-4 border border-emerald-100">
-                   <Share2 size={22} className="stroke-[2.5]" />
-                 </div>
-                 <div className="text-left font-sans">
-                   <p className="font-extrabold text-slate-800 text-sm sm:text-base leading-tight">Enviar PDF no WhatsApp</p>
-                   <p className="text-xs text-slate-500 mt-1.5 leading-snug">Gerar PDF e compartilhar diretamente ou via download + envio rápido.</p>
-                 </div>
-              </button>
-
               {/* Download PDF directly */}
               <button 
                 onClick={handleDownloadPDF}

@@ -3341,48 +3341,7 @@ const App: React.FC = () => {
     try {
       const doc = generateHistoryPDF(filteredSalesHistory, businessProfile, filterLabel);
       const fileName = `Relatorio_Vendas_${filterLabel}.pdf`;
-      const pdfBlob = doc.output("blob");
-      const file = new File([pdfBlob], fileName, { type: "application/pdf" });
-
-      const defaultText = `Olá! Segue em anexo o relatório de vendas (${fileName.replace(".pdf", "")}).`;
-      const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(defaultText)}`;
-
-      // Try Native Web Share first (highly direct on mobile devices!)
-      if (
-        navigator.share &&
-        navigator.canShare &&
-        navigator.canShare({ files: [file] })
-      ) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: fileName.replace(".pdf", ""),
-            text: defaultText
-          });
-          setIsGeneratingPDF(false);
-          return;
-        } catch (shareErr) {
-          console.warn("Direct native share failed or was cancelled by user:", shareErr);
-        }
-      }
-
-      // Force-download the PDF locally so it's guaranteed to be saved on the user's device
-      const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      // Open instructions modal to guide the user on attaching the downloaded PDF on WhatsApp
-      setPdfShareModal({
-        isOpen: true,
-        fileName,
-        isSuccess: true,
-        whatsappUrl
-      });
+      doc.save(fileName);
     } catch (err) {
       console.error("Erro ao gerar PDF", err);
       alert("Houve uma falha ao gerar o arquivo PDF.");
@@ -5731,9 +5690,9 @@ Obrigado pela preferência!`;
                   <button
                     onClick={handleShareHistoryWhatsApp}
                     className="p-1.5 sm:p-2 bg-white/20 hover:bg-white/30 text-white rounded-xl border border-white/10 active:scale-95 transition-all flex items-center justify-center"
-                    title="Compartilhar no WhatsApp"
+                    title="Baixar Relatório PDF"
                   >
-                    <MessageSquare size={18} />
+                    <Download size={18} />
                   </button>
                 </div>
               }
