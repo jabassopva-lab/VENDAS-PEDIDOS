@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 import {
   Users,
   Package,
@@ -434,6 +436,14 @@ const App: React.FC = () => {
     isOpen: boolean;
     message: string;
     limitName: string;
+  } | null>(null);
+
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [pdfShareModal, setPdfShareModal] = useState<{
+    isOpen: boolean;
+    fileName: string;
+    isSuccess: boolean;
+    whatsappUrl?: string;
   } | null>(null);
 
   const [plansConfig, setPlansConfig] = useState<Record<string, { price: number; maxProducts: number; maxClients: number; maxSellers: number; label: string }>>(() => {
@@ -1678,7 +1688,755 @@ const App: React.FC = () => {
     });
   };
 
+  const getSingleSaleHtml = (sale: Sale) => {
+    const profile = businessProfile;
+    const clientData = clients.find((c) => c.id === sale.clientId);
+    const logoUrl = convertDriveLink(profile.logoUrl || "");
+    const companyName = profile.companyName || "OMNIVENDA";
+    const logoHtml = logoUrl
+      ? `<img src="${logoUrl}" style="max-height: 80px; max-width: 180px; margin-bottom: 8px; object-fit: contain;">`
+      : "";
+    const clientPhone = clientData?.phone || "";
+    const clientAddress = clientData?.address || "";
+
+    return `
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Pedido ${sale.orderNumber ? String(sale.orderNumber).padStart(4, "0") : sale.id}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+          <style>
+            @page { size: A4; margin: 12mm; }
+            body { 
+              font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+              color: #1e293b; 
+              margin: 0; 
+              padding: 0; 
+              background: #f8fafc;
+              -webkit-font-smoothing: antialiased;
+            }
+            .ticket {
+              max-width: 750px;
+              margin: 20px auto;
+              background: #ffffff;
+              border: 1px solid #e2e8f0;
+              border-radius: 16px;
+              box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+              overflow: hidden;
+              position: relative;
+            }
+            .brand-bar {
+              height: 6px;
+              background: linear-gradient(90deg, #0ea5e9, #0284c7);
+            }
+            .header { 
+              padding: 30px 40px; 
+              border-bottom: 1px solid #f1f5f9;
+              background: #fafafb;
+            }
+            .header-main {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              gap: 20px;
+            }
+            .header-company {
+              flex: 1;
+            }
+            .header-company h1 { 
+              margin: 0; 
+              font-size: 22px; 
+              font-weight: 800; 
+              color: #0f172a; 
+              letter-spacing: -0.5px;
+              text-transform: uppercase;
+            }
+            .company-doc { 
+              margin: 6px 0 2px 0; 
+              color: #64748b; 
+              font-size: 11px; 
+              font-weight: 500; 
+            }
+            .company-contact {
+              margin: 0;
+              color: #64748b;
+              font-size: 11px;
+              font-weight: 500;
+            }
+            .header-meta {
+              text-align: right;
+              display: flex;
+              flex-direction: column;
+              align-items: flex-end;
+              gap: 8px;
+            }
+            .badge {
+              padding: 6px 12px;
+              border-radius: 9999px;
+              font-size: 9px;
+              font-weight: 800;
+              letter-spacing: 0.5px;
+              text-transform: uppercase;
+            }
+            .badge-budget {
+              background-color: #fef3c7;
+              color: #d97706;
+            }
+            .badge-finalized {
+              background-color: #d1fae5;
+              color: #059669;
+            }
+            .order-id {
+              font-size: 12px;
+              font-weight: 700;
+              color: #475569;
+              margin-top: 4px;
+            }
+            .order-id span {
+              color: #0f172a;
+              font-family: monospace;
+              font-size: 13px;
+            }
+            .order-date {
+              font-size: 10px;
+              color: #64748b;
+              font-weight: 500;
+            }
+            .details-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 20px;
+              padding: 24px 40px;
+              border-bottom: 1px solid #f1f5f9;
+            }
+            .details-column {
+              min-width: 0;
+            }
+            .section-title {
+              font-size: 10px;
+              font-weight: 800;
+              color: #64748b;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              margin-bottom: 10px;
+            }
+            .details-box {
+              background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 12px;
+              padding: 16px;
+              height: 100%;
+              box-sizing: border-box;
+            }
+            .client-name {
+              margin: 0 0 6px 0;
+              font-size: 13px;
+              font-weight: 700;
+              color: #0f172a;
+              text-transform: uppercase;
+            }
+            .client-detail {
+              margin: 4px 0;
+              font-size: 11px;
+              color: #475569;
+              line-height: 1.4;
+            }
+            .table-section {
+              padding: 30px 40px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            th {
+              text-align: left;
+              padding: 10px 12px;
+              font-size: 9px;
+              font-weight: 800;
+              color: #475569;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              border-bottom: 2px solid #e2e8f0;
+            }
+            td {
+              padding: 12px;
+              font-size: 12px;
+              color: #334155;
+              border-bottom: 1px solid #f1f5f9;
+            }
+            .item-name {
+              font-weight: 600;
+              color: #0f172a;
+            }
+            .total-section {
+              background: #fafafb;
+              padding: 24px 40px;
+              border-top: 1px solid #f1f5f9;
+              display: flex;
+              justify-content: flex-end;
+            }
+            .total-row-main {
+              display: flex;
+              align-items: center;
+              gap: 15px;
+            }
+            .total-label-main {
+              font-size: 10px;
+              font-weight: 800;
+              color: #64748b;
+              letter-spacing: 0.5px;
+            }
+            .total-val-main {
+              font-size: 20px;
+              font-weight: 800;
+              color: #0284c7;
+            }
+            .footer {
+              text-align: center;
+              padding: 24px;
+              font-size: 11px;
+              color: #94a3b8;
+              font-weight: 600;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            }
+            @media print {
+              body {
+                background: #ffffff;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              .ticket {
+                border: none;
+                box-shadow: none;
+                margin: 0;
+                max-width: 100%;
+              }
+            }
+          </style>
+        </head>
+        <body>
+            <div class="ticket">
+                <div class="brand-bar"></div>
+                <div class="header">
+                    <div class="header-main">
+                        <div class="header-company">
+                            ${logoHtml}
+                            <h1>${companyName}</h1>
+                            <p class="company-doc">${profile.document || ""}</p>
+                            <p class="company-contact">${profile.phone || ""}</p>
+                        </div>
+                        <div class="header-meta">
+                            <div class="badge ${sale.status === "ORCAMENTO" ? "badge-budget" : "badge-finalized"}">
+                                ${sale.status === "ORCAMENTO" ? "ORÇAMENTO" : "COMPROVANTE DE PEDIDO"}
+                            </div>
+                            <div class="order-id">PEDIDO NO. <span>${sale.orderNumber ? String(sale.orderNumber).padStart(4, "0") : sale.id}</span></div>
+                            <div class="order-date">${sale.date} às ${sale.time}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="details-grid">
+                    <div class="details-column">
+                        <div class="section-title">Cliente</div>
+                        <div class="details-box">
+                            <p class="client-name">${sale.clientName}</p>
+                            ${clientPhone ? `<p class="client-detail"><strong>WhatsApp / Tel:</strong> ${clientPhone}</p>` : ""}
+                            ${clientAddress ? `<p class="client-detail"><strong>Endereço:</strong> ${clientAddress}</p>` : ""}
+                        </div>
+                    </div>
+                    <div class="details-column">
+                        <div class="section-title">Informações de Venda</div>
+                        <div class="details-box">
+                            <p class="client-detail"><strong>Forma de Pagamento:</strong> ${sale.paymentMethod || "Dinheiro"}</p>
+                            <p class="client-detail"><strong>Vencimento:</strong> <strong>${(() => {
+                                const terms = sale.paymentTerms || "À vista";
+                                const match = terms.match(/(\d{2}\/\d{2}\/\d{4})/);
+                                return match ? match[1] : terms;
+                            })()}</strong></p>
+                            <p class="client-detail"><strong>Validade / Tipo:</strong> Documento sem valor fiscal</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-section">
+                    <div class="section-title">Produtos do Pedido</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item / Especificação</th>
+                                <th style="text-align: center; width: 60px;">Qtd</th>
+                                <th style="text-align: right; width: 120px;">Vl. Unitário</th>
+                                <th style="text-align: right; width: 120px;">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(sale.items || [])
+                              .map((item) => {
+                                const unitPrice =
+                                  item.price - (item.discount || 0);
+                                return `
+                                <tr>
+                                    <td>
+                                        <div class="item-name">${item.name}</div>
+                                    </td>
+                                    <td style="text-align: center; font-weight: 500;">${item.quantity}</td>
+                                    <td style="text-align: right; color: #475569;">R$ ${unitPrice.toFixed(2)}</td>
+                                    <td style="text-align: right; font-weight: 700; color: #0f172a;">R$ ${(unitPrice * item.quantity).toFixed(2)}</td>
+                                </tr>
+                                `;
+                              })
+                              .join("")}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="total-section">
+                    <div class="total-row-main">
+                        <span class="total-label-main">VALOR TOTAL DO PEDIDO:</span>
+                        <span class="total-val-main">R$ ${sale.total.toFixed(2)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer">
+                Agradecemos a preferência e confiança!
+            </div>
+        </body>
+      </html>
+    `;
+  };
+
+  const getHistoryListHtml = () => {
+    const profile = businessProfile;
+    const companyName = profile.companyName || "OMNIVENDA";
+    const logoUrl = convertDriveLink(profile.logoUrl || "");
+    const logoHtml = logoUrl
+      ? `<img src="${logoUrl}" style="max-height: 50px; max-width: 150px; object-fit: contain;">`
+      : "";
+
+    const count = filteredSalesHistory.length;
+    const totalSum = filteredSalesHistory.reduce((sum, sale) => sum + Number(sale.total || 0), 0);
+    const paidSum = filteredSalesHistory
+      .filter((sale) => sale.isPaid)
+      .reduce((sum, sale) => sum + Number(sale.total || 0), 0);
+    const pendingSum = filteredSalesHistory
+      .filter((sale) => !sale.isPaid && sale.status !== "ORCAMENTO")
+      .reduce((sum, sale) => sum + Number(sale.total || 0), 0);
+    const budgetSum = filteredSalesHistory
+      .filter((sale) => sale.status === "ORCAMENTO")
+      .reduce((sum, sale) => sum + Number(sale.total || 0), 0);
+
+    const filterLabel = 
+      historyFilter === "week" ? "Esta Semana" :
+      historyFilter === "month" ? "Este Mês" :
+      "Todas as Vendas";
+
+    const tableRowsHtml = filteredSalesHistory
+      .map((sale) => {
+        const orderNum = sale.orderNumber ? String(sale.orderNumber).padStart(4, "0") : "...";
+        const dateMatch = sale.paymentTerms?.match(/\d{2}\/\d{2}\/\d{4}/);
+        const dueDateExtracted = dateMatch ? dateMatch[0] : null;
+
+        const typeLabel = sale.status === "ORCAMENTO" ? "Orçamento" : "Venda";
+        const statusLabel = sale.isPaid
+          ? "PAGO"
+          : `PENDENTE${dueDateExtracted ? ` (Venc: ${dueDateExtracted})` : ""}`;
+
+        const statusClass = sale.isPaid ? "status-pago" : "status-pendente";
+        const typeClass = sale.status === "ORCAMENTO" ? "type-orcamento" : "type-venda";
+
+        return `
+          <tr>
+            <td style="text-align: center; font-family: monospace; font-weight: bold; font-size: 11px;">#${orderNum}</td>
+            <td style="font-size: 11px;">${sale.date} ${sale.time || ""}</td>
+            <td style="font-weight: 600; text-transform: uppercase; font-size: 11px;">${sale.clientName}</td>
+            <td style="text-align: center; font-size: 11px;"><span class="${typeClass}">${typeLabel}</span></td>
+            <td style="font-size: 11px;"><span class="${statusClass}">${statusLabel}</span></td>
+            <td style="text-align: right; font-weight: bold; color: #0f172a; font-size: 11px;">R$ ${Number(sale.total).toFixed(2)}</td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    return `
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Relatório de Vendas - Histórico</title>
+          <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+          <style>
+            @page { size: A4; margin: 15mm 10mm 15mm 10mm; }
+            body { 
+              font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+              color: #1e293b; 
+              margin: 0; 
+              padding: 0; 
+              background: #ffffff;
+              -webkit-font-smoothing: antialiased;
+            }
+            .container {
+              max-width: 1000px;
+              margin: 0 auto;
+              padding: 10px;
+            }
+            .header-print {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border-bottom: 2px solid #e2e8f0;
+              padding-bottom: 15px;
+              margin-bottom: 20px;
+            }
+            .header-info h1 {
+              font-size: 20px;
+              font-weight: 800;
+              margin: 0 0 5px 0;
+              color: #0f172a;
+              text-transform: uppercase;
+              letter-spacing: -0.5px;
+            }
+            .header-info p {
+              font-size: 11px;
+              color: #64748b;
+              margin: 2px 0;
+              text-transform: uppercase;
+              font-weight: 600;
+            }
+            .logo-container {
+              text-align: right;
+            }
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+              margin-bottom: 30px;
+            }
+            th { 
+              text-align: left; 
+              padding: 8px 10px; 
+              font-size: 10px; 
+              color: #475569; 
+              text-transform: uppercase; 
+              border-bottom: 2px solid #cbd5e1; 
+              border-top: 1px solid #e2e8f0;
+              letter-spacing: 0.5px;
+              font-weight: 700;
+              background-color: #f8fafc;
+            }
+            td { 
+              padding: 8px 10px; 
+              border-bottom: 1px solid #e2e8f0; 
+              font-size: 11px; 
+              color: #334155;
+            }
+            tr:nth-child(even) td {
+              background-color: #fafafa;
+            }
+            .type-orcamento {
+              background-color: #fef3c7;
+              color: #92400e;
+              padding: 2px 6px;
+              border-radius: 4px;
+              font-size: 9px;
+              font-weight: 700;
+              text-transform: uppercase;
+            }
+            .type-venda {
+              background-color: #d1fae5;
+              color: #065f46;
+              padding: 2px 6px;
+              border-radius: 4px;
+              font-size: 9px;
+              font-weight: 700;
+              text-transform: uppercase;
+            }
+            .status-pago {
+              color: #166534;
+              font-weight: 700;
+              font-size: 10px;
+            }
+            .status-pendente {
+              color: #991b1b;
+              font-weight: 700;
+              font-size: 10px;
+            }
+            .summary-grid {
+              display: grid;
+              grid-template-columns: repeat(4, 1fr);
+              gap: 15px;
+              margin-top: 20px;
+              border-top: 2px solid #e2e8f0;
+              padding-top: 15px;
+            }
+            .summary-card {
+              background-color: #f8fafc;
+              border: 1px solid #e2e8f0;
+              padding: 10px;
+              border-radius: 8px;
+              text-align: center;
+            }
+            .summary-card .label {
+              font-size: 9px;
+              color: #64748b;
+              text-transform: uppercase;
+              font-weight: bold;
+              margin-bottom: 4px;
+              letter-spacing: 0.5px;
+            }
+            .summary-card .value {
+              font-size: 14px;
+              font-weight: 800;
+              color: #0f172a;
+            }
+            .no-print-bar {
+              background-color: #1e293b;
+              color: white;
+              padding: 10px 20px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 20px;
+              border-radius: 8px;
+              box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            }
+            .no-print-bar span {
+              font-size: 12px;
+              font-weight: bold;
+            }
+            .btn-print {
+              background-color: #0284c7;
+              color: white;
+              border: none;
+              padding: 8px 16px;
+              font-weight: bold;
+              border-radius: 6px;
+              cursor: pointer;
+              font-size: 12px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              transition: background-color 0.2s;
+            }
+            .btn-print:hover {
+              background-color: #0369a1;
+            }
+            @media print {
+              .no-print {
+                display: none !important;
+              }
+              body {
+                background: white;
+              }
+              .container {
+                max-width: 100%;
+                padding: 0;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="no-print no-print-bar">
+              <span>Modo de Impressão de Histórico (${filterLabel})</span>
+              <button class="btn-print" onclick="window.print()">Imprimir Lista</button>
+            </div>
+
+            <div class="header-print">
+              <div class="header-info">
+                <h1>Relatório de Pedidos / Vendas</h1>
+                <p>Empresa: ${companyName} • Período: ${filterLabel}</p>
+                <p>Gerado em: ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}</p>
+              </div>
+              <div class="logo-container">
+                ${logoHtml}
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 10%; text-align: center;">Pedido</th>
+                  <th style="width: 18%;">Data / Hora</th>
+                  <th style="width: 35%;">Cliente</th>
+                  <th style="width: 12%; text-align: center;">Tipo</th>
+                  <th style="width: 15%;">Pagamento</th>
+                  <th style="width: 15%; text-align: right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRowsHtml}
+              </tbody>
+            </table>
+
+            <div class="summary-grid">
+              <div class="summary-card">
+                <div class="label">Total de Pedidos</div>
+                <div class="value">${count}</div>
+              </div>
+              <div class="summary-card">
+                <div class="label">Total Geral</div>
+                <div class="value" style="color: #0284c7;">R$ ${totalSum.toFixed(2)}</div>
+              </div>
+              <div class="summary-card">
+                <div class="label">Total Pago</div>
+                <div class="value" style="color: #166534;">R$ ${paidSum.toFixed(2)}</div>
+              </div>
+              <div class="summary-card">
+                <div class="label">Total Pendente</div>
+                <div class="value" style="color: #991b1b;">R$ ${pendingSum.toFixed(2)}</div>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+  };
+
+  const generateAndSharePDF = async (printContentHtml: string, fileName: string, fallbackPhone?: string) => {
+    setIsGeneratingPDF(true);
+    try {
+      // Create a container to render the HTML off-screen
+      const container = document.createElement("div");
+      container.style.position = "fixed";
+      container.style.left = "-9999px";
+      container.style.top = "0";
+      container.style.width = "800px"; // A4 width rendering
+      container.style.background = "#ffffff";
+      container.style.padding = "25px";
+      container.style.boxSizing = "border-box";
+      
+      // Inject HTML but strip print script tags
+      let cleanHtml = printContentHtml.replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, "");
+      container.innerHTML = cleanHtml;
+      
+      // Enforce clean layout for screenshot
+      const overrideStyle = document.createElement("style");
+      overrideStyle.innerHTML = `
+        .no-print, .no-print-bar { display: none !important; }
+        body, .container, .ticket { background: #ffffff !important; box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; }
+        th { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .summary-card { background-color: #f8fafc !important; }
+      `;
+      container.appendChild(overrideStyle);
+      document.body.appendChild(container);
+
+      // Wait a tiny bit for assets/paint
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      const canvas = await html2canvas(container, {
+        scale: 2, // Retinal high resolution
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff"
+      });
+
+      document.body.removeChild(container);
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
+      });
+
+      const pdfWidth = 210; // A4 width in mm
+      const pdfHeight = 297; // A4 height in mm
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      // Add remaining pages if any
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
+      const pdfBlob = pdf.output("blob");
+      const file = new File([pdfBlob], fileName, { type: "application/pdf" });
+
+      // Determine WhatsApp text
+      const isSingleSale = fileName.toLowerCase().startsWith("pedido");
+      const defaultText = isSingleSale 
+        ? `Olá! Segue em anexo o PDF do seu pedido (${fileName.replace(".pdf", "")}).`
+        : `Olá! Segue em anexo o relatório de vendas (${fileName.replace(".pdf", "")}).`;
+      
+      let finalPhone = "";
+      if (fallbackPhone) {
+        const cleanP = fallbackPhone.replace(/\D/g, "");
+        if (cleanP.length >= 10) {
+          finalPhone = cleanP.startsWith("55") ? cleanP : `55${cleanP}`;
+        }
+      }
+
+      const whatsappUrl = finalPhone
+        ? `https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodeURIComponent(defaultText)}`
+        : `https://api.whatsapp.com/send?text=${encodeURIComponent(defaultText)}`;
+
+      // Try native Web Share
+      if (
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: fileName.replace(".pdf", ""),
+            text: defaultText
+          });
+          setIsGeneratingPDF(false);
+          return;
+        } catch (shareErr) {
+          console.warn("Native Web Share failed/cancelled:", shareErr);
+        }
+      }
+
+      // Fallback: local download
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      // Open instructions modal
+      setPdfShareModal({
+        isOpen: true,
+        fileName,
+        isSuccess: true,
+        whatsappUrl
+      });
+    } catch (err) {
+      console.error("Error compiling PDF document:", err);
+      alert("Houve uma falha ao compilar o arquivo PDF. Você ainda pode usar o botão de Imprimir para salvar como PDF.");
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
   const handlePrintSaleDirect = (sale: Sale) => {
+    const printContent = getSingleSaleHtml(sale);
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 800);
+    }
+  };
+
+  const __unused_handlePrintSaleDirect = (sale: Sale) => {
     const profile = businessProfile;
     const clientData = clients.find((c) => c.id === sale.clientId);
     const logoUrl = convertDriveLink(profile.logoUrl || "");
@@ -2027,6 +2785,15 @@ const App: React.FC = () => {
   };
 
   const handlePrintHistoryList = () => {
+    const printContent = getHistoryListHtml();
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+    }
+  };
+
+  const __unused_handlePrintHistoryList = () => {
     const profile = businessProfile;
     const companyName = profile.companyName || "OMNIVENDA";
     const logoUrl = convertDriveLink(profile.logoUrl || "");
@@ -2326,6 +3093,15 @@ const App: React.FC = () => {
   };
 
   const handleShareHistoryWhatsApp = () => {
+    const printContent = getHistoryListHtml();
+    const filterLabel = 
+      historyFilter === "week" ? "Esta_Semana" :
+      historyFilter === "month" ? "Este_Mes" :
+      "Todas_as_Vendas";
+    generateAndSharePDF(printContent, `Relatorio_Vendas_${filterLabel}.pdf`);
+  };
+
+  const __unused_handleShareHistoryWhatsApp = () => {
     const profile = businessProfile;
     const companyName = profile.companyName || "OMNIVENDA";
     const count = filteredSalesHistory.length;
@@ -2385,6 +3161,13 @@ Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTim
   };
 
   const handleShareWhatsAppDirect = (sale: Sale) => {
+    const printContent = getSingleSaleHtml(sale);
+    const clientData = clients.find((c) => c.id === sale.clientId);
+    const orderNum = sale.orderNumber ? String(sale.orderNumber).padStart(4, "0") : sale.id;
+    generateAndSharePDF(printContent, `Pedido_#${orderNum}.pdf`, clientData?.phone);
+  };
+
+  const __unused_handleShareWhatsAppDirect = (sale: Sale) => {
     const profile = businessProfile;
     const clientData = clients.find((c) => c.id === sale.clientId);
     const companyName = profile.companyName || "OMNIVENDA";
@@ -7682,6 +8465,73 @@ Obrigado pela preferência!`;
           </p>
         </div>
       </div>
+
+      {/* Modal de Progresso da Geração de PDF */}
+      {isGeneratingPDF && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 text-white p-6 rounded-2xl max-w-sm w-full mx-4 shadow-2xl text-center space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative w-12 h-12 mx-auto">
+              <div className="absolute inset-0 rounded-full border-4 border-slate-800"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-t-sky-500 animate-spin"></div>
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white">Gerando PDF do Documento...</h3>
+              <p className="text-xs text-slate-400 mt-1">Isso pode levar alguns segundos devido à compilação de alta resolução.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Sucesso e Instruções de Envio do PDF para WhatsApp */}
+      {pdfShareModal?.isOpen && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div className="bg-white text-slate-900 p-6 rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+            <div className="text-center space-y-4">
+              <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+                ✓
+              </div>
+              <div>
+                <h3 className="text-lg font-extrabold text-slate-900">PDF Pronto para Enviar!</h3>
+                <p className="text-sm text-slate-500 mt-1">O arquivo <strong className="text-slate-700">{pdfShareModal.fileName}</strong> foi baixado no seu dispositivo.</p>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-left text-xs text-slate-600 space-y-2.5">
+                <span className="font-bold text-slate-800 text-sm block border-b pb-1">Como enviar pelo WhatsApp:</span>
+                <div className="flex items-start gap-2">
+                  <span className="bg-sky-100 text-sky-800 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">1</span>
+                  <p>Clique no botão verde <strong>"Abrir WhatsApp"</strong> abaixo para ir direto ao aplicativo.</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="bg-sky-100 text-sky-800 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">2</span>
+                  <p>Selecione a pessoa ou grupo para quem deseja enviar.</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="bg-sky-100 text-sky-800 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">3</span>
+                  <p>Clique no ícone de <strong>anexo (clipe de papel / +)</strong>, selecione <strong>"Documento"</strong> e escolha o PDF baixado.</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <button
+                  onClick={() => setPdfShareModal(null)}
+                  className="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold rounded-xl text-xs transition-all"
+                >
+                  Fechar Alerta
+                </button>
+                <a
+                  href={pdfShareModal.whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setPdfShareModal(null)}
+                  className="flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 transition-all"
+                >
+                  Abrir WhatsApp
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
