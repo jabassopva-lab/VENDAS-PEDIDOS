@@ -3342,22 +3342,59 @@ const App: React.FC = () => {
       const doc = generateHistoryPDF(filteredSalesHistory, businessProfile, filterLabel);
       const fileName = `Relatorio_Vendas_${filterLabel}.pdf`;
       
-      // Generate the PDF as a Blob and use a temporary anchor element for high compatibility on mobile
       const pdfBlob = doc.output("blob");
+
+      // 1. Try Native Web Share if available (highly direct and natively supported on mobile OS!)
+      const file = new File([pdfBlob], fileName, { type: "application/pdf" });
+      if (
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: `Relatório de Vendas - ${filterLabel.replace(/_/g, " ")}`,
+            text: `Segue em anexo o relatório de vendas: ${filterLabel.replace(/_/g, " ")}`
+          });
+          return;
+        } catch (shareErr) {
+          console.warn("Native share cancelled or failed:", shareErr);
+          const errString = String(shareErr).toLowerCase();
+          if (errString.includes("abort") || errString.includes("cancel")) {
+            return; // User cancelled, so stop here
+          }
+        }
+      }
+
+      // 2. Mobile fallback: Open in a new tab so mobile browsers can natively view and save/download it
       const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = fileName;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      document.body.appendChild(link);
-      link.click();
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       
-      // Clean up the DOM and release memory after a small delay
-      setTimeout(() => {
+      if (isMobile) {
+        try {
+          const newWindow = window.open(url, "_blank");
+          if (!newWindow || newWindow.closed || typeof newWindow.closed === "undefined") {
+            window.location.href = url;
+          }
+        } catch (e) {
+          window.location.href = url;
+        }
+      } else {
+        // 3. Desktop fallback: Hidden link download (the standard, perfect way on desktop)
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
         document.body.removeChild(link);
+      }
+
+      // Clean up the URL object after a small delay
+      setTimeout(() => {
         URL.revokeObjectURL(url);
       }, 500);
+
     } catch (err) {
       console.error("Erro ao gerar PDF", err);
       alert("Houve uma falha ao gerar o arquivo PDF.");

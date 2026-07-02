@@ -313,11 +313,65 @@ Obrigado pela preferência!`;
     return doc;
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     try {
       const doc = generateSalePDF();
       const orderNum = sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : sale.id.substring(0, 8).toUpperCase();
-      doc.save(`pedido_${orderNum}.pdf`);
+      const fileName = `pedido_${orderNum}.pdf`;
+
+      const pdfBlob = doc.output("blob");
+
+      // 1. Try Native Web Share if available (highly direct and natively supported on mobile OS!)
+      const file = new File([pdfBlob], fileName, { type: "application/pdf" });
+      if (
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: `Pedido #${orderNum}`,
+            text: `Segue em anexo o PDF do Pedido #${orderNum}`
+          });
+          return;
+        } catch (shareErr) {
+          console.warn("Native share cancelled or failed:", shareErr);
+          const errString = String(shareErr).toLowerCase();
+          if (errString.includes("abort") || errString.includes("cancel")) {
+            return; // User cancelled, so stop here
+          }
+        }
+      }
+
+      // 2. Mobile fallback: Open in a new tab so mobile browsers can natively view and save/download it
+      const url = URL.createObjectURL(pdfBlob);
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        try {
+          const newWindow = window.open(url, "_blank");
+          if (!newWindow || newWindow.closed || typeof newWindow.closed === "undefined") {
+            window.location.href = url;
+          }
+        } catch (e) {
+          window.location.href = url;
+        }
+      } else {
+        // 3. Desktop fallback: Hidden link download (the standard, perfect way on desktop)
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      // Cleanup
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 500);
+
     } catch (err) {
       console.error("Erro ao gerar PDF", err);
       alert("Houve um problema ao gerar o arquivo PDF.");
