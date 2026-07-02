@@ -3331,7 +3331,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleShareHistoryWhatsApp = () => {
+  const handleShareHistoryWhatsApp = async () => {
     const filterLabel = 
       historyFilter === "week" ? "Esta_Semana" :
       historyFilter === "month" ? "Este_Mes" :
@@ -3342,9 +3342,29 @@ const App: React.FC = () => {
       const doc = generateHistoryPDF(filteredSalesHistory, businessProfile, filterLabel);
       const fileName = `Relatorio_Vendas_${filterLabel}.pdf`;
       const pdfBlob = doc.output("blob");
+      const file = new File([pdfBlob], fileName, { type: "application/pdf" });
 
       const defaultText = `Olá! Segue em anexo o relatório de vendas (${fileName.replace(".pdf", "")}).`;
       const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(defaultText)}`;
+
+      // Try Native Web Share first (highly direct on mobile devices!)
+      if (
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: fileName.replace(".pdf", ""),
+            text: defaultText
+          });
+          setIsGeneratingPDF(false);
+          return;
+        } catch (shareErr) {
+          console.warn("Direct native share failed or was cancelled by user:", shareErr);
+        }
+      }
 
       // Force-download the PDF locally so it's guaranteed to be saved on the user's device
       const url = URL.createObjectURL(pdfBlob);
@@ -3438,6 +3458,7 @@ Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTim
     try {
       const doc = generateSingleSalePDF(sale, businessProfile, clients, isTestMode);
       const pdfBlob = doc.output("blob");
+      const file = new File([pdfBlob], fileName, { type: "application/pdf" });
 
       const defaultText = `Olá! Segue em anexo o PDF do seu pedido (${fileName.replace(".pdf", "")}).`;
 
@@ -3453,6 +3474,29 @@ Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTim
       const whatsappUrl = finalPhone
         ? `https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodeURIComponent(defaultText)}`
         : `https://api.whatsapp.com/send?text=${encodeURIComponent(defaultText)}`;
+
+      // Try Native Web Share first (direct attached file sharing to WhatsApp/System share!)
+      if (
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        try {
+          navigator.share({
+            files: [file],
+            title: fileName.replace(".pdf", ""),
+            text: defaultText
+          }).then(() => {
+            setIsGeneratingPDF(false);
+          }).catch((shareErr) => {
+            console.warn("Direct native share failed or cancelled:", shareErr);
+          });
+          setIsGeneratingPDF(false);
+          return;
+        } catch (shareErr) {
+          console.warn("Direct native share logic setup failed:", shareErr);
+        }
+      }
 
       // Force-download the PDF locally so it's guaranteed to be saved on the user's device
       const url = URL.createObjectURL(pdfBlob);
