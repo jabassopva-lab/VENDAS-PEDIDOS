@@ -2293,116 +2293,374 @@ const App: React.FC = () => {
     `;
   };
 
-  const generateAndSharePDF = async (printContentHtml: string, fileName: string, fallbackPhone?: string) => {
-    setIsGeneratingPDF(true);
-    try {
-      // Create a container to render the HTML off-screen
-      const container = document.createElement("div");
-      container.style.position = "fixed";
-      container.style.left = "-9999px";
-      container.style.top = "0";
-      container.style.width = "800px"; // A4 width rendering
-      container.style.background = "#ffffff";
-      container.style.padding = "25px";
-      container.style.boxSizing = "border-box";
-      
-      // Inject HTML but strip print script tags
-      let cleanHtml = printContentHtml.replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, "");
-      container.innerHTML = cleanHtml;
-      
-      // Enforce clean layout for screenshot
-      const overrideStyle = document.createElement("style");
-      overrideStyle.innerHTML = `
-        .no-print, .no-print-bar { display: none !important; }
-        body, .container, .ticket { background: #ffffff !important; box-shadow: none !important; border: none !important; margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; }
-        th { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .summary-card { background-color: #f8fafc !important; }
-      `;
-      container.appendChild(overrideStyle);
-      document.body.appendChild(container);
+  const generateSingleSalePDF = (sale: Sale, profile: BusinessProfile, clientsList: Client[], isTest?: boolean) => {
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4"
+    });
 
-      // Wait a tiny bit for assets/paint
-      await new Promise((resolve) => setTimeout(resolve, 800));
+    let y = 15;
 
-      const canvas = await html2canvas(container, {
-        scale: 2, // Retinal high resolution
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff"
-      });
+    // Header brand bar
+    doc.setFillColor(14, 165, 233); // #0ea5e9
+    doc.rect(0, 0, 210, 5, "F");
 
-      document.body.removeChild(container);
+    y = 20;
 
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4"
-      });
+    // Company Name
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(15, 23, 42); // #0f172a
+    const companyName = profile.companyName || "OMNIVENDA";
+    doc.text(companyName.toUpperCase(), 15, y);
 
-      const pdfWidth = 210; // A4 width in mm
-      const pdfHeight = 297; // A4 height in mm
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
+    // Document status badge
+    const isBudget = sale.status === "ORCAMENTO";
+    const statusLabel = isBudget ? "ORCAMENTO" : "COMPROVANTE DE PEDIDO";
+    doc.setFontSize(8.5);
+    doc.setFont("Helvetica", "bold");
+    doc.setTextColor(isBudget ? 180 : 21, isBudget ? 83 : 128, isBudget ? 9 : 61);
+    doc.setFillColor(isBudget ? 254 : 220, isBudget ? 243 : 252, isBudget ? 199 : 231);
+    doc.rect(135, y - 5, 60, 6, "F");
+    doc.text(statusLabel, 165, y - 1, { align: "center" });
 
-      // Add first page
-      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pdfHeight;
-
-      // Add remaining pages if any
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight;
-      }
-
-      const pdfBlob = pdf.output("blob");
-      const file = new File([pdfBlob], fileName, { type: "application/pdf" });
-
-      // Determine WhatsApp text
-      const isSingleSale = fileName.toLowerCase().startsWith("pedido");
-      const defaultText = isSingleSale 
-        ? `Olá! Segue em anexo o PDF do seu pedido (${fileName.replace(".pdf", "")}).`
-        : `Olá! Segue em anexo o relatório de vendas (${fileName.replace(".pdf", "")}).`;
-      
-      let finalPhone = "";
-      if (fallbackPhone) {
-        const cleanP = fallbackPhone.replace(/\D/g, "");
-        if (cleanP.length >= 10) {
-          finalPhone = cleanP.startsWith("55") ? cleanP : `55${cleanP}`;
-        }
-      }
-
-      const whatsappUrl = finalPhone
-        ? `https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodeURIComponent(defaultText)}`
-        : `https://api.whatsapp.com/send?text=${encodeURIComponent(defaultText)}`;
-
-      // Force-download the PDF locally so it's guaranteed to be saved on the user's device
-      const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      // Open instructions modal to guide the user on attaching the downloaded PDF on WhatsApp
-      setPdfShareModal({
-        isOpen: true,
-        fileName,
-        isSuccess: true,
-        whatsappUrl
-      });
-    } catch (err) {
-      console.error("Error compiling PDF document:", err);
-      alert("Houve uma falha ao compilar o arquivo PDF. Você ainda pode usar o botão de Imprimir para salvar como PDF.");
-    } finally {
-      setIsGeneratingPDF(false);
+    y += 7;
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    if (profile.document) {
+      doc.text(`CNPJ/CPF: ${profile.document}`, 15, y);
+      y += 5;
     }
+    if (profile.phone) {
+      doc.text(`WhatsApp: ${profile.phone}`, 15, y);
+      y += 5;
+    }
+
+    // Right side header info (Order #, Date)
+    const orderNum = sale.orderNumber ? String(sale.orderNumber).padStart(4, "0") : sale.id.substring(0, 8).toUpperCase();
+    doc.text(`PEDIDO N.: #${orderNum}`, 135, y - 5);
+    doc.text(`Data: ${sale.date} ${sale.time || ""}`, 135, y);
+
+    if (isTest) {
+      doc.setTextColor(239, 68, 68);
+      doc.setFontSize(30);
+      doc.setFont("Helvetica", "bold");
+      doc.text("DOCUMENTO PARA TESTE - MODO DEMO", 105, 150, { align: "center", angle: 45 });
+      doc.setTextColor(51, 65, 85);
+    }
+
+    y += 5;
+    // Divider line
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.4);
+    doc.line(15, y, 195, y);
+    y += 7;
+
+    // Client card
+    const clientData = clientsList.find((c) => c.id === sale.clientId);
+    doc.setFillColor(248, 250, 252);
+    doc.rect(15, y, 180, 26, "F");
+    doc.setDrawColor(241, 245, 249);
+    doc.rect(15, y, 180, 26, "S");
+
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text("CLIENTE", 20, y + 5);
+
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(2, 132, 199);
+    doc.text(sale.clientName.toUpperCase(), 20, y + 11);
+
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    const addressText = clientData?.address || "Não informado";
+    const phoneText = clientData?.phone || "Não informado";
+    doc.text(`WhatsApp/Tel: ${phoneText}`, 20, y + 16);
+    doc.text(`Endereço: ${addressText}`, 20, y + 21);
+
+    y += 32;
+
+    // Payment Box
+    doc.setFillColor(248, 250, 252);
+    doc.rect(15, y, 180, 14, "F");
+    doc.setDrawColor(241, 245, 249);
+    doc.rect(15, y, 180, 14, "S");
+
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text("DADOS DE PAGAMENTO", 20, y + 5);
+
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(51, 65, 85);
+    doc.text(`Forma: ${sale.paymentMethod || "Dinheiro"}`, 20, y + 10);
+    doc.text(`Vencimento: ${sale.paymentTerms || "À vista"}`, 90, y + 10);
+    if (sale.installments && sale.installments > 1) {
+      doc.text(`Parcelas: ${sale.installments}x de R$ ${(sale.total / sale.installments).toFixed(2)}`, 145, y + 10);
+    }
+
+    y += 20;
+
+    // Table of products header
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    doc.text("PRODUTOS DO PEDIDO", 15, y);
+
+    y += 3;
+    doc.setDrawColor(226, 232, 240);
+    doc.line(15, y, 195, y);
+    y += 5;
+
+    // Columns
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text("DESCRIÇÃO DO PRODUTO", 15, y);
+    doc.text("QTD", 115, y, { align: "center" });
+    doc.text("VL. UNITÁRIO", 145, y, { align: "right" });
+    doc.text("SUBTOTAL", 195, y, { align: "right" });
+
+    y += 3;
+    doc.line(15, y, 195, y);
+    y += 6;
+
+    // Items
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(51, 65, 85);
+
+    sale.items.forEach((item) => {
+      if (y > 265) {
+        doc.addPage();
+        y = 20;
+        doc.line(15, y, 195, y);
+        y += 5;
+      }
+
+      doc.setFont("Helvetica", "bold");
+      doc.text(item.name.toUpperCase(), 15, y);
+
+      doc.setFont("Helvetica", "normal");
+      const unitPrice = item.price - (item.discount || 0);
+      doc.text(String(item.quantity), 115, y, { align: "center" });
+      doc.text(`R$ ${unitPrice.toFixed(2)}`, 145, y, { align: "right" });
+      doc.setFont("Helvetica", "bold");
+      doc.text(`R$ ${(unitPrice * item.quantity).toFixed(2)}`, 195, y, { align: "right" });
+
+      y += 5;
+      if (item.discount > 0) {
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(7.5);
+        doc.setTextColor(239, 68, 68);
+        doc.text(`Desconto de R$ ${item.discount.toFixed(2)} por un.`, 15, y);
+        y += 4;
+      }
+
+      doc.setFont("Helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(51, 65, 85);
+
+      doc.setDrawColor(241, 245, 249);
+      doc.line(15, y, 195, y);
+      y += 5;
+    });
+
+    if (y > 255) {
+      doc.addPage();
+      y = 20;
+    }
+
+    y += 2;
+    doc.setFillColor(250, 250, 251);
+    doc.rect(15, y, 180, 16, "F");
+    doc.setDrawColor(226, 232, 240);
+    doc.rect(15, y, 180, 16, "S");
+
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(71, 85, 105);
+    doc.text("VALOR TOTAL DO PEDIDO:", 20, y + 10);
+
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(15);
+    doc.setTextColor(14, 165, 233);
+    doc.text(`R$ ${sale.total.toFixed(2)}`, 190, y + 11.5, { align: "right" });
+
+    y += 25;
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    doc.text("DOCUMENTO AUXILIAR DE VENDA E DESCRITIVO DE PRODUTOS • SEM VALOR FISCAL", 105, y, { align: "center" });
+    doc.text("Gerado pelo OmniVenda Digital", 105, y + 4, { align: "center" });
+
+    return doc;
+  };
+
+  const generateHistoryPDF = (salesList: Sale[], profile: BusinessProfile, filterText: string) => {
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4"
+    });
+
+    let y = 15;
+
+    // Header brand bar
+    doc.setFillColor(14, 165, 233); // #0ea5e9
+    doc.rect(0, 0, 210, 5, "F");
+
+    y = 20;
+
+    // Company Name
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(15, 23, 42); // #0f172a
+    const companyName = profile.companyName || "OMNIVENDA";
+    doc.text(companyName.toUpperCase(), 15, y);
+
+    // Document status badge
+    doc.setFontSize(8.5);
+    doc.setFont("Helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.setFillColor(241, 245, 249);
+    doc.rect(130, y - 5, 65, 6, "F");
+    doc.text(`RELATORIO DE VENDAS: ${filterText.toUpperCase()}`, 162.5, y - 1, { align: "center" });
+
+    y += 7;
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    if (profile.document) {
+      doc.text(`CNPJ/CPF: ${profile.document}`, 15, y);
+      y += 5;
+    }
+    if (profile.phone) {
+      doc.text(`WhatsApp: ${profile.phone}`, 15, y);
+      y += 5;
+    }
+
+    // Right side header info
+    const currentDate = new Date().toLocaleDateString("pt-BR");
+    doc.text(`Emissao: ${currentDate}`, 135, y - 5);
+    doc.text(`Total de Pedidos: ${salesList.length}`, 135, y);
+
+    y += 5;
+    // Divider line
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.4);
+    doc.line(15, y, 195, y);
+    y += 10;
+
+    // Summary of metrics
+    const totalAmount = salesList.reduce((sum, s) => sum + s.total, 0);
+    const paidSum = salesList.filter((s) => s.isPaid).reduce((sum, s) => sum + s.total, 0);
+    const pendingSum = totalAmount - paidSum;
+
+    // Summary Box
+    doc.setFillColor(248, 250, 252);
+    doc.rect(15, y, 180, 16, "F");
+    doc.setDrawColor(241, 245, 249);
+    doc.rect(15, y, 180, 16, "S");
+
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text("RESUMO FINANCEIRO", 20, y + 5);
+
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(51, 65, 85);
+    doc.text(`Faturamento: R$ ${totalAmount.toFixed(2)}`, 20, y + 11);
+    doc.setTextColor(22, 101, 52); // Green
+    doc.text(`Pago: R$ ${paidSum.toFixed(2)}`, 90, y + 11);
+    doc.setTextColor(153, 27, 27); // Red
+    doc.text(`Pendente: R$ ${pendingSum.toFixed(2)}`, 145, y + 11);
+
+    y += 24;
+
+    // Table Header
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    doc.text("LISTA DE PEDIDOS", 15, y);
+
+    y += 3;
+    doc.setDrawColor(226, 232, 240);
+    doc.line(15, y, 195, y);
+    y += 5;
+
+    // Columns
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text("PEDIDO", 15, y);
+    doc.text("DATA", 35, y);
+    doc.text("CLIENTE", 60, y);
+    doc.text("METODO", 125, y);
+    doc.text("STATUS", 160, y);
+    doc.text("TOTAL", 195, y, { align: "right" });
+
+    y += 3;
+    doc.line(15, y, 195, y);
+    y += 6;
+
+    // Items
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(51, 65, 85);
+
+    salesList.forEach((sale) => {
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+        doc.line(15, y, 195, y);
+        y += 5;
+      }
+
+      const orderNumStr = sale.orderNumber ? `#${String(sale.orderNumber).padStart(4, "0")}` : sale.id.substring(0, 6).toUpperCase();
+      doc.setFont("Helvetica", "bold");
+      doc.text(orderNumStr, 15, y);
+
+      doc.setFont("Helvetica", "normal");
+      doc.text(sale.date, 35, y);
+      
+      const clientNameTruncated = sale.clientName.length > 30 ? sale.clientName.substring(0, 27) + "..." : sale.clientName;
+      doc.text(clientNameTruncated.toUpperCase(), 60, y);
+      
+      doc.text(sale.paymentMethod || "Dinheiro", 125, y);
+      
+      const payStatus = sale.isPaid ? "PAGO" : "PENDENTE";
+      doc.text(payStatus, 160, y);
+
+      doc.setFont("Helvetica", "bold");
+      doc.text(`R$ ${sale.total.toFixed(2)}`, 195, y, { align: "right" });
+
+      y += 6;
+      doc.setDrawColor(241, 245, 249);
+      doc.line(15, y, 195, y);
+      y += 6;
+    });
+
+    if (y > 265) {
+      doc.addPage();
+      y = 20;
+    }
+
+    y += 5;
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    doc.text("RELATORIO GERENCIAL • SEM VALOR FISCAL", 105, y, { align: "center" });
+    doc.text("Gerado pelo OmniVenda Digital", 105, y + 4, { align: "center" });
+
+    return doc;
   };
 
   const handlePrintSaleDirect = (sale: Sale) => {
@@ -3074,12 +3332,43 @@ const App: React.FC = () => {
   };
 
   const handleShareHistoryWhatsApp = () => {
-    const printContent = getHistoryListHtml();
     const filterLabel = 
       historyFilter === "week" ? "Esta_Semana" :
       historyFilter === "month" ? "Este_Mes" :
       "Todas_as_Vendas";
-    generateAndSharePDF(printContent, `Relatorio_Vendas_${filterLabel}.pdf`);
+
+    setIsGeneratingPDF(true);
+    try {
+      const doc = generateHistoryPDF(filteredSalesHistory, businessProfile, filterLabel);
+      const fileName = `Relatorio_Vendas_${filterLabel}.pdf`;
+      const pdfBlob = doc.output("blob");
+
+      const defaultText = `Olá! Segue em anexo o relatório de vendas (${fileName.replace(".pdf", "")}).`;
+      const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(defaultText)}`;
+
+      // Force-download the PDF locally so it's guaranteed to be saved on the user's device
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      // Open instructions modal to guide the user on attaching the downloaded PDF on WhatsApp
+      setPdfShareModal({
+        isOpen: true,
+        fileName,
+        isSuccess: true,
+        whatsappUrl
+      });
+    } catch (err) {
+      console.error("Erro ao gerar PDF", err);
+      alert("Houve uma falha ao gerar o arquivo PDF.");
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   const __unused_handleShareHistoryWhatsApp = () => {
@@ -3141,11 +3430,53 @@ Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTim
     window.open(whatsappUrl, "_blank");
   };
 
-  const handleShareWhatsAppDirect = (sale: Sale) => {
-    const printContent = getSingleSaleHtml(sale);
-    const clientData = clients.find((c) => c.id === sale.clientId);
-    const orderNum = sale.orderNumber ? String(sale.orderNumber).padStart(4, "0") : sale.id;
-    generateAndSharePDF(printContent, `Pedido_#${orderNum}.pdf`, clientData?.phone);
+  const handleShareWhatsAppDirect = (sale: Sale, overridePhone?: string) => {
+    const orderNum = sale.orderNumber ? String(sale.orderNumber).padStart(4, "0") : sale.id.substring(0, 8).toUpperCase();
+    const fileName = `Pedido_#${orderNum}.pdf`;
+
+    setIsGeneratingPDF(true);
+    try {
+      const doc = generateSingleSalePDF(sale, businessProfile, clients, isTestMode);
+      const pdfBlob = doc.output("blob");
+
+      const defaultText = `Olá! Segue em anexo o PDF do seu pedido (${fileName.replace(".pdf", "")}).`;
+
+      let finalPhone = "";
+      const phoneToUse = overridePhone || clients.find((c) => c.id === sale.clientId)?.phone;
+      if (phoneToUse) {
+        const cleanP = phoneToUse.replace(/\D/g, "");
+        if (cleanP.length >= 10) {
+          finalPhone = cleanP.startsWith("55") ? cleanP : `55${cleanP}`;
+        }
+      }
+
+      const whatsappUrl = finalPhone
+        ? `https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodeURIComponent(defaultText)}`
+        : `https://api.whatsapp.com/send?text=${encodeURIComponent(defaultText)}`;
+
+      // Force-download the PDF locally so it's guaranteed to be saved on the user's device
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      // Open instructions modal to guide the user on attaching the downloaded PDF on WhatsApp
+      setPdfShareModal({
+        isOpen: true,
+        fileName,
+        isSuccess: true,
+        whatsappUrl
+      });
+    } catch (err) {
+      console.error("Erro ao gerar PDF", err);
+      alert("Houve uma falha ao gerar o arquivo PDF.");
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   const __unused_handleShareWhatsAppDirect = (sale: Sale) => {
@@ -3163,14 +3494,14 @@ Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTim
 ---------------------------
 👤 *Cliente:* ${sale.clientName}
 📅 *Data:* ${sale.date} às ${sale.time}
-
+ 
 📦 *Itens:*
 ${itemsText}
-
+ 
 💰 *Total: R$ ${sale.total.toFixed(2)}*
 💳 *Pagamento:* ${sale.paymentMethod || "Não informado"}
 🗓️ *Condição:* ${sale.paymentTerms || "À vista"}
-
+ 
 Obrigado pela preferência!`;
 
     const encodedText = encodeURIComponent(message);
@@ -7514,6 +7845,7 @@ Obrigado pela preferência!`;
         onDelete={handleDeleteSale}
         onTogglePaid={handleTogglePaid}
         isTestMode={isTestMode}
+        onSharePDFWhatsApp={handleShareWhatsAppDirect}
       />
 
       {/* Modal de Contas a Receber Vencendo Hoje */}

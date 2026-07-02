@@ -14,6 +14,7 @@ interface SaleDetailModalProps {
   onDelete: (saleId: string) => void;
   onTogglePaid?: (saleId: string, isPaid: boolean) => void;
   isTestMode?: boolean;
+  onSharePDFWhatsApp?: (sale: Sale, customPhone?: string) => void;
 }
 
 const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ 
@@ -25,7 +26,8 @@ const SaleDetailModal: React.FC<SaleDetailModalProps> = ({
   onEdit, 
   onDelete,
   onTogglePaid,
-  isTestMode
+  isTestMode,
+  onSharePDFWhatsApp
 }) => {
   const [showConfirmDelete, setShowConfirmDelete] = React.useState(false);
   const [viewMode, setViewMode] = React.useState<'VIEW' | 'ACTIONS'>('VIEW');
@@ -323,6 +325,11 @@ Obrigado pela preferência!`;
   };
 
   const handleSharePDFWhatsApp = async () => {
+    if (onSharePDFWhatsApp) {
+      onSharePDFWhatsApp(sale, customPhone);
+      return;
+    }
+
     const orderNum = sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : sale.id.substring(0, 8).toUpperCase();
     
     // Always download PDF locally first to guarantee it is saved on the device
