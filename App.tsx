@@ -3013,23 +3013,55 @@ const App: React.FC = () => {
       </html>
     `;
 
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      printWindow.document.write(printContent);
-      printWindow.document.close();
+    // Print using a hidden iframe for 100% WebView/APK compatibility and no popup blocker or blank screen issues!
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    document.body.appendChild(iframe);
+    
+    iframe.contentWindow?.document.write(printContent);
+    iframe.contentWindow?.document.close();
+    
+    setTimeout(() => {
+      if (iframe.contentWindow) {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      }
       setTimeout(() => {
-        printWindow.print();
-      }, 800);
-    }
+        document.body.removeChild(iframe);
+      }, 2000);
+    }, 600);
   };
 
   const handlePrintHistoryList = () => {
     const printContent = getHistoryListHtml();
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-    }
+    
+    // Print using a hidden iframe for 100% WebView/APK compatibility and no popup blocker or blank screen issues!
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    document.body.appendChild(iframe);
+    
+    iframe.contentWindow?.document.write(printContent);
+    iframe.contentWindow?.document.close();
+    
+    setTimeout(() => {
+      if (iframe.contentWindow) {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      }
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 2000);
+    }, 600);
   };
 
   const __unused_handlePrintHistoryList = () => {
@@ -3367,28 +3399,14 @@ const App: React.FC = () => {
         }
       }
 
-      // 2. Mobile fallback: Open in a new tab so mobile browsers can natively view and save/download it
+      // 2. Fallback: Download using hidden link click (works perfectly on mobile and desktop without blank screens!)
       const url = URL.createObjectURL(pdfBlob);
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      
-      if (isMobile) {
-        try {
-          const newWindow = window.open(url, "_blank");
-          if (!newWindow || newWindow.closed || typeof newWindow.closed === "undefined") {
-            window.location.href = url;
-          }
-        } catch (e) {
-          window.location.href = url;
-        }
-      } else {
-        // 3. Desktop fallback: Hidden link download (the standard, perfect way on desktop)
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
       // Clean up the URL object after a small delay
       setTimeout(() => {
