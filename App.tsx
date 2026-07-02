@@ -398,6 +398,111 @@ const App: React.FC = () => {
     return localStorage.getItem("omnivenda_saas_logo_url") || "";
   });
 
+  // Efeito para criar o ícone da aplicação (favicon e apple-touch-icon) dinamicamente
+  // e aplicar um padding de segurança de 15% para evitar que o celular corte a imagem nas bordas (squircles)
+  useEffect(() => {
+    const updateAppIcons = async () => {
+      // Determina qual imagem de logo usar
+      let logoSrc = "/favicon.svg";
+      if (saasLogoUrl) {
+        logoSrc = convertDriveLink(saasLogoUrl);
+      } else if (businessProfile?.logoUrl) {
+        logoSrc = convertDriveLink(businessProfile.logoUrl);
+      }
+
+      // Se for o favicon padrão, não precisa de canvas
+      if (logoSrc === "/favicon.svg") {
+        const favLink = document.getElementById("dynamic-favicon") as HTMLLinkElement;
+        if (favLink) {
+          favLink.href = "/favicon.svg";
+          favLink.type = "image/svg+xml";
+        }
+        const touchLink = document.getElementById("apple-touch-icon") as HTMLLinkElement;
+        if (touchLink) {
+          touchLink.href = "/favicon.svg";
+        }
+        return;
+      }
+
+      // Se for uma imagem personalizada, cria uma versão com padding seguro de 15% em canvas
+      try {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          const size = 512;
+          const canvas = document.createElement("canvas");
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+
+          // Preenche o fundo com branco para um visual limpo e profissional de ícone de app
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, size, size);
+
+          // Define a área segura: 70% do tamanho total (15% de margem em cada lado)
+          const safeSize = size * 0.70;
+          let drawW = img.width;
+          let drawH = img.height;
+
+          // Redimensiona mantendo a proporção
+          if (drawW > drawH) {
+            drawH = (drawH * safeSize) / drawW;
+            drawW = safeSize;
+          } else {
+            drawW = (drawW * safeSize) / drawH;
+            drawH = safeSize;
+          }
+
+          // Centraliza a imagem no canvas de 512x512
+          const x = (size - drawW) / 2;
+          const y = (size - drawH) / 2;
+
+          ctx.drawImage(img, x, y, drawW, drawH);
+
+          try {
+            const dataUrl = canvas.toDataURL("image/png");
+            
+            // Atualiza favicon
+            const favLink = document.getElementById("dynamic-favicon") as HTMLLinkElement;
+            if (favLink) {
+              favLink.href = dataUrl;
+              favLink.type = "image/png";
+            }
+            
+            // Atualiza ícone de atalho mobile (iOS e Android)
+            const touchLink = document.getElementById("apple-touch-icon") as HTMLLinkElement;
+            if (touchLink) {
+              touchLink.href = dataUrl;
+            }
+          } catch (canvasErr) {
+            console.warn("CORS ou erro ao converter canvas do ícone, usando link direto:", canvasErr);
+            // Fallback: se o canvas estiver maculado (CORS), usa o link do logo diretamente
+            const favLink = document.getElementById("dynamic-favicon") as HTMLLinkElement;
+            if (favLink) {
+              favLink.href = logoSrc;
+              favLink.type = "image/png";
+            }
+            const touchLink = document.getElementById("apple-touch-icon") as HTMLLinkElement;
+            if (touchLink) {
+              touchLink.href = logoSrc;
+            }
+          }
+        };
+
+        img.onerror = () => {
+          console.warn("Erro ao carregar imagem do logo para o ícone, usando favicon padrão.");
+        };
+
+        img.src = logoSrc;
+      } catch (err) {
+        console.error("Erro geral ao processar ícones:", err);
+      }
+    };
+
+    updateAppIcons();
+  }, [saasLogoUrl, businessProfile?.logoUrl]);
+
   const getVisualStack = () => {
     const stack = [];
     if (currentScreen !== "HOME") stack.push("screen");
