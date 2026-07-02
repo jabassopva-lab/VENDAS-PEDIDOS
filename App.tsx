@@ -5864,15 +5864,6 @@ Obrigado pela preferência!`;
                           </button>
 
                           <button
-                            onClick={() => handleShareWhatsAppDirect(sale)}
-                            className="flex items-center gap-1 bg-emerald-50/40 hover:bg-emerald-50 border border-emerald-100/50 text-emerald-600 p-2 sm:px-3 sm:py-1.5 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
-                            title="Enviar WhatsApp"
-                          >
-                            <MessageSquare size={16} className="text-emerald-500 sm:w-[17px] sm:h-[17px]" />
-                            <span className="hidden sm:inline">WhatsApp</span>
-                          </button>
-
-                          <button
                             onClick={() => handleDeleteSale(sale.id)}
                             className="flex items-center gap-1 bg-red-50/40 hover:bg-red-50 border border-red-100/50 text-red-650 p-2 sm:px-3 sm:py-1.5 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-xs"
                             title="Excluir Pedido"
