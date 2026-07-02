@@ -3341,7 +3341,23 @@ const App: React.FC = () => {
     try {
       const doc = generateHistoryPDF(filteredSalesHistory, businessProfile, filterLabel);
       const fileName = `Relatorio_Vendas_${filterLabel}.pdf`;
-      doc.save(fileName);
+      
+      // Generate the PDF as a Blob and use a temporary anchor element for high compatibility on mobile
+      const pdfBlob = doc.output("blob");
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up the DOM and release memory after a small delay
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 500);
     } catch (err) {
       console.error("Erro ao gerar PDF", err);
       alert("Houve uma falha ao gerar o arquivo PDF.");
