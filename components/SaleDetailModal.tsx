@@ -1037,20 +1037,6 @@ Obrigado pela preferência!`;
                  </div>
               </button>
 
-              {/* Download PDF directly */}
-              <button 
-                onClick={handleDownloadPDF}
-                className="bg-white p-5 rounded-[2rem] border border-slate-150 flex flex-col justify-between items-stretch text-left active:scale-98 transition-all group hover:border-indigo-500 hover:shadow-lg hover:shadow-indigo-50 shadow-sm"
-              >
-                 <div className="w-11 h-11 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform mb-4 border border-indigo-100">
-                   <Download size={22} className="stroke-[2.5]" />
-                 </div>
-                 <div className="text-left font-sans">
-                   <p className="font-extrabold text-slate-800 text-sm sm:text-base leading-tight">Baixar PDF do Pedido</p>
-                   <p className="text-xs text-slate-500 mt-1.5 leading-snug">Gerar e salvar o arquivo PDF em formato A4 profissional no seu dispositivo.</p>
-                 </div>
-              </button>
-
               {/* Editar */}
               <button 
                 onClick={() => {

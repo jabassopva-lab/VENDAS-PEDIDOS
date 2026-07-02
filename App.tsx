@@ -5758,13 +5758,6 @@ Obrigado pela preferência!`;
                   >
                     <Printer size={18} />
                   </button>
-                  <button
-                    onClick={handleShareHistoryWhatsApp}
-                    className="p-1.5 sm:p-2 bg-white/20 hover:bg-white/30 text-white rounded-xl border border-white/10 active:scale-95 transition-all flex items-center justify-center"
-                    title="Baixar Relatório PDF"
-                  >
-                    <Download size={18} />
-                  </button>
                 </div>
               }
             />
