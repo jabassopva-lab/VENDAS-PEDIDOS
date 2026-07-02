@@ -2351,23 +2351,7 @@ ${itemsText}
 Obrigado pela preferência!`;
 
     const encodedText = encodeURIComponent(message);
-    
-    // Prompt for WhatsApp number, default to client phone if available
-    const phoneInput = clientData?.phone || "";
-    const userPhone = window.prompt("Digite ou confirme o WhatsApp do destinatário (apenas números com DDD):", phoneInput);
-    if (userPhone === null) return; // User cancelled
-    
-    const cleanPhone = userPhone.replace(/\D/g, "");
-    let finalPhone = cleanPhone;
-    if (cleanPhone.length >= 10) {
-      if (!cleanPhone.startsWith('55')) {
-        finalPhone = `55${cleanPhone}`;
-      }
-    }
-
-    const whatsappUrl = finalPhone
-      ? `https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodedText}`
-      : `https://api.whatsapp.com/send?text=${encodedText}`;
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodedText}`;
 
     window.open(whatsappUrl, "_blank");
   };
