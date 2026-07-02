@@ -2325,6 +2325,65 @@ const App: React.FC = () => {
     }
   };
 
+  const handleShareHistoryWhatsApp = () => {
+    const profile = businessProfile;
+    const companyName = profile.companyName || "OMNIVENDA";
+    const count = filteredSalesHistory.length;
+    const totalSum = filteredSalesHistory.reduce((sum, sale) => sum + Number(sale.total || 0), 0);
+    const paidSum = filteredSalesHistory
+      .filter((sale) => sale.isPaid)
+      .reduce((sum, sale) => sum + Number(sale.total || 0), 0);
+    const pendingSum = filteredSalesHistory
+      .filter((sale) => !sale.isPaid && sale.status !== "ORCAMENTO")
+      .reduce((sum, sale) => sum + Number(sale.total || 0), 0);
+    const budgetSum = filteredSalesHistory
+      .filter((sale) => sale.status === "ORCAMENTO")
+      .reduce((sum, sale) => sum + Number(sale.total || 0), 0);
+
+    const filterLabel = 
+      historyFilter === "week" ? "Esta Semana" :
+      historyFilter === "month" ? "Este Mês" :
+      "Todas as Vendas";
+
+    const salesListText = filteredSalesHistory
+      .map((sale) => {
+        const orderNum = sale.orderNumber ? String(sale.orderNumber).padStart(4, "0") : "...";
+        const dateMatch = sale.paymentTerms?.match(/\d{2}\/\d{2}\/\d{4}/);
+        const dueDateExtracted = dateMatch ? dateMatch[0] : null;
+
+        const typeLabel = sale.status === "ORCAMENTO" ? "Orçamento" : "Venda";
+        const statusLabel = sale.isPaid
+          ? "Pago"
+          : `Pendente${dueDateExtracted ? ` (Venc: ${dueDateExtracted})` : ""}`;
+
+        return `• *#${orderNum}* | ${sale.clientName}\n  ${sale.date} ${sale.time || ""} | _${typeLabel}_ | _${statusLabel}_\n  *R$ ${Number(sale.total).toFixed(2)}*`;
+      })
+      .join("\n\n");
+
+    const message = `*${companyName} - Relatório de Pedidos / Vendas*
+---------------------------
+📅 *Período:* ${filterLabel}
+📊 *Resumo:*
+• *Qtd de Pedidos:* ${count}
+• *Total Geral:* R$ ${totalSum.toFixed(2)}
+• *Total Pago:* R$ ${paidSum.toFixed(2)}
+• *Total Pendente:* R$ ${pendingSum.toFixed(2)}
+• *Total Orçamentos:* R$ ${budgetSum.toFixed(2)}
+
+---------------------------
+📋 *Lista de Pedidos:*
+
+${salesListText || "Nenhum pedido encontrado no período."}
+
+---------------------------
+Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}`;
+
+    const encodedText = encodeURIComponent(message);
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodedText}`;
+
+    window.open(whatsappUrl, "_blank");
+  };
+
   const handleShareWhatsAppDirect = (sale: Sale) => {
     const profile = businessProfile;
     const clientData = clients.find((c) => c.id === sale.clientId);
@@ -4529,6 +4588,13 @@ Obrigado pela preferência!`;
                     title="Imprimir Lista"
                   >
                     <Printer size={18} />
+                  </button>
+                  <button
+                    onClick={handleShareHistoryWhatsApp}
+                    className="p-1.5 sm:p-2 bg-white/20 hover:bg-white/30 text-white rounded-xl border border-white/10 active:scale-95 transition-all flex items-center justify-center"
+                    title="Compartilhar no WhatsApp"
+                  >
+                    <MessageSquare size={18} />
                   </button>
                 </div>
               }
