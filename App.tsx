@@ -2380,26 +2380,7 @@ const App: React.FC = () => {
         ? `https://api.whatsapp.com/send?phone=${finalPhone}&text=${encodeURIComponent(defaultText)}`
         : `https://api.whatsapp.com/send?text=${encodeURIComponent(defaultText)}`;
 
-      // Try native Web Share
-      if (
-        navigator.share &&
-        navigator.canShare &&
-        navigator.canShare({ files: [file] })
-      ) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: fileName.replace(".pdf", ""),
-            text: defaultText
-          });
-          setIsGeneratingPDF(false);
-          return;
-        } catch (shareErr) {
-          console.warn("Native Web Share failed/cancelled:", shareErr);
-        }
-      }
-
-      // Fallback: local download
+      // Force-download the PDF locally so it's guaranteed to be saved on the user's device
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement("a");
       link.href = url;
@@ -2409,7 +2390,7 @@ const App: React.FC = () => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      // Open instructions modal
+      // Open instructions modal to guide the user on attaching the downloaded PDF on WhatsApp
       setPdfShareModal({
         isOpen: true,
         fileName,

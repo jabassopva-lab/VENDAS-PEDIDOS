@@ -324,41 +324,23 @@ Obrigado pela preferência!`;
 
   const handleSharePDFWhatsApp = async () => {
     const orderNum = sale.orderNumber ? String(sale.orderNumber).padStart(4, '0') : sale.id.substring(0, 8).toUpperCase();
-    try {
-      const doc = generateSalePDF();
-      const filename = `pedido_${orderNum}.pdf`;
-      const pdfBlob = doc.output('blob');
-      const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
-
-      // Check if browser/tab can natively share files
-      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-        await navigator.share({
-          files: [pdfFile],
-          title: `Pedido #${orderNum}`,
-          text: `Segue o comprovante em PDF do seu pedido.`
-        });
-        return;
-      }
-    } catch (shareErr) {
-      console.log("Native share failed/unsupported", shareErr);
-    }
-
-    // Fallback: download PDF + open WhatsApp and inform user
+    
+    // Always download PDF locally first to guarantee it is saved on the device
     try {
       const doc = generateSalePDF();
       doc.save(`pedido_${orderNum}.pdf`);
       
-      // Let user know their PDF was downloaded and that they can attach it
+      // Notify user and open WhatsApp
       try {
-        alert(`📄 PDF do Pedido #${orderNum} foi baixado com sucesso!\n\nAgora abriremos o WhatsApp. Basta anexar o arquivo PDF baixado (clipe de papel) na conversa do WhatsApp.`);
+        alert(`📄 PDF do Pedido #${orderNum} foi baixado com sucesso!\n\nAgora abriremos o WhatsApp. Basta anexar o arquivo PDF baixado (clipe de papel / +) na conversa do WhatsApp.`);
       } catch (alertErr) {
         console.warn("Alert is blocked by browser policies:", alertErr);
       }
       
-      // Open WhatsApp with text summary as well
+      // Open WhatsApp with text summary
       handleShareWhatsApp();
     } catch (err) {
-      console.error("Erro no compartilhamento fallback", err);
+      console.error("Erro ao gerar e compartilhar PDF", err);
       handleShareWhatsApp();
     }
   };
