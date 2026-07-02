@@ -3457,7 +3457,7 @@ Obrigado pela preferência!`;
           </div>
           <div className="flex gap-1.5 sm:gap-2 shrink-0 items-center">
             {rightAction}
-            {session && !isPureAdmin && currentScreen !== "SETTINGS" && (
+            {session && !isPureAdmin && currentScreen === "HOME" && (
               <button
                 onClick={() => setCurrentScreen("SETTINGS")}
                 className={`p-1.5 sm:p-2 rounded-xl transition-all border border-white/10 ${
