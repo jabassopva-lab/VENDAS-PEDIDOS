@@ -404,6 +404,8 @@ const App: React.FC = () => {
   });
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [directPrintHtml, setDirectPrintHtml] = useState<string | null>(null);
+  const [onScreenPrintHtml, setOnScreenPrintHtml] = useState<string | null>(null);
+  const [onScreenPrintTitle, setOnScreenPrintTitle] = useState<string>("");
 
   const [productModal, setProductModal] = useState<{
     type: ModalType;
@@ -2664,80 +2666,27 @@ const App: React.FC = () => {
     return doc;
   };
 
-  const executeUniversalPrint = (printContent: string) => {
-    // 1. Try iframe method first because it's non-disruptive and works well in standard desktop browsers
-    try {
-      const iframe = document.createElement("iframe");
-      iframe.style.position = "fixed";
-      iframe.style.right = "0";
-      iframe.style.bottom = "0";
-      iframe.style.width = "0";
-      iframe.style.height = "0";
-      iframe.style.border = "0";
-      document.body.appendChild(iframe);
-      
-      iframe.contentWindow?.document.open();
-      iframe.contentWindow?.document.write(printContent);
-      iframe.contentWindow?.document.close();
-      
-      setTimeout(() => {
-        let printTriggered = false;
-        try {
-          if (iframe.contentWindow) {
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
-            printTriggered = true;
-          }
-        } catch (e) {
-          console.error("Iframe print triggered catch:", e);
-        }
-        
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-        }, 2000);
-
-        if (!printTriggered) {
-          triggerFallback();
-        }
-      }, 600);
-    } catch (err) {
-      console.error("Iframe creation failed:", err);
-      triggerFallback();
-    }
-
-    function triggerFallback() {
-      // 2. Try window.open popup
+  const executeUniversalPrint = (printContent: string, title: string = "Visualização do Documento") => {
+    setOnScreenPrintTitle(title);
+    setOnScreenPrintHtml(printContent);
+    setDirectPrintHtml(printContent);
+    
+    triggerNotify("Gerando visualização de impressão...");
+    
+    // Attempt automatic print in case we are running outside the sandboxed iframe
+    setTimeout(() => {
       try {
-        const printWindow = window.open("", "_blank");
-        if (printWindow) {
-          printWindow.document.open();
-          printWindow.document.write(printContent);
-          printWindow.document.close();
-          setTimeout(() => {
-            printWindow.print();
-          }, 800);
-          triggerNotify("Visualizador aberto em nova janela!");
-          return;
-        }
-      } catch (err) {
-        console.error("Window open failed:", err);
-      }
-
-      // 3. Ultimate robust fallback: Direct inline printing via state
-      triggerNotify("Gerando página de impressão...");
-      setDirectPrintHtml(printContent);
-      setTimeout(() => {
         window.print();
-        setTimeout(() => {
-          setDirectPrintHtml(null);
-        }, 1500);
-      }, 300);
-    }
+      } catch (err) {
+        console.error("Auto print failed or blocked by sandbox:", err);
+      }
+    }, 450);
   };
 
   const handlePrintSaleDirect = (sale: Sale) => {
     const printContent = getSingleSaleHtml(sale);
-    executeUniversalPrint(printContent);
+    const orderNo = sale.orderNumber ? String(sale.orderNumber).padStart(4, "0") : sale.id.substring(0, 8).toUpperCase();
+    executeUniversalPrint(printContent, `Recibo de Pedido #${orderNo}`);
   };
 
   const __unused_handlePrintSaleDirect = (sale: Sale) => {
@@ -3104,7 +3053,7 @@ const App: React.FC = () => {
 
   const handlePrintHistoryList = () => {
     const printContent = getHistoryListHtml();
-    executeUniversalPrint(printContent);
+    executeUniversalPrint(printContent, "Relatório de Histórico de Vendas");
   };
 
   const __unused_handlePrintHistoryList = () => {
@@ -8949,10 +8898,138 @@ Obrigado pela preferência!`;
       )}
 
       {directPrintHtml && (
-        <div 
-          className="hidden print:block bg-white text-slate-900 p-4 w-full"
-          dangerouslySetInnerHTML={{ __html: directPrintHtml }}
-        />
+        <>
+          <style dangerouslySetInnerHTML={{ __html: `
+            @media print {
+              html, body {
+                height: auto !important;
+                overflow: visible !important;
+                background: #ffffff !important;
+              }
+              body > * {
+                display: none !important;
+              }
+              body > #root {
+                display: block !important;
+              }
+              #root > * {
+                display: none !important;
+              }
+              #root > .print-container-only {
+                display: block !important;
+                width: 100% !important;
+                height: auto !important;
+                position: static !important;
+                overflow: visible !important;
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+              }
+            }
+          `}} />
+          <div 
+            className="print-container-only hidden print:block bg-white text-slate-900 p-0 w-full"
+            dangerouslySetInnerHTML={{ __html: directPrintHtml }}
+          />
+        </>
+      )}
+
+      {onScreenPrintHtml && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[250] flex flex-col justify-between p-2 sm:p-4 md:p-6 print:hidden overflow-hidden">
+          <div className="bg-slate-50 rounded-[2rem] shadow-2xl max-w-3xl w-full mx-auto flex flex-col flex-1 border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="bg-sky-950 text-white px-5 py-4 flex items-center justify-between border-b border-sky-900">
+              <div className="text-left">
+                <div className="flex items-center gap-2">
+                  <Printer size={18} className="text-sky-400 animate-pulse" />
+                  <h3 className="text-xs sm:text-sm font-black uppercase italic tracking-wider text-white">
+                    {onScreenPrintTitle || "Visualização do Documento"}
+                  </h3>
+                </div>
+                <p className="text-[8px] sm:text-[9px] text-sky-300 font-bold uppercase tracking-widest mt-0.5">
+                  Pré-visualização fiel do recibo / relatório
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setOnScreenPrintHtml(null);
+                  setDirectPrintHtml(null);
+                }}
+                className="bg-white/10 hover:bg-white/20 p-2 rounded-2xl active:scale-90 transition-all font-sans"
+                title="Fechar"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Aviso inteligente de iframe / simulador */}
+            <div className="bg-amber-500/10 border-b border-amber-500/25 px-5 py-2.5 text-left">
+              <p className="text-[9px] font-black text-amber-700 uppercase tracking-wider leading-relaxed">
+                👉 **DICA DE IMPRESSÃO:** O simulador do editor impede a abertura direta da janela de impressão. Para imprimir de verdade ou gerar PDF sem restrições, clique no botão **"Abrir Nova Aba"** (ou ícone de tela cheia) no topo do editor para executar o OmniVenda livremente!
+              </p>
+            </div>
+
+            {/* Document body preview */}
+            <div className="p-2 sm:p-4 overflow-y-auto flex-1 bg-slate-100 flex justify-center">
+              <div className="bg-white shadow-md border border-slate-200 rounded-2xl w-full max-w-2xl overflow-hidden flex flex-col">
+                <iframe
+                  title="Receipt Print Preview"
+                  srcDoc={onScreenPrintHtml}
+                  className="w-full h-full min-h-[50vh] bg-white border-0"
+                  sandbox="allow-same-origin allow-scripts"
+                />
+              </div>
+            </div>
+
+            {/* Footer com botões de ação */}
+            <div className="bg-white border-t border-slate-200 px-5 py-4 flex flex-col sm:flex-row items-center gap-3 justify-end shrink-0">
+              <button
+                onClick={() => {
+                  setOnScreenPrintHtml(null);
+                  setDirectPrintHtml(null);
+                }}
+                className="w-full sm:w-auto px-5 py-3 border border-slate-200 hover:bg-slate-100 rounded-xl text-slate-500 text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all text-center"
+              >
+                Voltar
+              </button>
+              
+              <button
+                onClick={() => {
+                  try {
+                    const tempDiv = document.createElement("div");
+                    tempDiv.innerHTML = onScreenPrintHtml;
+                    const text = tempDiv.innerText || tempDiv.textContent || "";
+                    navigator.clipboard.writeText(text);
+                    triggerNotify("Texto do recibo copiado com sucesso!");
+                  } catch (e) {
+                    triggerNotify("Erro ao copiar o texto.");
+                  }
+                }}
+                className="w-full sm:w-auto px-5 py-3 bg-sky-50 border border-sky-100 hover:bg-sky-100 text-sky-700 rounded-xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-1.5"
+              >
+                <FileText size={14} /> Copiar Dados do Recibo
+              </button>
+
+              <button
+                onClick={() => {
+                  setDirectPrintHtml(onScreenPrintHtml);
+                  triggerNotify("Chamando impressora do sistema...");
+                  setTimeout(() => {
+                    try {
+                      window.print();
+                    } catch (e) {
+                      console.error("Window print error:", e);
+                      triggerNotify("Impressão bloqueada pelo navegador no simulador.");
+                    }
+                  }, 150);
+                }}
+                className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 border-b-2 border-sky-700"
+              >
+                <Printer size={14} /> Imprimir / Salvar PDF
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
