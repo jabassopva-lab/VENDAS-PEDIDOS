@@ -15,6 +15,7 @@ interface SaleDetailModalProps {
   onTogglePaid?: (saleId: string, isPaid: boolean) => void;
   isTestMode?: boolean;
   onSharePDFWhatsApp?: (sale: Sale, customPhone?: string) => void;
+  onPrintDirect?: (sale: Sale) => void;
 }
 
 const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ 
@@ -27,7 +28,8 @@ const SaleDetailModal: React.FC<SaleDetailModalProps> = ({
   onDelete,
   onTogglePaid,
   isTestMode,
-  onSharePDFWhatsApp
+  onSharePDFWhatsApp,
+  onPrintDirect
 }) => {
   const [showConfirmDelete, setShowConfirmDelete] = React.useState(false);
   const [viewMode, setViewMode] = React.useState<'VIEW' | 'ACTIONS'>('VIEW');
@@ -393,6 +395,11 @@ Obrigado pela preferência!`;
   };
 
   const handlePrint = () => {
+    if (onPrintDirect && sale) {
+      onPrintDirect(sale);
+      return;
+    }
+
     const logoUrl = convertDriveLink(profile.logoUrl || '');
     const companyName = profile.companyName || 'OMNIVENDA';
     const logoHtml = logoUrl ? `<img src="${logoUrl}" style="max-height: 80px; max-width: 180px; margin-bottom: 8px; object-fit: contain;">` : '';
@@ -755,7 +762,7 @@ Obrigado pela preferência!`;
   const currentLogo = convertDriveLink(profile.logoUrl || '');
 
   return (
-    <div className="fixed inset-0 bg-sky-950/40 backdrop-blur-sm z-[100] flex items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300">
+    <div className="fixed inset-0 bg-sky-950/40 backdrop-blur-sm z-[100] flex items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300 print:hidden">
       <div className="bg-white w-full h-full sm:h-auto sm:max-h-[85vh] sm:rounded-[2rem] sm:max-w-2xl shadow-2xl overflow-hidden flex flex-col border-0 sm:border border-slate-200 animate-in zoom-in-95 relative">
         {/* Confirmação de Exclusão Overlay */}
         {showConfirmDelete && (

@@ -403,6 +403,7 @@ const App: React.FC = () => {
     return today.toISOString().split("T")[0];
   });
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [directPrintHtml, setDirectPrintHtml] = useState<string | null>(null);
 
   const [productModal, setProductModal] = useState<{
     type: ModalType;
@@ -2663,16 +2664,80 @@ const App: React.FC = () => {
     return doc;
   };
 
+  const executeUniversalPrint = (printContent: string) => {
+    // 1. Try iframe method first because it's non-disruptive and works well in standard desktop browsers
+    try {
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      document.body.appendChild(iframe);
+      
+      iframe.contentWindow?.document.open();
+      iframe.contentWindow?.document.write(printContent);
+      iframe.contentWindow?.document.close();
+      
+      setTimeout(() => {
+        let printTriggered = false;
+        try {
+          if (iframe.contentWindow) {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+            printTriggered = true;
+          }
+        } catch (e) {
+          console.error("Iframe print triggered catch:", e);
+        }
+        
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 2000);
+
+        if (!printTriggered) {
+          triggerFallback();
+        }
+      }, 600);
+    } catch (err) {
+      console.error("Iframe creation failed:", err);
+      triggerFallback();
+    }
+
+    function triggerFallback() {
+      // 2. Try window.open popup
+      try {
+        const printWindow = window.open("", "_blank");
+        if (printWindow) {
+          printWindow.document.open();
+          printWindow.document.write(printContent);
+          printWindow.document.close();
+          setTimeout(() => {
+            printWindow.print();
+          }, 800);
+          triggerNotify("Visualizador aberto em nova janela!");
+          return;
+        }
+      } catch (err) {
+        console.error("Window open failed:", err);
+      }
+
+      // 3. Ultimate robust fallback: Direct inline printing via state
+      triggerNotify("Gerando página de impressão...");
+      setDirectPrintHtml(printContent);
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => {
+          setDirectPrintHtml(null);
+        }, 1500);
+      }, 300);
+    }
+  };
+
   const handlePrintSaleDirect = (sale: Sale) => {
     const printContent = getSingleSaleHtml(sale);
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-      setTimeout(() => {
-        printWindow.print();
-      }, 800);
-    }
+    executeUniversalPrint(printContent);
   };
 
   const __unused_handlePrintSaleDirect = (sale: Sale) => {
@@ -3039,29 +3104,7 @@ const App: React.FC = () => {
 
   const handlePrintHistoryList = () => {
     const printContent = getHistoryListHtml();
-    
-    // Print using a hidden iframe for 100% WebView/APK compatibility and no popup blocker or blank screen issues!
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "0";
-    document.body.appendChild(iframe);
-    
-    iframe.contentWindow?.document.write(printContent);
-    iframe.contentWindow?.document.close();
-    
-    setTimeout(() => {
-      if (iframe.contentWindow) {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-      }
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 2000);
-    }, 600);
+    executeUniversalPrint(printContent);
   };
 
   const __unused_handlePrintHistoryList = () => {
@@ -7904,6 +7947,7 @@ Obrigado pela preferência!`;
         onTogglePaid={handleTogglePaid}
         isTestMode={isTestMode}
         onSharePDFWhatsApp={handleShareWhatsAppDirect}
+        onPrintDirect={handlePrintSaleDirect}
       />
 
       {/* Modal de Contas a Receber Vencendo Hoje */}
@@ -8902,6 +8946,13 @@ Obrigado pela preferência!`;
             </div>
           </div>
         </div>
+      )}
+
+      {directPrintHtml && (
+        <div 
+          className="hidden print:block bg-white text-slate-900 p-4 w-full"
+          dangerouslySetInnerHTML={{ __html: directPrintHtml }}
+        />
       )}
     </>
   );
