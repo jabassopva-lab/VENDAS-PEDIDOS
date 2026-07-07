@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#ffffff" />
+
+  <!-- Blue Rounded Container -->
+  <rect x="156" y="60" width="200" height="200" rx="55" ry="55" fill="#0ea5e9" stroke="#facc15" stroke-width="8" />
+
+  <!-- Cloud Icon centered in the container -->
+  <!-- Lucide Cloud path: M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z -->
+  <!-- Centering calculations:
+       The path is in a 24x24 box. Centered at (256, 160).
+       Scale is 4.8. Width = 24 * 4.8 = 115.2. Height = 24 * 4.8 = 115.2.
+       Translate = (256 - 57.6, 160 - 57.6) = (198.4, 102.4).
+  -->
+  <g transform="translate(198.4, 102.4) scale(4.8)">
+    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- OMNIVENDA text -->
+  <text x="256" y="360" font-family="'Fredoka', 'Inter', 'Arial Black', sans-serif" font-weight="900" font-size="62" font-style="italic" fill="#112235" text-anchor="middle" letter-spacing="-1">OMNIVENDA</text>
+
+  <!-- GESTÃO DE VENDAS text -->
+  <text x="256" y="415" font-family="'Inter', 'Fredoka', 'Arial', sans-serif" font-weight="800" font-size="28" fill="#0ea5e9" text-anchor="middle" letter-spacing="4">GESTÃO DE VENDAS</text>
+</svg>
