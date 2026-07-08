@@ -5325,7 +5325,7 @@ Obrigado pela preferência!`;
                             : "text-slate-500 hover:text-slate-800"
                         }`}
                       >
-                        Vendas do Dia
+                        Dia
                       </button>
                       <button
                         type="button"
@@ -5426,7 +5426,7 @@ Obrigado pela preferência!`;
                       <FileSpreadsheet size={16} className="text-yellow-300 md:size-6" />
                     </div>
                     <span className="text-[7.5px] md:text-xs font-black uppercase tracking-widest mt-0.5 text-indigo-100">
-                      Vendas do Dia
+                      Dia
                     </span>
                   </button>
                 </div>
@@ -6248,7 +6248,7 @@ Obrigado pela preferência!`;
                   onClick={() => setReportTab("DIARIO")}
                   className={`flex-1 py-1 sm:py-1.5 rounded-xl text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "DIARIO" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                 >
-                  Vendas do Dia
+                  Dia
                 </button>
                 <button
                   onClick={() => setReportTab("MENSAL")}
@@ -7579,7 +7579,7 @@ Obrigado pela preferência!`;
                       onClick={() => setReportTab("DIARIO")}
                       className={`flex-1 py-1 sm:py-1 rounded-lg text-sm sm:text-base font-black uppercase tracking-tight transition-all ${reportTab === "DIARIO" ? "bg-white text-sky-800 shadow-md" : "text-sky-100/80 hover:text-white hover:bg-white/5"}`}
                     >
-                      Vendas do Dia
+                      Dia
                     </button>
                     <button
                       onClick={() => setReportTab("MENSAL")}

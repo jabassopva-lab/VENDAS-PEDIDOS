@@ -1258,7 +1258,7 @@ Feito pelo OmniVenda Co-piloto`;
               <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
                 <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
                   <Clock size={14} className="text-violet-500" />
-                  Cronologia das Vendas do Dia
+                  Cronologia do Dia
                 </h3>
                 <div className="space-y-3">
                   {todaySales.length === 0 ? (
