@@ -3,8 +3,7 @@ const ASSETS = [
   '/',
   '/index.html',
   '/favicon.svg',
-  '/launchericon-192x192.png',
-  '/launchericon-512x512.png',
+  '/icon.svg',
   '/manifest.json'
 ];
 
