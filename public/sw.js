@@ -4,6 +4,8 @@ const ASSETS = [
   '/index.html',
   '/favicon.svg',
   '/icon.svg',
+  '/launchericon-192x192.png',
+  '/launchericon-512x512.png',
   '/manifest.json'
 ];
 
