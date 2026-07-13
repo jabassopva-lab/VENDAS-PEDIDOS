@@ -1476,15 +1476,15 @@ const App: React.FC = () => {
         ...data,
         clientName: client?.name || "Venda Avulsa",
         items: cleanItems as any,
-        date: isUpdate
+        date: data.date || (isUpdate
           ? salesHistory.find((s) => s.id === data.id)?.date || todayBR
-          : todayBR,
-        time: isUpdate
+          : todayBR),
+        time: data.time || (isUpdate
           ? salesHistory.find((s) => s.id === data.id)?.time || "00:00"
           : new Date().toLocaleTimeString("pt-BR", {
               hour: "2-digit",
               minute: "2-digit",
-            }),
+            })),
       };
 
       let savedSale;

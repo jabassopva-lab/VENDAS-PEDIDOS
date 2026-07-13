@@ -55,6 +55,9 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
   const [dueDate, setDueDate] = useState<string>(
     new Date().toISOString().split("T")[0],
   );
+  const [saleDate, setSaleDate] = useState<string>(
+    new Date().toISOString().split("T")[0],
+  );
 
   // Status State
   const [isPaid, setIsPaid] = useState(false);
@@ -84,6 +87,16 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
   ];
 
   useEffect(() => {
+    const parseBRDateToISO = (brDate?: string) => {
+      if (!brDate) return new Date().toISOString().split("T")[0];
+      const parts = brDate.split("/");
+      if (parts.length === 3) {
+        const [day, month, year] = parts;
+        return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+      }
+      return new Date().toISOString().split("T")[0];
+    };
+
     if (isOpen) {
       if (initialData) {
         setStep("SELECTION");
@@ -98,6 +111,7 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
         setIsPendingDelivery(initialData.deliveryStatus === "PENDENTE");
         setInstallments(initialData.installments || 1);
         setPaymentType(initialData.installments > 1 ? "PARCELADO" : "A_VISTA");
+        setSaleDate(parseBRDateToISO(initialData.date));
       } else {
         setStep("SELECTION");
         setCart([]);
@@ -108,6 +122,7 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
         setPaymentType("A_VISTA");
         setInstallments(1);
         setDueDate(new Date().toISOString().split("T")[0]);
+        setSaleDate(new Date().toISOString().split("T")[0]);
         setIsPaid(false);
         setIsPendingDelivery(false);
         setIsBudget(false);
@@ -268,6 +283,12 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
       const finalStatus =
         statusOverride || (isBudget ? "ORCAMENTO" : "FINALIZADA");
 
+      let formattedSaleDate = "";
+      if (saleDate) {
+        const [sYear, sMonth, sDay] = saleDate.split("-");
+        formattedSaleDate = `${sDay}/${sMonth}/${sYear}`;
+      }
+
       await onFinishSale({
         id: initialData?.id,
         clientId: selectedClientId,
@@ -280,6 +301,7 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
         status: finalStatus,
         isPaid: finalStatus === "ORCAMENTO" ? false : isPaid,
         deliveryStatus: isPendingDelivery ? "PENDENTE" : "ENTREGUE",
+        date: formattedSaleDate || undefined,
       });
       // O fechamento do modal agora é controlado pela função handleFinishSale no App.tsx
     } catch (e: any) {
@@ -490,6 +512,23 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
         {step === "CART" && (
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             <div className="bg-white p-6 rounded-[2rem] shadow-md border-b-4 border-slate-100 space-y-5">
+              {/* Data da Venda */}
+              <div>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5 block flex items-center gap-1.5">
+                  <Calendar size={13} className="text-blue-500 font-bold" /> Data da Venda
+                </label>
+                <input
+                  type="date"
+                  className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-slate-800 font-bold focus:border-blue-500 transition-colors"
+                  value={saleDate}
+                  onChange={(e) => {
+                    const newDate = e.target.value;
+                    setSaleDate(newDate);
+                    setDueDate(newDate);
+                  }}
+                />
+              </div>
+
               {/* Método de Pagamento */}
               <div>
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block">

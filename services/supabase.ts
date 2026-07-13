@@ -400,7 +400,9 @@ export const db = {
         payment_method: sale.paymentMethod || 'Dinheiro',
         payment_terms: sale.paymentTerms || 'À vista',
         status: sale.status || 'FINALIZADA',
-        delivery_status: sale.deliveryStatus || 'ENTREGUE'
+        delivery_status: sale.deliveryStatus || 'ENTREGUE',
+        date: sale.date,
+        time: sale.time
       };
       
       payload[paidCol] = toBool(sale.isPaid);
