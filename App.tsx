@@ -6885,51 +6885,51 @@ Obrigado pela preferência!`;
             <div className="flex items-center justify-between px-6 pt-6 pb-6">
               <button
                 onClick={() => setCurrentScreen("REPORTS")}
-                className="bg-white text-slate-800 hover:bg-yellow-400 hover:text-slate-900 px-3 py-2 rounded-2xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-1.5 font-black text-[10px] uppercase tracking-wider"
+                className="bg-white text-slate-800 hover:bg-yellow-400 hover:text-slate-900 px-5 py-3 rounded-2xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-2 font-black text-xs sm:text-sm md:text-base uppercase tracking-wider cursor-pointer"
                 title="Voltar"
               >
-                <ArrowLeft size={18} strokeWidth={3.5} />
+                <ArrowLeft size={20} strokeWidth={3.5} />
                 <span>Voltar</span>
               </button>
-              <h3 className="text-lg font-black uppercase italic tracking-tighter text-center flex-1">
+              <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase italic tracking-tighter text-center flex-1">
                 Dashboard Executivo
               </h3>
               <button
                 onClick={handlePrintDashboard}
-                className="bg-white/10 p-2.5 rounded-2xl active:scale-90 hover:bg-white/20 transition-all text-white flex items-center justify-center"
+                className="bg-white/10 p-3.5 rounded-2xl active:scale-90 hover:bg-white/20 transition-all text-white flex items-center justify-center cursor-pointer"
                 title="Imprimir Relatório"
               >
-                <Printer size={20} />
+                <Printer size={24} />
               </button>
             </div>
           </div>
 
-          <div className="w-full max-w-full px-4 md:px-8 lg:px-12 py-4 space-y-4">
+          <div className="w-full max-w-full px-4 md:px-8 lg:px-12 py-4 space-y-6">
             {/* Seletor de Período do Dashboard */}
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-[2rem] py-2.5 px-4 shadow-xl border-b-4 border-slate-950 relative overflow-hidden shadow-slate-200/50">
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-[2.5rem] py-4 px-6 md:py-5 md:px-8 shadow-xl border-b-4 border-slate-950 relative overflow-hidden shadow-slate-200/50">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none"></div>
               
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 relative z-10">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 relative z-10">
                 {/* Parte Esquerda: Título do Período e Navegadores Alinhados */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="text-left shrink-0">
-                    <h4 className="text-[10px] font-black uppercase tracking-wider leading-none text-amber-400">
+                    <h4 className="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider leading-none text-amber-400">
                       Período de Análise
                     </h4>
                   </div>
                   
                   {/* Navegadores de data super compactos */}
-                  <div className="flex items-center gap-1 bg-slate-950/40 p-1 rounded-xl border border-white/5">
+                  <div className="flex items-center gap-1.5 bg-slate-950/40 p-1.5 rounded-2xl border border-white/5">
                     <button
                       onClick={() => changeDate(-1)}
-                      className="p-1 hover:bg-white/10 active:scale-90 text-white rounded-lg transition-all disabled:opacity-20 shadow-sm border border-white/5"
+                      className="p-2 hover:bg-white/10 active:scale-90 text-white rounded-xl transition-all disabled:opacity-20 shadow-sm border border-white/5 cursor-pointer"
                       disabled={reportTab === "TOTAL"}
                     >
-                      <ChevronLeft size={14} className="stroke-[2.5]" />
+                      <ChevronLeft size={18} className="stroke-[2.5]" />
                     </button>
-                    <div className="flex items-center gap-1.5 px-2">
-                      <Calendar size={12} className="text-amber-400 stroke-[2.5]" />
-                      <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-white drop-shadow-sm font-sans whitespace-nowrap">
+                    <div className="flex items-center gap-2 px-3">
+                      <Calendar size={18} className="text-amber-400 stroke-[2.5]" />
+                      <span className="text-sm sm:text-base md:text-lg lg:text-xl font-black uppercase tracking-wider text-white drop-shadow-sm font-sans whitespace-nowrap">
                         {reportTab === "DIARIO"
                           ? currentDate.toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" })
                           : reportTab === "MENSAL"
@@ -6941,19 +6941,19 @@ Obrigado pela preferência!`;
                     </div>
                     <button
                       onClick={() => changeDate(1)}
-                      className="p-1 hover:bg-white/10 active:scale-90 text-white rounded-lg transition-all disabled:opacity-20 shadow-sm border border-white/5"
+                      className="p-2 hover:bg-white/10 active:scale-90 text-white rounded-xl transition-all disabled:opacity-20 shadow-sm border border-white/5 cursor-pointer"
                       disabled={reportTab === "TOTAL"}
                     >
-                      <ChevronRight size={14} className="stroke-[2.5]" />
+                      <ChevronRight size={18} className="stroke-[2.5]" />
                     </button>
                   </div>
                 </div>
 
                 {/* Parte Direita: Botões de Filtro */}
-                <div className="flex items-center bg-slate-950/40 p-0.5 rounded-xl border border-white/5 max-w-xs w-full sm:w-auto self-start md:self-auto">
+                <div className="flex items-center bg-slate-950/40 p-1 rounded-2xl border border-white/5 max-w-md w-full lg:w-auto self-start lg:self-auto">
                   <button
                     onClick={() => setReportTab("DIARIO")}
-                    className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-[9px] sm:text-xs font-black uppercase tracking-tight transition-all ${
+                    className={`flex-1 lg:flex-none px-5 py-2.5 rounded-xl text-xs sm:text-sm md:text-base font-black uppercase tracking-tight transition-all cursor-pointer ${
                       reportTab === "DIARIO"
                         ? "bg-white text-slate-900 shadow-md"
                         : "text-slate-300 hover:text-white"
@@ -6963,7 +6963,7 @@ Obrigado pela preferência!`;
                   </button>
                   <button
                     onClick={() => setReportTab("MENSAL")}
-                    className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-[9px] sm:text-xs font-black uppercase tracking-tight transition-all ${
+                    className={`flex-1 lg:flex-none px-5 py-2.5 rounded-xl text-xs sm:text-sm md:text-base font-black uppercase tracking-tight transition-all cursor-pointer ${
                       reportTab === "MENSAL"
                         ? "bg-white text-slate-900 shadow-md"
                         : "text-slate-300 hover:text-white"
@@ -6973,7 +6973,7 @@ Obrigado pela preferência!`;
                   </button>
                   <button
                     onClick={() => setReportTab("ANUAL")}
-                    className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-[9px] sm:text-xs font-black uppercase tracking-tight transition-all ${
+                    className={`flex-1 lg:flex-none px-5 py-2.5 rounded-xl text-xs sm:text-sm md:text-base font-black uppercase tracking-tight transition-all cursor-pointer ${
                       reportTab === "ANUAL"
                         ? "bg-white text-slate-900 shadow-md"
                         : "text-slate-300 hover:text-white"
@@ -6983,7 +6983,7 @@ Obrigado pela preferência!`;
                   </button>
                   <button
                     onClick={() => setReportTab("TOTAL")}
-                    className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-[9px] sm:text-xs font-black uppercase tracking-tight transition-all ${
+                    className={`flex-1 lg:flex-none px-5 py-2.5 rounded-xl text-xs sm:text-sm md:text-base font-black uppercase tracking-tight transition-all cursor-pointer ${
                       reportTab === "TOTAL"
                         ? "bg-white text-slate-900 shadow-md"
                         : "text-slate-300 hover:text-white"
@@ -6998,55 +6998,55 @@ Obrigado pela preferência!`;
             {/* Banner de Impressão Rápida / Resumo Executivo */}
             <div
               onClick={handlePrintDashboard}
-              className="bg-gradient-to-r from-amber-500 to-amber-600 p-4 rounded-[2rem] shadow-sm flex items-center justify-between text-white active:scale-[0.98] transition-all cursor-pointer hover:shadow-md border border-amber-400"
+              className="bg-gradient-to-r from-amber-500 to-amber-600 p-6 sm:p-8 rounded-[2.5rem] shadow-md flex items-center justify-between text-white active:scale-[0.98] transition-all cursor-pointer hover:shadow-lg border border-amber-400"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-white shrink-0">
-                  <Printer size={20} className="stroke-[2.5]" />
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-[1.5rem] bg-white/20 flex items-center justify-center text-white shrink-0">
+                  <Printer size={30} className="stroke-[2.5]" />
                 </div>
                 <div className="text-left">
-                  <h4 className="text-[11px] font-black uppercase tracking-wider leading-none">
+                  <h4 className="text-base sm:text-xl lg:text-2xl font-black uppercase tracking-wider leading-none">
                     Imprimir Resumo Executivo
                   </h4>
-                  <p className="text-[8.5px] font-bold text-amber-100 uppercase tracking-widest mt-1">
+                  <p className="text-xs sm:text-sm font-bold text-amber-100 uppercase tracking-widest mt-2">
                     Gerar PDF com indicadores e plano de ações de vendas
                   </p>
                 </div>
               </div>
-              <div className="bg-white text-amber-700 text-[9px] font-black uppercase tracking-wider px-3.5 py-2 rounded-xl shrink-0 active:scale-95 transition-all shadow-sm">
+              <div className="bg-white text-amber-700 text-xs sm:text-sm font-black uppercase tracking-wider px-6 py-3.5 rounded-2xl shrink-0 active:scale-95 transition-all shadow-md">
                 Imprimir
               </div>
             </div>
 
             {/* 1. Progressão de Vendas (AreaChart) */}
-            <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 space-y-3 text-left">
-              <div className="flex items-center justify-between">
+            <div className="bg-white p-6 sm:p-10 rounded-[2.5rem] shadow-sm border border-slate-100 space-y-6 text-left">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 leading-none">
+                  <h4 className="text-lg sm:text-2xl font-black uppercase tracking-widest text-slate-800 leading-none">
                     Progressão de Vendas
                   </h4>
-                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                  <p className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">
                     Evolução de faturamento e lucro
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="flex items-center gap-1 text-[8px] font-black text-sky-500 uppercase">
-                    <span className="w-1.5 h-1.5 rounded-full bg-sky-500 inline-block font-sans"></span>{" "}
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center gap-2 text-xs sm:text-sm font-black text-sky-500 uppercase">
+                    <span className="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block font-sans"></span>{" "}
                     Faturamento
                   </span>
-                  <span className="flex items-center gap-1 text-[8px] font-black text-green-500 uppercase">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block font-sans"></span>{" "}
+                  <span className="flex items-center gap-2 text-xs sm:text-sm font-black text-green-500 uppercase">
+                    <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block font-sans"></span>{" "}
                     Lucro
                   </span>
                 </div>
               </div>
 
-              <div className="w-full h-48">
+              <div className="w-full h-[400px] sm:h-[480px] lg:h-[520px]">
                 {dashboardChartData.length === 0 ||
                 dashboardChartData.every((item) => item.total === 0) ? (
-                  <div className="w-full h-full flex flex-col items-center justify-center border border-dashed border-slate-100 rounded-2xl bg-slate-50 text-center p-4">
-                    <BarChart3 className="text-slate-300 mb-2" size={24} />
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none font-sans">
+                  <div className="w-full h-full flex flex-col items-center justify-center border border-dashed border-slate-100 rounded-2xl bg-slate-50 text-center p-6">
+                    <BarChart3 className="text-slate-300 mb-3" size={36} />
+                    <span className="text-sm sm:text-base font-black text-slate-400 uppercase tracking-widest leading-none font-sans">
                       Sem movimentação no período
                     </span>
                   </div>
@@ -7054,7 +7054,7 @@ Obrigado pela preferência!`;
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
                       data={dashboardChartData}
-                      margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
+                      margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
                     >
                       <defs>
                         <linearGradient
@@ -7067,7 +7067,7 @@ Obrigado pela preferência!`;
                           <stop
                             offset="5%"
                             stopColor="#38bdf8"
-                            stopOpacity={0.2}
+                            stopOpacity={0.25}
                           />
                           <stop
                             offset="95%"
@@ -7085,7 +7085,7 @@ Obrigado pela preferência!`;
                           <stop
                             offset="5%"
                             stopColor="#10b981"
-                            stopOpacity={0.2}
+                            stopOpacity={0.25}
                           />
                           <stop
                             offset="95%"
@@ -7102,37 +7102,41 @@ Obrigado pela preferência!`;
                       <XAxis
                         dataKey="label"
                         stroke="#94a3b8"
-                        fontSize={8}
+                        fontSize={12}
                         fontWeight={900}
                         tickLine={false}
                         axisLine={false}
+                        dy={10}
                       />
                       <YAxis
                         stroke="#94a3b8"
-                        fontSize={8}
+                        fontSize={12}
                         fontWeight={900}
                         tickLine={false}
                         axisLine={false}
+                        width={65}
                         tickFormatter={(val) => `R$ ${val}`}
                       />
                       <Tooltip
                         contentStyle={{
                           background: "#0f172a",
                           border: "none",
-                          borderRadius: "1rem",
-                          padding: "10px",
+                          borderRadius: "1.25rem",
+                          padding: "16px",
+                          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
                         }}
                         labelStyle={{
-                          fontSize: "9px",
+                          fontSize: "12px",
                           fontWeight: "900",
                           color: "#94a3b8",
                           textTransform: "uppercase",
                           fontFamily: "sans-serif",
+                          marginBottom: "4px",
                         }}
                         itemStyle={{
-                          fontSize: "10px",
+                          fontSize: "13px",
                           fontWeight: "900",
-                          padding: "2px 0",
+                          padding: "3px 0",
                           fontFamily: "sans-serif",
                         }}
                         formatter={(value: any, name: string) => [
@@ -7145,7 +7149,7 @@ Obrigado pela preferência!`;
                         dataKey="total"
                         name="total"
                         stroke="#38bdf8"
-                        strokeWidth={2.5}
+                        strokeWidth={3}
                         fillOpacity={1}
                         fill="url(#colorTotal)"
                       />
@@ -7154,7 +7158,7 @@ Obrigado pela preferência!`;
                         dataKey="profit"
                         name="profit"
                         stroke="#10b981"
-                        strokeWidth={2.5}
+                        strokeWidth={3}
                         fillOpacity={1}
                         fill="url(#colorProfit)"
                       />
@@ -7165,36 +7169,35 @@ Obrigado pela preferência!`;
             </div>
 
             {/* 2. Meios de Pagamento */}
-            <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 space-y-4 text-left">
+            <div className="bg-white p-6 sm:p-10 rounded-[2.5rem] shadow-sm border border-slate-100 space-y-6 text-left">
               <div>
-                <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 leading-none">
+                <h4 className="text-lg sm:text-2xl font-black uppercase tracking-widest text-slate-800 leading-none">
                   Meios de Pagamento
                 </h4>
-                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                <p className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">
                   Receita distribuída por forma de pagamento
                 </p>
               </div>
 
               {paymentMethodsBreakdown.length === 0 ? (
-                <div className="text-center p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-100">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
+                <div className="text-center p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-100">
+                  <p className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-widest mb-0.5">
                     Sem dados de pagamento
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3 font-sans">
+                <div className="space-y-4 sm:space-y-6 font-sans">
                   {paymentMethodsBreakdown.map((item, idx) => (
-                    <div key={idx} className="space-y-1">
-                      <div className="flex justify-between items-center text-[9px] font-black uppercase">
+                    <div key={idx} className="space-y-2">
+                      <div className="flex justify-between items-center text-xs sm:text-base md:text-lg lg:text-xl font-black uppercase">
                         <span className="text-slate-600 italic tracking-wide">
                           {item.name}
                         </span>
                         <span className="text-slate-800">
-                          R$ {item.value.toFixed(2)} ({item.percent.toFixed(0)}
-                          %)
+                          R$ {item.value.toFixed(2)} ({item.percent.toFixed(0)}%)
                         </span>
                       </div>
-                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="w-full h-4 sm:h-5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
                         <div
                           className="h-full bg-gradient-to-r from-sky-400 to-blue-500 rounded-full transition-all duration-500"
                           style={{ width: `${item.percent}%` }}
@@ -7207,21 +7210,21 @@ Obrigado pela preferência!`;
             </div>
 
             {/* 3. Desempenho dos Sabores (Cocadas) */}
-            <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 space-y-4 text-left">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="bg-white p-6 sm:p-10 rounded-[2.5rem] shadow-sm border border-slate-100 space-y-6 text-left">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 leading-none">
+                  <h4 className="text-lg sm:text-2xl font-black uppercase tracking-widest text-slate-800 leading-none">
                     Desempenho dos Sabores
                   </h4>
-                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                  <p className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-widest mt-2">
                     Oscilações de faturamento e volumes por sabor de cocada
                   </p>
                 </div>
-                <div className="flex items-center gap-2 self-start sm:self-auto">
-                  <div className="flex bg-slate-100 p-0.5 rounded-xl">
+                <div className="flex items-center gap-3 self-start sm:self-auto">
+                  <div className="flex bg-slate-100 p-1 rounded-2xl">
                     <button
                       onClick={() => setFlavorChartMetric("REVENUE")}
-                      className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider transition-all ${
+                      className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer ${
                         flavorChartMetric === "REVENUE"
                           ? "bg-white text-slate-800 shadow-sm"
                           : "text-slate-400 hover:text-slate-600"
@@ -7231,7 +7234,7 @@ Obrigado pela preferência!`;
                     </button>
                     <button
                       onClick={() => setFlavorChartMetric("VOLUME")}
-                      className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider transition-all ${
+                      className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer ${
                         flavorChartMetric === "VOLUME"
                           ? "bg-white text-slate-800 shadow-sm"
                           : "text-slate-400 hover:text-slate-600"
@@ -7240,15 +7243,15 @@ Obrigado pela preferência!`;
                       Volume
                     </button>
                   </div>
-                  <div className="bg-amber-50 text-amber-600 px-2 py-1 rounded-xl text-[8px] font-black uppercase tracking-wider flex items-center gap-1">
-                    <Sparkles size={10} /> Cocos
+                  <div className="bg-amber-50 text-amber-600 px-4 py-2 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+                    <Sparkles size={14} /> Cocos
                   </div>
                 </div>
               </div>
 
               {flavorAndIntelligenceData.flavorList.length === 0 ? (
-                <div className="text-center p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-100">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                <div className="text-center p-10 bg-slate-50 rounded-[2rem] border border-dashed border-slate-100">
+                  <p className="text-xs sm:text-sm md:text-base font-black text-slate-400 uppercase tracking-widest leading-none">
                     Sem cocadas vendidas no período
                   </p>
                 </div>
@@ -7278,7 +7281,7 @@ Obrigado pela preferência!`;
                   }));
 
                 return (
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
                     {/* Left Column: Pie Chart (Donut style) */}
                     <div className="lg:col-span-6 flex flex-col items-center justify-center">
                       <div className="relative w-full h-[380px] sm:h-[460px] lg:h-[500px] flex items-center justify-center">
@@ -7297,6 +7300,7 @@ Obrigado pela preferência!`;
                                 <Cell
                                   key={`cell-${index}`}
                                   fill={COLORS[index % COLORS.length]}
+                                  className="focus:outline-none"
                                 />
                               ))}
                             </Pie>
@@ -7305,27 +7309,27 @@ Obrigado pela preferência!`;
                                 if (active && payload && payload.length) {
                                   const data = payload[0].payload;
                                   return (
-                                    <div className="bg-slate-950 text-white p-4 rounded-2xl shadow-xl border border-slate-800 text-left font-sans space-y-1.5 z-50">
-                                      <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 leading-none">
+                                    <div className="bg-slate-950 text-white p-5 rounded-2xl shadow-2xl border border-slate-800 text-left font-sans space-y-2 z-50">
+                                      <p className="text-xs font-black uppercase tracking-wider text-slate-400 leading-none">
                                         Sabor
                                       </p>
-                                      <p className="text-sm font-black uppercase tracking-wide text-white">
+                                      <p className="text-base font-black uppercase tracking-wide text-white">
                                         {data.name}
                                       </p>
-                                      <div className="pt-2 space-y-1 border-t border-white/10 mt-1.5">
-                                        <p className="text-xs font-bold text-slate-300">
+                                      <div className="pt-2.5 space-y-1.5 border-t border-white/10 mt-1.5">
+                                        <p className="text-sm font-bold text-slate-300">
                                           Faturamento: <span className="font-black text-white">R$ {data.currRevenue.toFixed(2)}</span>
                                         </p>
-                                        <p className="text-xs font-bold text-slate-300">
+                                        <p className="text-sm font-bold text-slate-300">
                                           Volume: <span className="font-black text-white">{data.currQuantity} uds</span>
                                         </p>
-                                        <p className="text-xs font-bold text-slate-300">
+                                        <p className="text-sm font-bold text-slate-300">
                                           Lucro Est.: <span className="font-black text-emerald-400">R$ {data.currProfit.toFixed(2)}</span>
                                         </p>
-                                        <p className="text-xs font-bold text-slate-300">
+                                        <p className="text-sm font-bold text-slate-300">
                                           Margem: <span className="font-black text-purple-400">{data.margin.toFixed(0)}%</span>
                                         </p>
-                                        <p className="text-xs font-bold text-slate-300">
+                                        <p className="text-sm font-bold text-slate-300">
                                           Share: <span className="font-black text-sky-400">{data.percent.toFixed(1)}%</span>
                                         </p>
                                       </div>
@@ -7338,10 +7342,10 @@ Obrigado pela preferência!`;
                           </PieChart>
                         </ResponsiveContainer>
                         <div className="absolute flex flex-col items-center justify-center text-center pointer-events-none">
-                          <span className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-widest leading-none">
+                          <span className="text-sm sm:text-base md:text-lg font-black text-slate-400 uppercase tracking-widest leading-none">
                             {flavorChartMetric === "REVENUE" ? "FATURAMENTO" : "VOLUME"}
                           </span>
-                          <span className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 mt-3 leading-none font-sans tracking-tight">
+                          <span className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 mt-4 leading-none font-sans tracking-tight">
                             {flavorChartMetric === "REVENUE"
                               ? `R$ ${flavorAndIntelligenceData.flavorList.reduce((acc, curr) => acc + curr.currRevenue, 0).toFixed(0)}`
                               : `${flavorAndIntelligenceData.flavorList.reduce((acc, curr) => acc + curr.currQuantity, 0)} uds`}
@@ -7350,14 +7354,14 @@ Obrigado pela preferência!`;
                       </div>
 
                       {/* Compact legend list under pie */}
-                      <div className="flex flex-wrap gap-3 justify-center mt-6 max-w-xl">
+                      <div className="flex flex-wrap gap-4 justify-center mt-8 max-w-xl">
                         {chartData.map((item, idx) => (
                           <div
                             key={idx}
-                            className="flex items-center gap-2 bg-slate-50 border border-slate-100/80 px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm font-black text-slate-700 shadow-sm"
+                            className="flex items-center gap-3 bg-slate-50 border border-slate-100/80 px-5 py-3.5 rounded-2xl text-sm sm:text-base font-black text-slate-700 shadow-sm"
                           >
                             <span
-                              className="w-3 h-3 rounded-full inline-block shrink-0"
+                              className="w-4 h-4 rounded-full inline-block shrink-0 shadow-sm"
                               style={{ backgroundColor: COLORS[idx % COLORS.length] }}
                             />
                             <span className="uppercase tracking-wider">{item.name}</span>
@@ -7367,7 +7371,7 @@ Obrigado pela preferência!`;
                     </div>
 
                     {/* Right Column: Detailed Flavor Cards */}
-                    <div className="lg:col-span-6 space-y-3.5 font-sans">
+                    <div className="lg:col-span-6 space-y-5 font-sans">
                       {flavorAndIntelligenceData.flavorList.map((item, idx) => {
                         const totalRevenue =
                           flavorAndIntelligenceData.currTotalRevenue || 1;
@@ -7378,12 +7382,12 @@ Obrigado pela preferência!`;
                         return (
                           <div
                             key={idx}
-                            className="bg-slate-50/40 py-4 px-6 rounded-3xl border border-slate-100 space-y-3 transition-all hover:bg-slate-50/70"
+                            className="bg-slate-50/40 py-6 px-8 rounded-[2.25rem] border border-slate-100 space-y-4 transition-all hover:bg-slate-50/70 shadow-sm"
                           >
                             <div className="flex justify-between items-center">
                               <div className="flex items-center gap-4">
                                 <div
-                                  className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg italic border shrink-0"
+                                  className="w-16 h-16 rounded-[1.25rem] flex items-center justify-center font-black text-2xl italic border shrink-0"
                                   style={{
                                     backgroundColor: `${COLORS[colorIndex % COLORS.length]}12`,
                                     color: COLORS[colorIndex % COLORS.length],
@@ -7393,10 +7397,10 @@ Obrigado pela preferência!`;
                                   {item.flavor.charAt(0)}
                                 </div>
                                 <div className="text-left">
-                                  <span className="text-base sm:text-lg lg:text-xl font-black text-slate-800 uppercase tracking-wide block leading-tight">
+                                  <span className="text-xl sm:text-2xl font-black text-slate-800 uppercase tracking-wide block leading-tight">
                                     {item.flavor}
                                   </span>
-                                  <span className="text-xs sm:text-sm font-semibold text-slate-400 block mt-1 uppercase tracking-wider leading-none">
+                                  <span className="text-sm sm:text-base font-semibold text-slate-400 block mt-1 uppercase tracking-wider leading-none">
                                     {item.currQuantity} unidades • Ticket Médio R${" "}
                                     {(item.currQuantity > 0
                                       ? item.currRevenue / item.currQuantity
@@ -7406,27 +7410,27 @@ Obrigado pela preferência!`;
                                 </div>
                               </div>
                               <div className="text-right">
-                                <span className="text-base sm:text-lg lg:text-xl font-black text-slate-800 block leading-tight">
+                                <span className="text-xl sm:text-2xl font-black text-slate-800 block leading-tight">
                                   R$ {item.currRevenue.toFixed(2)}
                                 </span>
 
                                 {/* Fluctuations */}
-                                <div className="mt-1 flex items-center justify-end gap-1.5">
+                                <div className="mt-2 flex items-center justify-end gap-1.5">
                                   {item.revChange > 0 ? (
-                                    <span className="inline-flex items-center gap-0.5 bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-lg text-xs font-black leading-none">
+                                    <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 px-3.5 py-1.5 rounded-xl text-sm font-black leading-none shadow-sm">
                                       + {item.revChange.toFixed(0)}%{" "}
-                                      <TrendingUp size={11} />
+                                      <TrendingUp size={14} />
                                     </span>
                                   ) : item.revChange < 0 ? (
-                                    <span className="inline-flex items-center gap-0.5 bg-rose-50 text-rose-600 px-2.5 py-1 rounded-lg text-xs font-black leading-none">
+                                    <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-600 px-3.5 py-1.5 rounded-xl text-sm font-black leading-none shadow-sm">
                                       {item.revChange.toFixed(0)}%{" "}
                                       <TrendingUp
-                                        size={11}
+                                        size={14}
                                         className="transform rotate-180"
                                       />
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center gap-0.5 bg-slate-100 text-slate-500 px-2.5 py-1 rounded-lg text-xs font-bold leading-none">
+                                    <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-500 px-3.5 py-1.5 rounded-xl text-sm font-bold leading-none shadow-sm">
                                       0% ○
                                     </span>
                                   )}
@@ -7434,7 +7438,7 @@ Obrigado pela preferência!`;
                                   {/* Flag for new flavor in comparison to previous */}
                                   {!hasPrevious &&
                                     flavorAndIntelligenceData.prevTotalRevenue > 0 && (
-                                      <span className="bg-sky-50 text-sky-600 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ml-1.5">
+                                      <span className="bg-sky-50 text-sky-600 px-2.5 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider ml-1.5 shadow-sm">
                                         Novo
                                       </span>
                                     )}
@@ -7443,12 +7447,12 @@ Obrigado pela preferência!`;
                             </div>
 
                             {/* Progress bar representing share of faturamento */}
-                            <div className="space-y-1.5">
-                              <div className="flex justify-between text-xs sm:text-sm font-black text-slate-400 uppercase tracking-widest leading-none">
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm sm:text-base font-black text-slate-400 uppercase tracking-widest leading-none">
                                 <span>Percentual das vendas</span>
                                 <span>{percentOfTotal.toFixed(1)}%</span>
                               </div>
-                              <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden shadow-inner">
                                 <div
                                   className="h-full rounded-full transition-all duration-300"
                                   style={{
@@ -7460,28 +7464,28 @@ Obrigado pela preferência!`;
                             </div>
 
                             {/* Extra indicators including profit margin */}
-                            <div className="grid grid-cols-3 gap-3 pt-2.5 border-t border-slate-100/60 font-sans text-left">
+                            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100/60 font-sans text-left">
                               <div>
-                                <span className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest block leading-none">
+                                <span className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-widest block leading-none">
                                   Faturamento
                                 </span>
-                                <span className="text-sm sm:text-base lg:text-lg font-black text-slate-800 block mt-1">
+                                <span className="text-base sm:text-lg lg:text-xl font-black text-slate-800 block mt-2">
                                   R$ {item.currRevenue.toFixed(2)}
                                 </span>
                               </div>
                               <div>
-                                <span className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest block leading-none">
+                                <span className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-widest block leading-none">
                                   Lucro Estimado
                                 </span>
-                                <span className="text-sm sm:text-base lg:text-lg font-black text-emerald-600 block mt-1">
+                                <span className="text-base sm:text-lg lg:text-xl font-black text-emerald-600 block mt-2">
                                   R$ {item.currProfit.toFixed(2)}
                                 </span>
                               </div>
                               <div>
-                                <span className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest block leading-none">
+                                <span className="text-xs sm:text-sm font-black text-slate-400 uppercase tracking-widest block leading-none">
                                   Margem Ativa
                                 </span>
-                                <span className="text-sm sm:text-base lg:text-lg font-black text-purple-600 block mt-1">
+                                <span className="text-base sm:text-lg lg:text-xl font-black text-purple-600 block mt-2">
                                   {item.margin.toFixed(0)}%
                                 </span>
                               </div>
@@ -7496,29 +7500,29 @@ Obrigado pela preferência!`;
             </div>
 
             {/* 4. IA BI Inteligência e Ações para Crescimento - Botão de Acesso Compacto */}
-            <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 p-5 rounded-[2rem] border border-amber-200/60 shadow-sm text-left flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-all hover:bg-amber-100/85">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0 border border-amber-500/10 relative">
-                  <Sparkles size={20} className="animate-pulse stroke-[2.5]" />
+            <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 p-6 sm:p-8 rounded-[2.5rem] border border-amber-200/60 shadow-md text-left flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-all hover:bg-amber-100/85">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0 border border-amber-500/10 relative shadow-sm">
+                  <Sparkles size={28} className="animate-pulse stroke-[2.5]" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 leading-none flex items-center gap-1.5">
+                  <h4 className="text-base sm:text-lg md:text-xl lg:text-2xl font-black uppercase tracking-widest text-slate-800 leading-none flex items-center gap-2">
                     Inteligência Comercial & Ações
-                    <span className="bg-amber-200/70 text-amber-800 text-[7px] font-black uppercase px-1.5 py-0.5 rounded-md tracking-wider">
+                    <span className="bg-amber-200/70 text-amber-800 text-[9px] sm:text-xs font-black uppercase px-2.5 py-1 rounded-lg tracking-wider shadow-sm">
                       IA BI
                     </span>
                   </h4>
-                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+                  <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-widest mt-2">
                     Diagnóstico sobre aumentos, quedas e orientações de tração
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsIntelligenceModalOpen(true)}
-                className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-[9px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl shadow-md border-b-2 border-amber-700 shrink-0 flex items-center gap-1.5 transition-all cursor-pointer font-sans"
+                className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-xs sm:text-sm font-black uppercase tracking-widest px-6 py-3.5 rounded-2xl shadow-md border-b-2 border-amber-700 shrink-0 flex items-center gap-1.5 transition-all cursor-pointer font-sans"
               >
                 <span>Acessar Diagnóstico</span>
-                <ChevronRight size={12} className="stroke-[3]" />
+                <ChevronRight size={16} className="stroke-[3]" />
               </button>
             </div>
           </div>
