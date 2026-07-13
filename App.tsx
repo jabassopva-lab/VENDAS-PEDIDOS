@@ -9,6 +9,7 @@ import {
   ArrowLeft,
   Loader2,
   TrendingUp,
+  TrendingDown,
   ClipboardList,
   List,
   LayoutGrid,
@@ -7409,36 +7410,33 @@ Obrigado pela preferência!`;
                                   </span>
                                 </div>
                               </div>
-                              <div className="text-right">
-                                <span className="text-xl sm:text-2xl font-black text-slate-800 block leading-tight">
+                              <div className="text-right flex flex-col items-end justify-center">
+                                <span className="text-2xl sm:text-3xl font-black text-slate-900 block leading-none">
                                   R$ {item.currRevenue.toFixed(2)}
                                 </span>
 
                                 {/* Fluctuations */}
-                                <div className="mt-2 flex items-center justify-end gap-1.5">
+                                <div className="mt-2.5 flex items-center justify-end gap-2">
                                   {item.revChange > 0 ? (
-                                    <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 px-3.5 py-1.5 rounded-xl text-sm font-black leading-none shadow-sm">
-                                      + {item.revChange.toFixed(0)}%{" "}
-                                      <TrendingUp size={14} />
+                                    <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-green-600 text-white px-4 py-2 rounded-2xl text-sm sm:text-base lg:text-lg font-black tracking-wide shadow-md border-b-4 border-emerald-700 select-none transform hover:scale-105 transition-all">
+                                      <span>+ {item.revChange.toFixed(0)}%</span>
+                                      <TrendingUp size={18} className="stroke-[3]" />
                                     </span>
                                   ) : item.revChange < 0 ? (
-                                    <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-600 px-3.5 py-1.5 rounded-xl text-sm font-black leading-none shadow-sm">
-                                      {item.revChange.toFixed(0)}%{" "}
-                                      <TrendingUp
-                                        size={14}
-                                        className="transform rotate-180"
-                                      />
+                                    <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-rose-500 to-red-600 text-white px-4 py-2 rounded-2xl text-sm sm:text-base lg:text-lg font-black tracking-wide shadow-md border-b-4 border-rose-700 select-none transform hover:scale-105 transition-all">
+                                      <span>{item.revChange.toFixed(0)}%</span>
+                                      <TrendingDown size={18} className="stroke-[3]" />
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-500 px-3.5 py-1.5 rounded-xl text-sm font-bold leading-none shadow-sm">
-                                      0% ○
+                                    <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-500 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold shadow-sm select-none">
+                                      <span>0%</span>
                                     </span>
                                   )}
 
                                   {/* Flag for new flavor in comparison to previous */}
                                   {!hasPrevious &&
                                     flavorAndIntelligenceData.prevTotalRevenue > 0 && (
-                                      <span className="bg-sky-50 text-sky-600 px-2.5 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider ml-1.5 shadow-sm">
+                                      <span className="bg-sky-500 text-white px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm border-b-2 border-sky-700">
                                         Novo
                                       </span>
                                     )}
