@@ -407,6 +407,7 @@ const App: React.FC = () => {
     return today.toISOString().split("T")[0];
   });
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [isIntelligenceModalOpen, setIsIntelligenceModalOpen] = useState(false);
   const [directPrintHtml, setDirectPrintHtml] = useState<string | null>(null);
   const [onScreenPrintHtml, setOnScreenPrintHtml] = useState<string | null>(null);
   const [onScreenPrintTitle, setOnScreenPrintTitle] = useState<string>("");
@@ -6899,90 +6900,92 @@ Obrigado pela preferência!`;
 
           <div className="max-w-5xl mx-auto w-full p-4 space-y-4">
             {/* Seletor de Período do Dashboard */}
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-[2rem] p-4.5 sm:p-5 shadow-xl border-b-4 border-slate-950 space-y-4 relative overflow-hidden shadow-slate-200/50">
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-[2rem] py-2.5 px-4 shadow-xl border-b-4 border-slate-950 relative overflow-hidden shadow-slate-200/50">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none"></div>
               
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 relative z-10">
-                <div className="text-left">
-                  <h4 className="text-[11px] font-black uppercase tracking-wider leading-none text-amber-400">
-                    Período de Análise
-                  </h4>
-                  <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest mt-1">
-                    Selecione o filtro temporal para o dashboard
-                  </p>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 relative z-10">
+                {/* Parte Esquerda: Título do Período e Navegadores Alinhados */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="text-left shrink-0">
+                    <h4 className="text-[10px] font-black uppercase tracking-wider leading-none text-amber-400">
+                      Período de Análise
+                    </h4>
+                  </div>
+                  
+                  {/* Navegadores de data super compactos */}
+                  <div className="flex items-center gap-1 bg-slate-950/40 p-1 rounded-xl border border-white/5">
+                    <button
+                      onClick={() => changeDate(-1)}
+                      className="p-1 hover:bg-white/10 active:scale-90 text-white rounded-lg transition-all disabled:opacity-20 shadow-sm border border-white/5"
+                      disabled={reportTab === "TOTAL"}
+                    >
+                      <ChevronLeft size={14} className="stroke-[2.5]" />
+                    </button>
+                    <div className="flex items-center gap-1.5 px-2">
+                      <Calendar size={12} className="text-amber-400 stroke-[2.5]" />
+                      <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-white drop-shadow-sm font-sans whitespace-nowrap">
+                        {reportTab === "DIARIO"
+                          ? currentDate.toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" })
+                          : reportTab === "MENSAL"
+                            ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`
+                            : reportTab === "ANUAL"
+                              ? currentDate.getFullYear()
+                              : "Todo o Período"}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => changeDate(1)}
+                      className="p-1 hover:bg-white/10 active:scale-90 text-white rounded-lg transition-all disabled:opacity-20 shadow-sm border border-white/5"
+                      disabled={reportTab === "TOTAL"}
+                    >
+                      <ChevronRight size={14} className="stroke-[2.5]" />
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex items-center bg-slate-950/40 p-1 rounded-xl border border-white/5 max-w-xs w-full sm:w-auto">
+                {/* Parte Direita: Botões de Filtro */}
+                <div className="flex items-center bg-slate-950/40 p-0.5 rounded-xl border border-white/5 max-w-xs w-full sm:w-auto self-start md:self-auto">
                   <button
                     onClick={() => setReportTab("DIARIO")}
-                    className={`flex-1 sm:flex-none px-3.5 py-1 sm:py-1.5 rounded-lg text-[9px] sm:text-xs font-black uppercase tracking-tight transition-all ${
+                    className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-[9px] sm:text-xs font-black uppercase tracking-tight transition-all ${
                       reportTab === "DIARIO"
                         ? "bg-white text-slate-900 shadow-md"
-                        : "text-slate-300 hover:text-white hover:bg-white/5"
+                        : "text-slate-300 hover:text-white"
                     }`}
                   >
                     Dia
                   </button>
                   <button
                     onClick={() => setReportTab("MENSAL")}
-                    className={`flex-1 sm:flex-none px-3.5 py-1 sm:py-1.5 rounded-lg text-[9px] sm:text-xs font-black uppercase tracking-tight transition-all ${
+                    className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-[9px] sm:text-xs font-black uppercase tracking-tight transition-all ${
                       reportTab === "MENSAL"
                         ? "bg-white text-slate-900 shadow-md"
-                        : "text-slate-300 hover:text-white hover:bg-white/5"
+                        : "text-slate-300 hover:text-white"
                     }`}
                   >
                     Mês
                   </button>
                   <button
                     onClick={() => setReportTab("ANUAL")}
-                    className={`flex-1 sm:flex-none px-3.5 py-1 sm:py-1.5 rounded-lg text-[9px] sm:text-xs font-black uppercase tracking-tight transition-all ${
+                    className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-[9px] sm:text-xs font-black uppercase tracking-tight transition-all ${
                       reportTab === "ANUAL"
                         ? "bg-white text-slate-900 shadow-md"
-                        : "text-slate-300 hover:text-white hover:bg-white/5"
+                        : "text-slate-300 hover:text-white"
                     }`}
                   >
                     Ano
                   </button>
                   <button
                     onClick={() => setReportTab("TOTAL")}
-                    className={`flex-1 sm:flex-none px-3.5 py-1 sm:py-1.5 rounded-lg text-[9px] sm:text-xs font-black uppercase tracking-tight transition-all ${
+                    className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-[9px] sm:text-xs font-black uppercase tracking-tight transition-all ${
                       reportTab === "TOTAL"
                         ? "bg-white text-slate-900 shadow-md"
-                        : "text-slate-300 hover:text-white hover:bg-white/5"
+                        : "text-slate-300 hover:text-white"
                     }`}
                   >
                     Tudo
                   </button>
                 </div>
-              </div>
-
-              <div className="flex items-center justify-between px-1 relative z-10 bg-slate-950/20 rounded-2xl p-2 border border-white/5">
-                <button
-                  onClick={() => changeDate(-1)}
-                  className="p-2 bg-white/10 hover:bg-white/20 active:scale-90 text-white rounded-xl transition-all disabled:opacity-20 disabled:hover:bg-white/10 shadow-sm border border-white/5"
-                  disabled={reportTab === "TOTAL"}
-                >
-                  <ChevronLeft size={18} className="stroke-[2.5]" />
-                </button>
-                <div className="flex items-center gap-2">
-                  <Calendar size={14} className="text-amber-400 stroke-[2.5]" />
-                  <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-white drop-shadow-sm font-sans">
-                    {reportTab === "DIARIO"
-                      ? currentDate.toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" })
-                      : reportTab === "MENSAL"
-                        ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`
-                        : reportTab === "ANUAL"
-                          ? currentDate.getFullYear()
-                          : "Todo o Período"}
-                  </span>
-                </div>
-                <button
-                  onClick={() => changeDate(1)}
-                  className="p-2 bg-white/10 hover:bg-white/20 active:scale-90 text-white rounded-xl transition-all disabled:opacity-20 disabled:hover:bg-white/10 shadow-sm border border-white/5"
-                  disabled={reportTab === "TOTAL"}
-                >
-                  <ChevronRight size={18} className="stroke-[2.5]" />
-                </button>
               </div>
             </div>
 
@@ -7486,151 +7489,31 @@ Obrigado pela preferência!`;
               })()}
             </div>
 
-            {/* 4. IA BI Inteligência e Ações para Crescimento */}
-            <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 space-y-4 text-left">
-              <div>
-                <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 leading-none">
-                  Inteligência Comercial & Ações
-                </h4>
-                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                  Diagnóstico sobre aumentos, quedas e orientações de tração
-                </p>
-              </div>
-
-              {/* Comparator card header */}
-              {flavorAndIntelligenceData.prevTotalRevenue > 0 ? (
-                <div className="grid grid-cols-3 gap-2 bg-slate-900 text-white p-3.5 rounded-2xl font-sans">
-                  <div>
-                    <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest block leading-none">
-                      Faturamento
-                    </span>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <span className="text-[10px] font-black">
-                        R$ {flavorAndIntelligenceData.currTotalRevenue.toFixed(0)}
-                      </span>
-                      {flavorAndIntelligenceData.revChangePercent >= 0 ? (
-                        <span className="text-emerald-400 text-[8px] font-black">
-                          ↑ (+{flavorAndIntelligenceData.revChangePercent.toFixed(0)}%)
-                        </span>
-                      ) : (
-                        <span className="text-rose-400 text-[8px] font-black">
-                          ↓ ({flavorAndIntelligenceData.revChangePercent.toFixed(0)}%)
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest block leading-none">
-                      Lucro Líquido
-                    </span>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <span className="text-[10px] font-black text-emerald-400">
-                        R$ {flavorAndIntelligenceData.currTotalProfit.toFixed(0)}
-                      </span>
-                      {flavorAndIntelligenceData.profitChangePercent >= 0 ? (
-                        <span className="text-emerald-400 text-[8px] font-black">
-                          ↑ (+{flavorAndIntelligenceData.profitChangePercent.toFixed(0)}%)
-                        </span>
-                      ) : (
-                        <span className="text-rose-400 text-[8px] font-black">
-                          ↓ ({flavorAndIntelligenceData.profitChangePercent.toFixed(0)}%)
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest block leading-none">
-                      Clientes Ativos
-                    </span>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <span className="text-[10px] font-black text-sky-400">
-                        {flavorAndIntelligenceData.currClientCount}
-                      </span>
-                      {flavorAndIntelligenceData.clientChangePercent >= 0 ? (
-                        <span className="text-emerald-400 text-[8px] font-black">
-                          ↑ (+{flavorAndIntelligenceData.clientChangePercent.toFixed(0)}%)
-                        </span>
-                      ) : (
-                        <span className="text-rose-400 text-[8px] font-black">
-                          ↓ ({flavorAndIntelligenceData.clientChangePercent.toFixed(0)}%)
-                        </span>
-                      )}
-                    </div>
-                  </div>
+            {/* 4. IA BI Inteligência e Ações para Crescimento - Botão de Acesso Compacto */}
+            <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 p-5 rounded-[2rem] border border-amber-200/60 shadow-sm text-left flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-all hover:bg-amber-100/85">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0 border border-amber-500/10 relative">
+                  <Sparkles size={20} className="animate-pulse stroke-[2.5]" />
                 </div>
-              ) : (
-                <div className="p-3.5 bg-slate-50 rounded-2xl border border-dashed border-slate-100 flex items-center gap-2">
-                  <Info size={14} className="text-slate-400 shrink-0" />
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider leading-normal">
-                    Registre vendas no período anterior para habilitar análises de
-                    oscilação completas!
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 leading-none flex items-center gap-1.5">
+                    Inteligência Comercial & Ações
+                    <span className="bg-amber-200/70 text-amber-800 text-[7px] font-black uppercase px-1.5 py-0.5 rounded-md tracking-wider">
+                      IA BI
+                    </span>
+                  </h4>
+                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+                    Diagnóstico sobre aumentos, quedas e orientações de tração
                   </p>
                 </div>
-              )}
-
-              {/* Recommendations list */}
-              <div className="space-y-3 font-sans">
-                {flavorAndIntelligenceData.insights.map((insight, idx) => {
-                  const isPositive = insight.type === "positive";
-                  const isNegative = insight.type === "negative";
-
-                  return (
-                    <div
-                      key={idx}
-                      className={`p-4 rounded-2xl border flex flex-col gap-2 transition-all duration-300 ${
-                        isPositive
-                          ? "bg-emerald-50/15 border-emerald-100"
-                          : isNegative
-                            ? "bg-rose-50/15 border-rose-100"
-                            : "bg-blue-50/15 border-blue-100"
-                      }`}
-                    >
-                      <div className="flex items-start gap-2.5">
-                        <div
-                          className={`w-7 h-7 rounded-lg shrink-0 flex items-center justify-center border ${
-                            isPositive
-                              ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                              : isNegative
-                                ? "bg-rose-50 text-rose-600 border-rose-100"
-                                : "bg-blue-50 text-blue-600 border-blue-100"
-                          }`}
-                        >
-                          {isPositive ? (
-                            <CheckCircle size={14} />
-                          ) : isNegative ? (
-                            <AlertCircle size={14} />
-                          ) : (
-                            <Info size={14} />
-                          )}
-                        </div>
-                        <div className="flex-1 text-left">
-                          <h5 className="text-[10px] font-black uppercase tracking-wide text-slate-800 leading-tight">
-                            {insight.title}
-                          </h5>
-                          <p className="text-[9px] font-medium text-slate-500 leading-relaxed mt-0.5">
-                            {insight.desc}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Guidance (Ações para Crescimento) */}
-                      <div className="pl-9 pt-2 border-t border-slate-100 flex gap-2 text-left">
-                        <div className="p-1 rounded-md bg-amber-50 shrink-0 h-fit text-amber-600">
-                          <Plus size={10} className="stroke-[3]" />
-                        </div>
-                        <div className="flex-1 flex flex-col">
-                          <span className="text-[7.5px] font-black uppercase text-amber-600 tracking-widest block mb-0.5">
-                            Ações Recomendadas
-                          </span>
-                          <p className="text-[9px] font-bold text-slate-700 leading-relaxed">
-                            {insight.action}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
               </div>
+              <button
+                onClick={() => setIsIntelligenceModalOpen(true)}
+                className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-[9px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl shadow-md border-b-2 border-amber-700 shrink-0 flex items-center gap-1.5 transition-all cursor-pointer font-sans"
+              >
+                <span>Acessar Diagnóstico</span>
+                <ChevronRight size={12} className="stroke-[3]" />
+              </button>
             </div>
           </div>
         </div>
@@ -8580,6 +8463,191 @@ Obrigado pela preferência!`;
         © {new Date().getFullYear()} JABASSO
       </footer>
     </div>
+
+      {/* MODAL DE INTELIGÊNCIA COMERCIAL */}
+      {isIntelligenceModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[200] flex items-center justify-center p-4 md:p-6 print:hidden overflow-y-auto">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-2xl w-full mx-auto flex flex-col max-h-[85vh] border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="bg-slate-900 text-white px-6 py-5 flex items-center justify-between border-b border-slate-800">
+              <div className="text-left">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} className="text-amber-400 animate-pulse shrink-0" />
+                  <h3 className="text-sm font-black uppercase italic tracking-wider">
+                    Inteligência Comercial & Ações
+                  </h3>
+                </div>
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                  Diagnóstico sobre aumentos, quedas e orientações de tração
+                </p>
+              </div>
+              <button
+                onClick={() => setIsIntelligenceModalOpen(false)}
+                className="bg-white/10 hover:bg-white/20 p-2 rounded-2xl active:scale-90 transition-all font-sans cursor-pointer text-white"
+                title="Fechar"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+              {/* Comparator card header */}
+              {flavorAndIntelligenceData.prevTotalRevenue > 0 ? (
+                <div className="grid grid-cols-3 gap-2 bg-slate-900 text-white p-4 rounded-2xl font-sans">
+                  <div>
+                    <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest block leading-none">
+                      Faturamento
+                    </span>
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="text-[11px] font-black">
+                        R$ {flavorAndIntelligenceData.currTotalRevenue.toFixed(0)}
+                      </span>
+                      {flavorAndIntelligenceData.revChangePercent >= 0 ? (
+                        <span className="text-emerald-400 text-[8.5px] font-black whitespace-nowrap">
+                          ↑ (+{flavorAndIntelligenceData.revChangePercent.toFixed(0)}%)
+                        </span>
+                      ) : (
+                        <span className="text-rose-400 text-[8.5px] font-black whitespace-nowrap">
+                          ↓ ({flavorAndIntelligenceData.revChangePercent.toFixed(0)}%)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest block leading-none">
+                      Lucro Líquido
+                    </span>
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="text-[11px] font-black text-emerald-400">
+                        R$ {flavorAndIntelligenceData.currTotalProfit.toFixed(0)}
+                      </span>
+                      {flavorAndIntelligenceData.profitChangePercent >= 0 ? (
+                        <span className="text-emerald-400 text-[8.5px] font-black whitespace-nowrap">
+                          ↑ (+{flavorAndIntelligenceData.profitChangePercent.toFixed(0)}%)
+                        </span>
+                      ) : (
+                        <span className="text-rose-400 text-[8.5px] font-black whitespace-nowrap">
+                          ↓ ({flavorAndIntelligenceData.profitChangePercent.toFixed(0)}%)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest block leading-none">
+                      Clientes Ativos
+                    </span>
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="text-[11px] font-black text-sky-400">
+                        {flavorAndIntelligenceData.currClientCount}
+                      </span>
+                      {flavorAndIntelligenceData.clientChangePercent >= 0 ? (
+                        <span className="text-emerald-400 text-[8.5px] font-black whitespace-nowrap">
+                          ↑ (+{flavorAndIntelligenceData.clientChangePercent.toFixed(0)}%)
+                        </span>
+                      ) : (
+                        <span className="text-rose-400 text-[8.5px] font-black whitespace-nowrap">
+                          ↓ ({flavorAndIntelligenceData.clientChangePercent.toFixed(0)}%)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 flex items-center gap-2.5">
+                  <Info size={16} className="text-slate-400 shrink-0" />
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-wider leading-normal">
+                    Registre vendas no período anterior para habilitar análises de oscilação completas!
+                  </p>
+                </div>
+              )}
+
+              {/* Recommendations list */}
+              <div className="space-y-3.5 font-sans">
+                {flavorAndIntelligenceData.insights.length === 0 ? (
+                  <div className="text-center py-6">
+                    <Info size={24} className="text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                      Nenhum diagnóstico gerado para o período selecionado
+                    </p>
+                  </div>
+                ) : (
+                  flavorAndIntelligenceData.insights.map((insight, idx) => {
+                    const isPositive = insight.type === "positive";
+                    const isNegative = insight.type === "negative";
+
+                    return (
+                      <div
+                        key={idx}
+                        className={`p-4 rounded-2xl border flex flex-col gap-2.5 transition-all duration-300 ${
+                          isPositive
+                            ? "bg-emerald-50/20 border-emerald-100"
+                            : isNegative
+                              ? "bg-rose-50/20 border-rose-100"
+                              : "bg-blue-50/20 border-blue-100"
+                        }`}
+                      >
+                        <div className="flex items-start gap-2.5">
+                          <div
+                            className={`w-7 h-7 rounded-lg shrink-0 flex items-center justify-center border ${
+                              isPositive
+                                ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                                : isNegative
+                                  ? "bg-rose-50 text-rose-600 border-rose-100"
+                                  : "bg-blue-50 text-blue-600 border-blue-100"
+                            }`}
+                          >
+                            {isPositive ? (
+                              <CheckCircle size={14} />
+                            ) : isNegative ? (
+                              <AlertCircle size={14} />
+                            ) : (
+                              <Info size={14} />
+                            )}
+                          </div>
+                          <div className="flex-1 text-left">
+                            <h5 className="text-[10px] font-black uppercase tracking-wide text-slate-800 leading-tight">
+                              {insight.title}
+                            </h5>
+                            <p className="text-[9px] font-medium text-slate-500 leading-relaxed mt-1">
+                              {insight.desc}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Guidance (Ações para Crescimento) */}
+                        <div className="pl-9.5 pt-2 border-t border-slate-100 flex gap-2 text-left">
+                          <div className="p-1 rounded-md bg-amber-50 shrink-0 h-fit text-amber-600">
+                            <Plus size={10} className="stroke-[3]" />
+                          </div>
+                          <div className="flex-1 flex flex-col">
+                            <span className="text-[7.5px] font-black uppercase text-amber-600 tracking-widest block mb-0.5">
+                              Ações Recomendadas
+                            </span>
+                            <p className="text-[9.5px] font-black text-slate-800 leading-relaxed">
+                              {insight.action}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-150 flex justify-end">
+              <button
+                onClick={() => setIsIntelligenceModalOpen(false)}
+                className="bg-slate-900 hover:bg-slate-850 active:scale-95 text-white font-black text-[10px] uppercase tracking-wider px-5 py-2.5 rounded-xl shadow-md cursor-pointer transition-all font-sans"
+              >
+                Concluído
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 2. MODAL DE PRÉ-VISUALIZAÇÃO & IMPRESSÃO NA TELA */}
       {isPrintModalOpen && (
