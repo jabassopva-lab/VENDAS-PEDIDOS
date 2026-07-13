@@ -186,6 +186,23 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
     );
   };
 
+  const setQuantity = (productId: string, qty: number) => {
+    setCart((prev) =>
+      prev.map((item) => {
+        if (item.id === productId) {
+          return { ...item, quantity: Math.max(0, qty) };
+        }
+        return item;
+      }),
+    );
+  };
+
+  const handleQuantityBlur = (productId: string, currentQty: number) => {
+    if (currentQty <= 0) {
+      setCart((prev) => prev.filter((item) => item.id !== productId));
+    }
+  };
+
   const updatePrice = (productId: string, newPrice: number) => {
     setCart((prev) =>
       prev.map((item) => {
@@ -434,9 +451,20 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         >
                           <Minus size={16} strokeWidth={3} />
                         </button>
-                        <span className="font-black min-w-[20px] text-center">
-                          {inCart.quantity}
-                        </span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          className="font-black text-center bg-transparent border-none text-white outline-none focus:ring-0 p-0 text-xs sm:text-sm"
+                          style={{ width: "32px" }}
+                          value={inCart.quantity === 0 ? "" : inCart.quantity}
+                          onChange={(e) => {
+                            const valStr = e.target.value.replace(/[^0-9]/g, "");
+                            const val = parseInt(valStr, 10);
+                            setQuantity(product.id, isNaN(val) ? 0 : val);
+                          }}
+                          onBlur={() => handleQuantityBlur(product.id, inCart.quantity)}
+                        />
                         <button
                           onClick={() => updateQuantity(product.id, 1)}
                           className="p-1 hover:bg-white/20 rounded"
@@ -826,9 +854,12 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
         <div className="flex gap-3">
           {step === "SELECTION" ? (
             <button
-              onClick={() => setStep("CART")}
+              onClick={() => {
+                setCart((prev) => prev.filter((item) => item.quantity > 0));
+                setStep("CART");
+              }}
               className="flex-1 bg-slate-100 text-slate-600 font-black py-4 rounded-2xl uppercase text-xs italic"
-              disabled={cart.length === 0}
+              disabled={cart.filter((item) => item.quantity > 0).length === 0}
             >
               Salvar Pedido
             </button>
