@@ -391,6 +391,7 @@ const App: React.FC = () => {
   const [reportTab, setReportTab] = useState<"DIARIO" | "MENSAL" | "ANUAL" | "TOTAL">(
     "MENSAL",
   );
+  const [flavorChartMetric, setFlavorChartMetric] = useState<"REVENUE" | "VOLUME">("REVENUE");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [rankingFilterType, setRankingFilterType] = useState<"MENSAL" | "PERIODO">("MENSAL");
   const [rankingMonth, setRankingMonth] = useState<string>(() => {
@@ -7110,7 +7111,7 @@ Obrigado pela preferência!`;
 
             {/* 3. Desempenho dos Sabores (Cocadas) */}
             <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 space-y-4 text-left">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                   <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 leading-none">
                     Desempenho dos Sabores
@@ -7119,8 +7120,32 @@ Obrigado pela preferência!`;
                     Oscilações de faturamento e volumes por sabor de cocada
                   </p>
                 </div>
-                <div className="bg-amber-50 text-amber-600 px-2 py-1 rounded-xl text-[8px] font-black uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles size={10} /> Cocos
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <div className="flex bg-slate-100 p-0.5 rounded-xl">
+                    <button
+                      onClick={() => setFlavorChartMetric("REVENUE")}
+                      className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider transition-all ${
+                        flavorChartMetric === "REVENUE"
+                          ? "bg-white text-slate-800 shadow-sm"
+                          : "text-slate-400 hover:text-slate-600"
+                      }`}
+                    >
+                      Faturamento
+                    </button>
+                    <button
+                      onClick={() => setFlavorChartMetric("VOLUME")}
+                      className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider transition-all ${
+                        flavorChartMetric === "VOLUME"
+                          ? "bg-white text-slate-800 shadow-sm"
+                          : "text-slate-400 hover:text-slate-600"
+                      }`}
+                    >
+                      Volume
+                    </button>
+                  </div>
+                  <div className="bg-amber-50 text-amber-600 px-2 py-1 rounded-xl text-[8px] font-black uppercase tracking-wider flex items-center gap-1">
+                    <Sparkles size={10} /> Cocos
+                  </div>
                 </div>
               </div>
 
@@ -7130,120 +7155,247 @@ Obrigado pela preferência!`;
                     Sem cocadas vendidas no período
                   </p>
                 </div>
-              ) : (
-                <div className="space-y-3.5 font-sans">
-                  {flavorAndIntelligenceData.flavorList.map((item, idx) => {
-                    const totalRevenue =
-                      flavorAndIntelligenceData.currTotalRevenue || 1;
-                    const percentOfTotal = (item.currRevenue / totalRevenue) * 100;
-                    const hasPrevious = item.prevRevenue > 0 || item.prevQuantity > 0;
+              ) : (() => {
+                const COLORS = [
+                  "#f59e0b", // Amber 500
+                  "#3b82f6", // Blue 500
+                  "#10b981", // Emerald 500
+                  "#8b5cf6", // Violet 500
+                  "#ec4899", // Pink 500
+                  "#f43f5e", // Rose 500
+                  "#06b6d4", // Cyan 500
+                  "#14b8a6", // Teal 500
+                  "#a855f7", // Purple 500
+                ];
 
-                    return (
-                      <div
-                        key={idx}
-                        className="bg-slate-50/40 p-3.5 rounded-2xl border border-slate-100 space-y-2.5 transition-all hover:bg-slate-50/70"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-black text-sm italic border border-amber-500/10">
-                              {item.flavor.charAt(0)}
-                            </div>
-                            <div className="text-left">
-                              <span className="text-[11px] font-black text-slate-800 uppercase tracking-wide block">
-                                {item.flavor}
-                              </span>
-                              <span className="text-[9px] font-bold text-slate-400 block mt-0.5 uppercase tracking-wider">
-                                {item.currQuantity} unidades • Ticket Médio R${" "}
-                                {(item.currQuantity > 0
-                                  ? item.currRevenue / item.currQuantity
-                                  : 0
-                                ).toFixed(2)}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-[11px] font-black text-slate-800 block">
-                              R$ {item.currRevenue.toFixed(2)}
-                            </span>
+                const chartData = flavorAndIntelligenceData.flavorList
+                  .filter((item) => (flavorChartMetric === "REVENUE" ? item.currRevenue : item.currQuantity) > 0)
+                  .map((item) => ({
+                    name: item.flavor,
+                    value: flavorChartMetric === "REVENUE" ? item.currRevenue : item.currQuantity,
+                    currRevenue: item.currRevenue,
+                    currQuantity: item.currQuantity,
+                    currProfit: item.currProfit,
+                    margin: item.margin,
+                    percent: (item.currRevenue / (flavorAndIntelligenceData.currTotalRevenue || 1)) * 100,
+                  }));
 
-                            {/* Fluctuations */}
-                            <div className="mt-1 flex items-center justify-end gap-1.5">
-                              {item.revChange > 0 ? (
-                                <span className="inline-flex items-center gap-0.5 bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded-lg text-[8px] font-black leading-none">
-                                  + {item.revChange.toFixed(0)}%{" "}
-                                  <TrendingUp size={8} />
-                                </span>
-                              ) : item.revChange < 0 ? (
-                                <span className="inline-flex items-center gap-0.5 bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-lg text-[8px] font-black leading-none">
-                                  {item.revChange.toFixed(0)}%{" "}
-                                  <TrendingUp
-                                    size={8}
-                                    className="transform rotate-180"
-                                  />
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-0.5 bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-lg text-[8px] font-bold leading-none">
-                                  0% ○
-                                </span>
-                              )}
-
-                              {/* Flag for new flavor in comparison to previous */}
-                              {!hasPrevious &&
-                                flavorAndIntelligenceData.prevTotalRevenue > 0 && (
-                                  <span className="bg-sky-50 text-sky-600 px-1 py-0.5 rounded-md text-[7px] font-black uppercase tracking-wider ml-1.5">
-                                    Novo
-                                  </span>
-                                )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Progress bar representing share of faturamento */}
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-[7.5px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                            <span>Percentual das vendas</span>
-                            <span>{percentOfTotal.toFixed(1)}%</span>
-                          </div>
-                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-300"
-                              style={{ width: `${percentOfTotal}%` }}
+                return (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                    {/* Left Column: Pie Chart (Donut style) */}
+                    <div className="lg:col-span-5 flex flex-col items-center">
+                      <div className="relative w-full h-56 flex items-center justify-center">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={chartData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={65}
+                              outerRadius={85}
+                              paddingAngle={3}
+                              dataKey="value"
+                            >
+                              {chartData.map((entry, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={COLORS[index % COLORS.length]}
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0].payload;
+                                  return (
+                                    <div className="bg-slate-950 text-white p-3.5 rounded-2xl shadow-xl border border-slate-800 text-left font-sans space-y-1 z-50">
+                                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 leading-none">
+                                        Sabor
+                                      </p>
+                                      <p className="text-xs font-black uppercase tracking-wide text-white">
+                                        {data.name}
+                                      </p>
+                                      <div className="pt-1.5 space-y-1 border-t border-white/10 mt-1">
+                                        <p className="text-[10px] font-bold text-slate-300">
+                                          Faturamento: <span className="font-black text-white">R$ {data.currRevenue.toFixed(2)}</span>
+                                        </p>
+                                        <p className="text-[10px] font-bold text-slate-300">
+                                          Volume: <span className="font-black text-white">{data.currQuantity} uds</span>
+                                        </p>
+                                        <p className="text-[10px] font-bold text-slate-300">
+                                          Lucro Est.: <span className="font-black text-emerald-400">R$ {data.currProfit.toFixed(2)}</span>
+                                        </p>
+                                        <p className="text-[10px] font-bold text-slate-300">
+                                          Margem: <span className="font-black text-purple-400">{data.margin.toFixed(0)}%</span>
+                                        </p>
+                                        <p className="text-[10px] font-bold text-slate-300">
+                                          Share: <span className="font-black text-sky-400">{data.percent.toFixed(1)}%</span>
+                                        </p>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
                             />
-                          </div>
-                        </div>
-
-                        {/* Extra indicators including profit margin */}
-                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100/60 font-sans text-left">
-                          <div>
-                            <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest block leading-none">
-                              Faturamento
-                            </span>
-                            <span className="text-[9px] font-black text-slate-700 block mt-0.5">
-                              R$ {item.currRevenue.toFixed(2)}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest block leading-none">
-                              Lucro Estimado
-                            </span>
-                            <span className="text-[9px] font-black text-emerald-600 block mt-0.5">
-                              R$ {item.currProfit.toFixed(2)}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest block leading-none">
-                              Margem Ativa
-                            </span>
-                            <span className="text-[9px] font-black text-purple-600 block mt-0.5">
-                              {item.margin.toFixed(0)}%
-                            </span>
-                          </div>
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute flex flex-col items-center justify-center text-center pointer-events-none">
+                          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                            {flavorChartMetric === "REVENUE" ? "FATURAMENTO" : "VOLUME"}
+                          </span>
+                          <span className="text-sm font-black text-slate-800 mt-1 leading-none font-sans">
+                            {flavorChartMetric === "REVENUE"
+                              ? `R$ ${flavorAndIntelligenceData.flavorList.reduce((acc, curr) => acc + curr.currRevenue, 0).toFixed(0)}`
+                              : `${flavorAndIntelligenceData.flavorList.reduce((acc, curr) => acc + curr.currQuantity, 0)} uds`}
+                          </span>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+
+                      {/* Compact legend list under pie */}
+                      <div className="flex flex-wrap gap-2 justify-center mt-2 max-w-sm">
+                        {chartData.map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-1.5 bg-slate-50 border border-slate-100/60 px-2 py-1 rounded-xl text-[9px] font-bold text-slate-600"
+                          >
+                            <span
+                              className="w-2 h-2 rounded-full inline-block shrink-0"
+                              style={{ backgroundColor: COLORS[idx % COLORS.length] }}
+                            />
+                            <span className="uppercase tracking-wide">{item.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Right Column: Detailed Flavor Cards */}
+                    <div className="lg:col-span-7 space-y-3 font-sans">
+                      {flavorAndIntelligenceData.flavorList.map((item, idx) => {
+                        const totalRevenue =
+                          flavorAndIntelligenceData.currTotalRevenue || 1;
+                        const percentOfTotal = (item.currRevenue / totalRevenue) * 100;
+                        const hasPrevious = item.prevRevenue > 0 || item.prevQuantity > 0;
+                        const colorIndex = idx;
+
+                        return (
+                          <div
+                            key={idx}
+                            className="bg-slate-50/40 p-3.5 rounded-2xl border border-slate-100 space-y-2.5 transition-all hover:bg-slate-50/70"
+                          >
+                            <div className="flex justify-between items-start">
+                              <div className="flex items-center gap-2.5">
+                                <div
+                                  className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm italic border"
+                                  style={{
+                                    backgroundColor: `${COLORS[colorIndex % COLORS.length]}12`,
+                                    color: COLORS[colorIndex % COLORS.length],
+                                    borderColor: `${COLORS[colorIndex % COLORS.length]}25`,
+                                  }}
+                                >
+                                  {item.flavor.charAt(0)}
+                                </div>
+                                <div className="text-left">
+                                  <span className="text-[11px] font-black text-slate-800 uppercase tracking-wide block">
+                                    {item.flavor}
+                                  </span>
+                                  <span className="text-[9px] font-bold text-slate-400 block mt-0.5 uppercase tracking-wider">
+                                    {item.currQuantity} unidades • Ticket Médio R${" "}
+                                    {(item.currQuantity > 0
+                                      ? item.currRevenue / item.currQuantity
+                                      : 0
+                                    ).toFixed(2)}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-[11px] font-black text-slate-800 block">
+                                  R$ {item.currRevenue.toFixed(2)}
+                                </span>
+
+                                {/* Fluctuations */}
+                                <div className="mt-1 flex items-center justify-end gap-1.5">
+                                  {item.revChange > 0 ? (
+                                    <span className="inline-flex items-center gap-0.5 bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded-lg text-[8px] font-black leading-none">
+                                      + {item.revChange.toFixed(0)}%{" "}
+                                      <TrendingUp size={8} />
+                                    </span>
+                                  ) : item.revChange < 0 ? (
+                                    <span className="inline-flex items-center gap-0.5 bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-lg text-[8px] font-black leading-none">
+                                      {item.revChange.toFixed(0)}%{" "}
+                                      <TrendingUp
+                                        size={8}
+                                        className="transform rotate-180"
+                                      />
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-0.5 bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-lg text-[8px] font-bold leading-none">
+                                      0% ○
+                                    </span>
+                                  )}
+
+                                  {/* Flag for new flavor in comparison to previous */}
+                                  {!hasPrevious &&
+                                    flavorAndIntelligenceData.prevTotalRevenue > 0 && (
+                                      <span className="bg-sky-50 text-sky-600 px-1 py-0.5 rounded-md text-[7px] font-black uppercase tracking-wider ml-1.5">
+                                        Novo
+                                      </span>
+                                    )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Progress bar representing share of faturamento */}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[7.5px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                                <span>Percentual das vendas</span>
+                                <span>{percentOfTotal.toFixed(1)}%</span>
+                              </div>
+                              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full rounded-full transition-all duration-300"
+                                  style={{
+                                    width: `${percentOfTotal}%`,
+                                    backgroundColor: COLORS[colorIndex % COLORS.length],
+                                  }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Extra indicators including profit margin */}
+                            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100/60 font-sans text-left">
+                              <div>
+                                <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest block leading-none">
+                                  Faturamento
+                                </span>
+                                <span className="text-[9px] font-black text-slate-700 block mt-0.5">
+                                  R$ {item.currRevenue.toFixed(2)}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest block leading-none">
+                                  Lucro Estimado
+                                </span>
+                                <span className="text-[9px] font-black text-emerald-600 block mt-0.5">
+                                  R$ {item.currProfit.toFixed(2)}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest block leading-none">
+                                  Margem Ativa
+                                </span>
+                                <span className="text-[9px] font-black text-purple-600 block mt-0.5">
+                                  {item.margin.toFixed(0)}%
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* 4. IA BI Inteligência e Ações para Crescimento */}
