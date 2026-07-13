@@ -236,10 +236,6 @@ const App: React.FC = () => {
   const [salesHistory, setSalesHistory] = useState<Sale[]>([]);
   const salesHistoryWithNumbers = useMemo(() => {
     const getTimestamp = (s: Sale) => {
-      if (s.created_at) {
-        const t = new Date(s.created_at).getTime();
-        if (!isNaN(t)) return t;
-      }
       if (s.date) {
         const parts = s.date.split("/");
         if (parts.length === 3) {
@@ -258,6 +254,10 @@ const App: React.FC = () => {
           if (!isNaN(parsedMs)) return parsedMs;
         }
       }
+      if (s.created_at) {
+        const t = new Date(s.created_at).getTime();
+        if (!isNaN(t)) return t;
+      }
       return 0;
     };
 
@@ -265,9 +265,12 @@ const App: React.FC = () => {
       const timeA = getTimestamp(a);
       const timeB = getTimestamp(b);
       if (timeA !== timeB) return timeA - timeB;
-      const dateComp = (a.date || "").localeCompare(b.date || "");
-      if (dateComp !== 0) return dateComp;
-      return (a.time || "").localeCompare(b.time || "");
+      
+      const createdA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const createdB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      if (createdA !== createdB) return createdA - createdB;
+
+      return String(a.id || "").localeCompare(String(b.id || ""));
     });
 
     return sortedAsc
@@ -298,11 +301,7 @@ const App: React.FC = () => {
       if (historyFilter === "all") return true;
 
       let saleDateObj: Date | null = null;
-      if (sale.created_at) {
-        const d = new Date(sale.created_at);
-        if (!isNaN(d.getTime())) saleDateObj = d;
-      }
-      if (!saleDateObj && sale.date) {
+      if (sale.date) {
         const parts = sale.date.split("/");
         if (parts.length === 3) {
           const day = parseInt(parts[0], 10);
@@ -318,6 +317,10 @@ const App: React.FC = () => {
           }
           saleDateObj = new Date(year, month, day, h, m);
         }
+      }
+      if (!saleDateObj && sale.created_at) {
+        const d = new Date(sale.created_at);
+        if (!isNaN(d.getTime())) saleDateObj = d;
       }
 
       if (!saleDateObj) return false;
