@@ -6898,6 +6898,94 @@ Obrigado pela preferência!`;
           </div>
 
           <div className="max-w-5xl mx-auto w-full p-4 space-y-4">
+            {/* Seletor de Período do Dashboard */}
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-[2rem] p-4.5 sm:p-5 shadow-xl border-b-4 border-slate-950 space-y-4 relative overflow-hidden shadow-slate-200/50">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none"></div>
+              
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 relative z-10">
+                <div className="text-left">
+                  <h4 className="text-[11px] font-black uppercase tracking-wider leading-none text-amber-400">
+                    Período de Análise
+                  </h4>
+                  <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest mt-1">
+                    Selecione o filtro temporal para o dashboard
+                  </p>
+                </div>
+
+                <div className="flex items-center bg-slate-950/40 p-1 rounded-xl border border-white/5 max-w-xs w-full sm:w-auto">
+                  <button
+                    onClick={() => setReportTab("DIARIO")}
+                    className={`flex-1 sm:flex-none px-3.5 py-1 sm:py-1.5 rounded-lg text-[9px] sm:text-xs font-black uppercase tracking-tight transition-all ${
+                      reportTab === "DIARIO"
+                        ? "bg-white text-slate-900 shadow-md"
+                        : "text-slate-300 hover:text-white hover:bg-white/5"
+                    }`}
+                  >
+                    Dia
+                  </button>
+                  <button
+                    onClick={() => setReportTab("MENSAL")}
+                    className={`flex-1 sm:flex-none px-3.5 py-1 sm:py-1.5 rounded-lg text-[9px] sm:text-xs font-black uppercase tracking-tight transition-all ${
+                      reportTab === "MENSAL"
+                        ? "bg-white text-slate-900 shadow-md"
+                        : "text-slate-300 hover:text-white hover:bg-white/5"
+                    }`}
+                  >
+                    Mês
+                  </button>
+                  <button
+                    onClick={() => setReportTab("ANUAL")}
+                    className={`flex-1 sm:flex-none px-3.5 py-1 sm:py-1.5 rounded-lg text-[9px] sm:text-xs font-black uppercase tracking-tight transition-all ${
+                      reportTab === "ANUAL"
+                        ? "bg-white text-slate-900 shadow-md"
+                        : "text-slate-300 hover:text-white hover:bg-white/5"
+                    }`}
+                  >
+                    Ano
+                  </button>
+                  <button
+                    onClick={() => setReportTab("TOTAL")}
+                    className={`flex-1 sm:flex-none px-3.5 py-1 sm:py-1.5 rounded-lg text-[9px] sm:text-xs font-black uppercase tracking-tight transition-all ${
+                      reportTab === "TOTAL"
+                        ? "bg-white text-slate-900 shadow-md"
+                        : "text-slate-300 hover:text-white hover:bg-white/5"
+                    }`}
+                  >
+                    Tudo
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between px-1 relative z-10 bg-slate-950/20 rounded-2xl p-2 border border-white/5">
+                <button
+                  onClick={() => changeDate(-1)}
+                  className="p-2 bg-white/10 hover:bg-white/20 active:scale-90 text-white rounded-xl transition-all disabled:opacity-20 disabled:hover:bg-white/10 shadow-sm border border-white/5"
+                  disabled={reportTab === "TOTAL"}
+                >
+                  <ChevronLeft size={18} className="stroke-[2.5]" />
+                </button>
+                <div className="flex items-center gap-2">
+                  <Calendar size={14} className="text-amber-400 stroke-[2.5]" />
+                  <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-white drop-shadow-sm font-sans">
+                    {reportTab === "DIARIO"
+                      ? currentDate.toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" })
+                      : reportTab === "MENSAL"
+                        ? `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`
+                        : reportTab === "ANUAL"
+                          ? currentDate.getFullYear()
+                          : "Todo o Período"}
+                  </span>
+                </div>
+                <button
+                  onClick={() => changeDate(1)}
+                  className="p-2 bg-white/10 hover:bg-white/20 active:scale-90 text-white rounded-xl transition-all disabled:opacity-20 disabled:hover:bg-white/10 shadow-sm border border-white/5"
+                  disabled={reportTab === "TOTAL"}
+                >
+                  <ChevronRight size={18} className="stroke-[2.5]" />
+                </button>
+              </div>
+            </div>
+
             {/* Banner de Impressão Rápida / Resumo Executivo */}
             <div
               onClick={handlePrintDashboard}
