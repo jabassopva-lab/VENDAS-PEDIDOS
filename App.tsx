@@ -6898,7 +6898,7 @@ Obrigado pela preferência!`;
             </div>
           </div>
 
-          <div className="max-w-5xl mx-auto w-full p-4 space-y-4">
+          <div className="w-full max-w-full px-4 md:px-8 lg:px-12 py-4 space-y-4">
             {/* Seletor de Período do Dashboard */}
             <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-[2rem] py-2.5 px-4 shadow-xl border-b-4 border-slate-950 relative overflow-hidden shadow-slate-200/50">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none"></div>
