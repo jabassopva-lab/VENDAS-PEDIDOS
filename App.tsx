@@ -3700,6 +3700,21 @@ Obrigado pela preferência!`;
       entregaCount: 0,
       entregaTotal: 0,
     };
+
+    // Calcular "A RECEBER" sobre todo o histórico de vendas (todos os períodos)
+    salesHistory.forEach((s) => {
+      if (!["FINALIZADA", "PENDENTE"].includes(s.status) || !s.date) return;
+      const isPaid =
+        s.isPaid === true ||
+        String(s.isPaid) === "true" ||
+        Number(s.isPaid) === 1;
+
+      if (!isPaid) {
+        stats.aReceberCount++;
+        stats.aReceberTotal += safeNumber(s.total);
+      }
+    });
+
     filtered.forEach((s) => {
       const total = safeNumber(s.total);
       const profit = safeNumber(s.profit || 0);
@@ -3715,9 +3730,6 @@ Obrigado pela preferência!`;
         if (isPaid) {
           stats.recebidoCount++;
           stats.recebidoTotal += total;
-        } else {
-          stats.aReceberCount++;
-          stats.aReceberTotal += total;
         }
         if (s.deliveryStatus === "PENDENTE") {
           stats.entregaCount++;
@@ -3811,6 +3823,71 @@ Obrigado pela preferência!`;
 
     return Object.values(clientsMap).sort((a, b) => b.totalSold - a.totalSold);
   }, [salesHistory, rankingFilterType, rankingMonth, rankingStartDate, rankingEndDate]);
+
+  const pendingClientsList = useMemo(() => {
+    const safeNumber = (val: any) => {
+      if (typeof val === "number") return isNaN(val) ? 0 : val;
+      if (typeof val === "string") {
+        let cleaned = val.replace(/[R$\s]/g, "");
+        if (cleaned.includes(",") && cleaned.includes(".")) {
+          cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+        } else if (cleaned.includes(",")) {
+          cleaned = cleaned.replace(",", ".");
+        }
+        const num = Number(cleaned);
+        return isNaN(num) ? 0 : num;
+      }
+      return Number(val) || 0;
+    };
+
+    const clientsMap: Record<string, any> = {};
+    salesHistory.forEach((sale) => {
+      if (!["FINALIZADA", "PENDENTE"].includes(sale.status) || !sale.date)
+        return;
+
+      const isPaid =
+        sale.isPaid === true ||
+        String(sale.isPaid) === "true" ||
+        Number(sale.isPaid) === 1;
+
+      if (isPaid) return;
+
+      const rawName = (sale.clientName || "Venda Avulsa").trim();
+      const groupKey =
+        rawName === "Venda Avulsa" ? `anon_${sale.id}` : rawName.toUpperCase();
+
+      if (!clientsMap[groupKey]) {
+        clientsMap[groupKey] = {
+          name: rawName,
+          clientId: sale.clientId || "",
+          salesCount: 0,
+          totalPotes: 0,
+          totalSold: 0,
+          totalProfit: 0,
+          totalPendingAmount: 0,
+        };
+      } else if (sale.clientId && !clientsMap[groupKey].clientId) {
+        clientsMap[groupKey].clientId = sale.clientId;
+      }
+
+      const total = safeNumber(sale.total);
+      const profit = safeNumber(sale.profit || 0);
+      const salePotes = (sale.items || []).reduce(
+        (sum, item) => sum + (Number(item.quantity) || 0),
+        0,
+      );
+
+      clientsMap[groupKey].salesCount++;
+      clientsMap[groupKey].totalPotes += salePotes;
+      clientsMap[groupKey].totalSold += total;
+      clientsMap[groupKey].totalProfit += profit;
+      clientsMap[groupKey].totalPendingAmount += total;
+    });
+
+    return Object.values(clientsMap).sort(
+      (a, b) => b.totalPendingAmount - a.totalPendingAmount,
+    );
+  }, [salesHistory]);
 
   const productRanking = useMemo(() => {
     const d = currentDate;
@@ -7348,12 +7425,7 @@ Obrigado pela preferência!`;
                       ? clientRanking
                       : currentScreen === "PRODUCT_REPORT"
                         ? productRanking
-                        : [...clientRanking]
-                            .filter((c) => c.totalPendingAmount > 0)
-                            .sort(
-                              (a, b) =>
-                                b.totalPendingAmount - a.totalPendingAmount,
-                            );
+                        : pendingClientsList;
                   const title =
                     currentScreen === "CLIENT_REPORT"
                       ? "RANKING DE CLIENTES"
@@ -7701,9 +7773,7 @@ Obrigado pela preferência!`;
               ? clientRanking
               : currentScreen === "PRODUCT_REPORT"
                 ? productRanking
-                : [...clientRanking]
-                    .filter((c) => c.totalPendingAmount > 0)
-                    .sort((a, b) => b.totalPendingAmount - a.totalPendingAmount)
+                : pendingClientsList
             ).length === 0 ? (
               <EmptyState message="Sem dados no período" icon={BarChart3} />
             ) : (
@@ -7712,11 +7782,7 @@ Obrigado pela preferência!`;
                   ? clientRanking
                   : currentScreen === "PRODUCT_REPORT"
                     ? productRanking
-                    : [...clientRanking]
-                        .filter((c) => c.totalPendingAmount > 0)
-                        .sort(
-                          (a, b) => b.totalPendingAmount - a.totalPendingAmount,
-                        )
+                    : pendingClientsList
                 ).map((item, index) => (
                   <div
                     key={index}
@@ -7803,7 +7869,7 @@ Obrigado pela preferência!`;
                           ? clientRanking
                           : currentScreen === "PRODUCT_REPORT"
                             ? productRanking
-                            : clientRanking
+                            : pendingClientsList
                         ).reduce((acc, curr) => acc + curr.salesCount, 0)}
                       </p>
                     </div>
@@ -7817,7 +7883,7 @@ Obrigado pela preferência!`;
                           ? clientRanking
                           : currentScreen === "PRODUCT_REPORT"
                             ? productRanking
-                            : clientRanking
+                            : pendingClientsList
                         )
                           .reduce(
                             (acc, curr) =>
