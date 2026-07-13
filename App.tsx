@@ -386,7 +386,7 @@ const App: React.FC = () => {
   };
 
   const [reportTab, setReportTab] = useState<"DIARIO" | "MENSAL" | "ANUAL" | "TOTAL">(
-    "TOTAL",
+    "MENSAL",
   );
   const [currentDate, setCurrentDate] = useState(new Date());
   const [rankingFilterType, setRankingFilterType] = useState<"MENSAL" | "PERIODO">("MENSAL");
