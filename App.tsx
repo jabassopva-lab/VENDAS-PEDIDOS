@@ -841,6 +841,12 @@ const App: React.FC = () => {
       return;
     }
 
+    if (!isConfigured) {
+      setSession(null);
+      setLoading(false);
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
@@ -7272,19 +7278,19 @@ Obrigado pela preferência!`;
                   }));
 
                 return (
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                     {/* Left Column: Pie Chart (Donut style) */}
-                    <div className="lg:col-span-5 flex flex-col items-center">
-                      <div className="relative w-full h-56 flex items-center justify-center">
+                    <div className="lg:col-span-6 flex flex-col items-center justify-center">
+                      <div className="relative w-full h-80 sm:h-96 flex items-center justify-center">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
                               data={chartData}
                               cx="50%"
                               cy="50%"
-                              innerRadius={65}
-                              outerRadius={85}
-                              paddingAngle={3}
+                              innerRadius={95}
+                              outerRadius={135}
+                              paddingAngle={3.5}
                               dataKey="value"
                             >
                               {chartData.map((entry, index) => (
@@ -7332,10 +7338,10 @@ Obrigado pela preferência!`;
                           </PieChart>
                         </ResponsiveContainer>
                         <div className="absolute flex flex-col items-center justify-center text-center pointer-events-none">
-                          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest leading-none">
                             {flavorChartMetric === "REVENUE" ? "FATURAMENTO" : "VOLUME"}
                           </span>
-                          <span className="text-sm font-black text-slate-800 mt-1 leading-none font-sans">
+                          <span className="text-xl sm:text-2xl font-black text-slate-900 mt-2 leading-none font-sans tracking-tight">
                             {flavorChartMetric === "REVENUE"
                               ? `R$ ${flavorAndIntelligenceData.flavorList.reduce((acc, curr) => acc + curr.currRevenue, 0).toFixed(0)}`
                               : `${flavorAndIntelligenceData.flavorList.reduce((acc, curr) => acc + curr.currQuantity, 0)} uds`}
@@ -7361,7 +7367,7 @@ Obrigado pela preferência!`;
                     </div>
 
                     {/* Right Column: Detailed Flavor Cards */}
-                    <div className="lg:col-span-7 space-y-3 font-sans">
+                    <div className="lg:col-span-6 space-y-2.5 font-sans">
                       {flavorAndIntelligenceData.flavorList.map((item, idx) => {
                         const totalRevenue =
                           flavorAndIntelligenceData.currTotalRevenue || 1;
@@ -7372,12 +7378,12 @@ Obrigado pela preferência!`;
                         return (
                           <div
                             key={idx}
-                            className="bg-slate-50/40 p-3.5 rounded-2xl border border-slate-100 space-y-2.5 transition-all hover:bg-slate-50/70"
+                            className="bg-slate-50/40 py-2.5 px-4 rounded-2xl border border-slate-100 space-y-1.5 transition-all hover:bg-slate-50/70"
                           >
-                            <div className="flex justify-between items-start">
-                              <div className="flex items-center gap-2.5">
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-3">
                                 <div
-                                  className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm italic border"
+                                  className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-base italic border shrink-0"
                                   style={{
                                     backgroundColor: `${COLORS[colorIndex % COLORS.length]}12`,
                                     color: COLORS[colorIndex % COLORS.length],
@@ -7387,10 +7393,10 @@ Obrigado pela preferência!`;
                                   {item.flavor.charAt(0)}
                                 </div>
                                 <div className="text-left">
-                                  <span className="text-[11px] font-black text-slate-800 uppercase tracking-wide block">
+                                  <span className="text-sm sm:text-base font-black text-slate-800 uppercase tracking-wide block leading-tight">
                                     {item.flavor}
                                   </span>
-                                  <span className="text-[9px] font-bold text-slate-400 block mt-0.5 uppercase tracking-wider">
+                                  <span className="text-xs font-bold text-slate-400 block mt-0.5 uppercase tracking-wider leading-none">
                                     {item.currQuantity} unidades • Ticket Médio R${" "}
                                     {(item.currQuantity > 0
                                       ? item.currRevenue / item.currQuantity
@@ -7400,27 +7406,27 @@ Obrigado pela preferência!`;
                                 </div>
                               </div>
                               <div className="text-right">
-                                <span className="text-[11px] font-black text-slate-800 block">
+                                <span className="text-sm sm:text-base font-black text-slate-800 block leading-tight">
                                   R$ {item.currRevenue.toFixed(2)}
                                 </span>
 
                                 {/* Fluctuations */}
                                 <div className="mt-1 flex items-center justify-end gap-1.5">
                                   {item.revChange > 0 ? (
-                                    <span className="inline-flex items-center gap-0.5 bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded-lg text-[8px] font-black leading-none">
+                                    <span className="inline-flex items-center gap-0.5 bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-lg text-[10px] font-black leading-none">
                                       + {item.revChange.toFixed(0)}%{" "}
-                                      <TrendingUp size={8} />
+                                      <TrendingUp size={10} />
                                     </span>
                                   ) : item.revChange < 0 ? (
-                                    <span className="inline-flex items-center gap-0.5 bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-lg text-[8px] font-black leading-none">
+                                    <span className="inline-flex items-center gap-0.5 bg-rose-50 text-rose-600 px-2 py-0.5 rounded-lg text-[10px] font-black leading-none">
                                       {item.revChange.toFixed(0)}%{" "}
                                       <TrendingUp
-                                        size={8}
+                                        size={10}
                                         className="transform rotate-180"
                                       />
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center gap-0.5 bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-lg text-[8px] font-bold leading-none">
+                                    <span className="inline-flex items-center gap-0.5 bg-slate-100 text-slate-500 px-2 py-0.5 rounded-lg text-[10px] font-bold leading-none">
                                       0% ○
                                     </span>
                                   )}
@@ -7428,7 +7434,7 @@ Obrigado pela preferência!`;
                                   {/* Flag for new flavor in comparison to previous */}
                                   {!hasPrevious &&
                                     flavorAndIntelligenceData.prevTotalRevenue > 0 && (
-                                      <span className="bg-sky-50 text-sky-600 px-1 py-0.5 rounded-md text-[7px] font-black uppercase tracking-wider ml-1.5">
+                                      <span className="bg-sky-50 text-sky-600 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ml-1.5">
                                         Novo
                                       </span>
                                     )}
@@ -7438,11 +7444,11 @@ Obrigado pela preferência!`;
 
                             {/* Progress bar representing share of faturamento */}
                             <div className="space-y-1">
-                              <div className="flex justify-between text-[7.5px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                              <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
                                 <span>Percentual das vendas</span>
                                 <span>{percentOfTotal.toFixed(1)}%</span>
                               </div>
-                              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                                 <div
                                   className="h-full rounded-full transition-all duration-300"
                                   style={{
@@ -7454,28 +7460,28 @@ Obrigado pela preferência!`;
                             </div>
 
                             {/* Extra indicators including profit margin */}
-                            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100/60 font-sans text-left">
+                            <div className="grid grid-cols-3 gap-2 pt-1.5 border-t border-slate-100/60 font-sans text-left">
                               <div>
-                                <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest block leading-none">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block leading-none">
                                   Faturamento
                                 </span>
-                                <span className="text-[9px] font-black text-slate-700 block mt-0.5">
+                                <span className="text-xs sm:text-sm font-black text-slate-800 block mt-0.5">
                                   R$ {item.currRevenue.toFixed(2)}
                                 </span>
                               </div>
                               <div>
-                                <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest block leading-none">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block leading-none">
                                   Lucro Estimado
                                 </span>
-                                <span className="text-[9px] font-black text-emerald-600 block mt-0.5">
+                                <span className="text-xs sm:text-sm font-black text-emerald-600 block mt-0.5">
                                   R$ {item.currProfit.toFixed(2)}
                                 </span>
                               </div>
                               <div>
-                                <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest block leading-none">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block leading-none">
                                   Margem Ativa
                                 </span>
-                                <span className="text-[9px] font-black text-purple-600 block mt-0.5">
+                                <span className="text-xs sm:text-sm font-black text-purple-600 block mt-0.5">
                                   {item.margin.toFixed(0)}%
                                 </span>
                               </div>
