@@ -965,18 +965,18 @@ const App: React.FC = () => {
     }
   };
 
-  const handlePaymentSuccess = async (newExpiryDate: string) => {
+  const handlePaymentSuccess = async (newExpiryDate: string, status: string = "ATIVO") => {
     try {
       const updated = {
         ...businessProfile,
-        planStatus: "ATIVO",
+        planStatus: status,
         nextBilling: newExpiryDate,
       };
       setBusinessProfile(updated);
       await db.profile.update(updated);
-      triggerNotify("Assinatura Ativada!");
+      triggerNotify(status === "ATIVO" ? "Assinatura Ativada!" : "Pagamento Registrado!");
     } catch (e) {
-      console.error("Erro ao ativar assinatura:", e);
+      console.error("Erro ao atualizar assinatura:", e);
     }
   };
 

@@ -11,13 +11,14 @@ import {
   Coins, 
   ChevronRight,
   Sparkles,
-  Smartphone
+  Smartphone,
+  Clock
 } from "lucide-react";
 import { BusinessProfile } from "../types";
 
 interface SaaSCheckoutProps {
   profile: BusinessProfile;
-  onPaymentSuccess: (newExpiryDate: string) => Promise<void>;
+  onPaymentSuccess: (newExpiryDate: string, status?: string) => Promise<void>;
   onClose?: () => void;
   isBlockedMode?: boolean;
 }
@@ -30,7 +31,9 @@ export const SaaSCheckout: React.FC<SaaSCheckoutProps> = ({
 }) => {
   const [paymentMethod, setPaymentMethod] = useState<"PIX" | "CARD">("PIX");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentStep, setPaymentStep] = useState<"FORM" | "SUCCESS">("FORM");
+  const [paymentStep, setPaymentStep] = useState<"FORM" | "SUCCESS" | "AWAITING">(
+    profile.planStatus === "PENDENTE" ? "AWAITING" : "FORM"
+  );
   const [copied, setCopied] = useState(false);
 
   // Card form states
@@ -115,9 +118,9 @@ export const SaaSCheckout: React.FC<SaaSCheckoutProps> = ({
         nextDate.setDate(nextDate.getDate() + 30);
         const nextDateStr = nextDate.toISOString().split("T")[0];
 
-        // Trigger success parent update
-        await onPaymentSuccess(nextDateStr);
-        setPaymentStep("SUCCESS");
+        // Trigger success parent update with "PENDENTE" status
+        await onPaymentSuccess(nextDateStr, "PENDENTE");
+        setPaymentStep("AWAITING");
       } catch (err) {
         console.error(err);
         alert("Erro ao sincronizar ativação com o servidor. Tente novamente.");
@@ -415,6 +418,91 @@ export const SaaSCheckout: React.FC<SaaSCheckoutProps> = ({
             </button>
           )}
         </>
+      ) : paymentStep === "AWAITING" ? (
+        /* Awaiting manual approval screen */
+        <div className="text-center py-8 space-y-6 animate-in fade-in zoom-in-95 duration-500">
+          <div className="relative inline-block">
+            <div className="w-20 h-20 bg-amber-50 border border-amber-100 rounded-[2rem] flex items-center justify-center mx-auto shadow-inner relative z-10 text-amber-500 animate-pulse">
+              <Clock size={40} className="stroke-[2.5]" />
+            </div>
+            <div className="absolute inset-0 bg-amber-500/10 rounded-[2.5rem] blur-xl scale-120 -z-0"></div>
+          </div>
+
+          <div className="space-y-2">
+            <span className="bg-amber-50 text-amber-600 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest inline-block border border-amber-200">
+              Pagamento em Análise
+            </span>
+            <h4 className="text-2xl font-black text-slate-800 tracking-tight italic uppercase">
+              Aguardando Liberação
+            </h4>
+            <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-xs mx-auto">
+              Registramos sua solicitação de ativação. Nosso departamento financeiro está verificando o Pix para liberar seu acesso completo em instantes.
+            </p>
+          </div>
+
+          {/* Action to send to WhatsApp */}
+          <div className="space-y-3 pt-2">
+            <a
+              href={`https://wa.me/5566992442998?text=${encodeURIComponent(
+                `Olá! Realizei o pagamento da assinatura da minha empresa *${profile.companyName}* (${profile.email || ''}) no valor de R$ 19,90 via Pix. Segue o comprovante para liberação do acesso.`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-100 flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
+            >
+              <Smartphone size={16} strokeWidth={2.5} />
+              Enviar Comprovante via WhatsApp
+            </a>
+            
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+              Ou tire suas dúvidas com o suporte: (66) 99244-2998
+            </p>
+          </div>
+
+          {/* Detail card */}
+          <div className="bg-slate-50 border border-slate-100 rounded-3xl p-5 text-left space-y-2">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-200/50">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                Dados da Empresa
+              </span>
+              <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">
+                Pendente
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-2 text-xs font-bold text-slate-600">
+              <div>
+                <p className="text-[8px] text-slate-400 uppercase font-black">Empresa</p>
+                <p className="text-slate-700 font-black truncate">{profile.companyName}</p>
+              </div>
+              <div>
+                <p className="text-[8px] text-slate-400 uppercase font-black">E-mail de Cadastro</p>
+                <p className="text-slate-700 font-black truncate">{profile.email}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Secondary buttons */}
+          <div className="pt-2 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setPaymentStep("FORM");
+              }}
+              className="w-full py-3 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all border border-slate-100 cursor-pointer"
+            >
+              Alterar Meio de Pagamento
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                window.location.reload();
+              }}
+              className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all cursor-pointer"
+            >
+              Já Fui Liberado (Atualizar Tela)
+            </button>
+          </div>
+        </div>
       ) : (
         /* Success screen */
         <div className="text-center py-8 space-y-6 animate-in fade-in zoom-in-95 duration-500">
@@ -467,7 +555,7 @@ export const SaaSCheckout: React.FC<SaaSCheckoutProps> = ({
               if (onClose) onClose();
               window.location.reload(); // Quick refresh to clear status
             }}
-            className="w-full bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all shadow-md"
+            className="w-full bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all shadow-md cursor-pointer"
           >
             Acessar Painel Agora
           </button>
