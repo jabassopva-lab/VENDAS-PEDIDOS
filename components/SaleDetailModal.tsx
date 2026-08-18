@@ -160,7 +160,7 @@ Obrigado pela preferência!`;
       doc.setTextColor(239, 68, 68);
       doc.setFontSize(30);
       doc.setFont('Helvetica', 'bold');
-      doc.text('DOCUMENTO PARA TESTE - MODO DEMO', 105, 150, { align: 'center', angle: 45 });
+      // doc.text('DOCUMENTO PARA TESTE - MODO DEMO', 105, 150, { align: 'center', angle: 45 });
       doc.setTextColor(51, 65, 85);
     }
 
