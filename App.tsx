@@ -1467,14 +1467,6 @@ const App: React.FC = () => {
   };
 
   const handleFinishSale = async (data: Partial<Sale>) => {
-    /* 
-    /* 
-    if (isTestMode && salesHistory.length >= 10 && !data.id) {
-      alert("No MODO DEMO, você pode realizar no máximo 10 vendas para teste. Crie uma conta real para uso ilimitado!");
-      return;
-    }
-    */
-    */
     try {
       const isUpdate = !!data.id;
       const client = clients.find((c) => c.id === data.clientId);

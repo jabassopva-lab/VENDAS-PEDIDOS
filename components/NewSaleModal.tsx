@@ -218,6 +218,10 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
     }
   };
 
+  const removeFromCart = (productId: string) => {
+    setCart((prev) => prev.filter((item) => item.id !== productId));
+  };
+
   const updatePrice = (productId: string, newPrice: number) => {
     setCart((prev) =>
       prev.map((item) => {
@@ -439,10 +443,10 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
                 return (
                   <div
                     key={product.id}
-                    className="bg-white p-2.5 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center active:scale-[0.99] transition-transform"
+                    className="bg-white p-2.5 sm:p-3 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center transition-all hover:border-blue-200 gap-2"
                   >
-                    <div className="flex items-center gap-2">
-                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden shadow-inner">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-1">
+                      <div className="w-10 h-10 sm:w-11 sm:h-11 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden shadow-inner border border-slate-100">
                         {product.imageUrl ? (
                           <img
                             src={product.imageUrl}
@@ -450,36 +454,45 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <Package size={18} className="text-gray-300" />
+                          <Package size={18} className="text-gray-400" />
                         )}
                       </div>
-                      <div>
-                        <h4 className="font-black text-slate-800 uppercase text-xs italic leading-tight">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-black text-slate-800 uppercase text-xs italic leading-tight truncate">
                           {product.name}
                         </h4>
-                        <p className="text-xs font-bold text-gray-400 uppercase mt-0.5">
-                          Estoque: {product.stock}
-                        </p>
-                        <p className="font-black text-blue-600 text-xs mt-0.5">
-                          R$ {product.price.toFixed(2)}
-                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">
+                            Est: {product.stock}
+                          </span>
+                          <span className="text-xs font-black text-blue-600">
+                            R$ {product.price.toFixed(2)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     {inCart ? (
-                      <div className="flex items-center gap-3 bg-blue-600 px-3 py-1.5 rounded-xl text-white shadow-md">
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1 bg-blue-600 p-1 rounded-xl text-white shadow-md shrink-0"
+                      >
                         <button
+                          type="button"
                           onClick={() => updateQuantity(product.id, -1)}
-                          className="p-1 hover:bg-white/20 rounded"
+                          className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-white/20 active:scale-90 rounded-lg transition-all text-white shrink-0"
+                          title="Diminuir quantidade"
                         >
-                          <Minus size={16} strokeWidth={3} />
+                          <Minus size={14} strokeWidth={3} />
                         </button>
                         <input
-                          type="text"
+                          type="number"
                           inputMode="numeric"
                           pattern="[0-9]*"
-                          className="font-black text-center bg-transparent border-none text-white outline-none focus:ring-0 p-0 text-xs sm:text-sm"
-                          style={{ width: "32px" }}
+                          min="0"
+                          className="w-12 sm:w-14 h-7 sm:h-8 font-black text-center bg-white text-blue-950 rounded-lg border border-blue-400 outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-300 text-xs sm:text-sm shadow-inner transition-all selection:bg-blue-200"
                           value={inCart.quantity === 0 ? "" : inCart.quantity}
+                          placeholder="0"
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) => {
                             const valStr = e.target.value.replace(/[^0-9]/g, "");
                             const val = parseInt(valStr, 10);
@@ -488,18 +501,22 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
                           onBlur={() => handleQuantityBlur(product.id, inCart.quantity)}
                         />
                         <button
+                          type="button"
                           onClick={() => updateQuantity(product.id, 1)}
-                          className="p-1 hover:bg-white/20 rounded"
+                          className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-white/20 active:scale-90 rounded-lg transition-all text-white shrink-0"
+                          title="Aumentar quantidade"
                         >
-                          <Plus size={16} strokeWidth={3} />
+                          <Plus size={14} strokeWidth={3} />
                         </button>
                       </div>
                     ) : (
                       <button
+                        type="button"
                         onClick={() => addToCart(product)}
-                        className="bg-white text-blue-600 border-2 border-blue-600 p-2.5 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                        className="bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-600 hover:text-white px-3 py-2 rounded-xl transition-all shadow-sm flex items-center gap-1 font-black text-xs uppercase active:scale-95 shrink-0"
                       >
-                        <Plus size={20} strokeWidth={3} />
+                        <Plus size={16} strokeWidth={3} />
+                        <span className="hidden xs:inline text-[10px]">Add</span>
                       </button>
                     )}
                   </div>
@@ -783,46 +800,97 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               {cart.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-white p-3 rounded-2xl border border-gray-100 flex flex-col gap-2 shadow-sm"
+                  className="bg-white p-3.5 sm:p-4 rounded-2xl border border-gray-100 flex flex-col gap-3 shadow-sm"
                 >
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center font-black text-blue-600 text-[10px] border border-blue-100">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center font-black text-blue-600 text-[11px] border border-blue-100 shrink-0">
                         {item.quantity}x
                       </div>
-                      <h4 className="font-black text-slate-800 uppercase italic text-[10px] leading-tight">
-                        {item.name}
-                      </h4>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-black text-slate-800 uppercase italic text-xs leading-tight truncate">
+                          {item.name}
+                        </h4>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">
+                          Subtotal: R${" "}
+                          {(
+                            (item.price - (item.discount || 0)) *
+                            item.quantity
+                          ).toFixed(2)}
+                        </p>
+                      </div>
                     </div>
-                    <span className="font-black text-slate-900 text-[11px] tabular-nums">
-                      R${" "}
-                      {(
-                        (item.price - (item.discount || 0)) *
-                        item.quantity
-                      ).toFixed(2)}
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeFromCart(item.id)}
+                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                      title="Remover produto do pedido"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 bg-blue-50/50 p-2 rounded-xl border border-blue-100 flex-1 group focus-within:border-blue-300 transition-colors">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 border-t border-slate-100">
+                    {/* Campo de Quantidade digitável no Mobile e Desktop */}
+                    <div className="flex items-center justify-between bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                      <span className="text-[8px] font-black text-slate-500 uppercase ml-1 tracking-wider">
+                        Qtd
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.id, -1)}
+                          className="w-7 h-7 flex items-center justify-center bg-white hover:bg-slate-100 text-slate-700 rounded-lg border border-slate-200 active:scale-90 transition-all font-bold"
+                          title="Diminuir quantidade"
+                        >
+                          <Minus size={13} strokeWidth={3} />
+                        </button>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          min="1"
+                          placeholder="1"
+                          className="w-12 sm:w-14 h-7 bg-white border border-blue-400 rounded-lg font-black text-xs text-blue-950 text-center outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-300 shadow-inner transition-all selection:bg-blue-200"
+                          value={item.quantity === 0 ? "" : item.quantity}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => {
+                            const valStr = e.target.value.replace(/[^0-9]/g, "");
+                            const val = parseInt(valStr, 10);
+                            setQuantity(item.id, isNaN(val) ? 0 : val);
+                          }}
+                          onBlur={() => handleQuantityBlur(item.id, item.quantity)}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.id, 1)}
+                          className="w-7 h-7 flex items-center justify-center bg-white hover:bg-slate-100 text-slate-700 rounded-lg border border-slate-200 active:scale-90 transition-all font-bold"
+                          title="Aumentar quantidade"
+                        >
+                          <Plus size={13} strokeWidth={3} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Preço Unitário */}
+                    <div className="flex items-center justify-between bg-blue-50/50 p-1.5 rounded-xl border border-blue-100 group focus-within:border-blue-300 transition-colors">
                       <span className="text-[8px] font-black text-blue-400 uppercase ml-1 tracking-wider">
                         Preço Unit.
                       </span>
-                      <div className="flex items-center gap-1 flex-1 justify-end">
-                        <span className="text-[10px] font-black text-blue-300">
-                          R$
-                        </span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] font-black text-blue-300">R$</span>
                         <input
                           type="number"
                           step="0.01"
                           min="0"
                           placeholder="0,00"
-                          className="w-16 bg-transparent outline-none text-[11px] font-black text-blue-600 text-right placeholder:text-blue-200"
+                          className="w-16 bg-transparent outline-none text-xs font-black text-blue-600 text-right placeholder:text-blue-200"
                           value={item.price || ""}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) =>
                             updatePrice(
                               item.id,
@@ -833,21 +901,21 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 bg-red-50/50 p-2 rounded-xl border border-red-100 flex-1 group focus-within:border-red-300 transition-colors">
+                    {/* Desconto Unitário */}
+                    <div className="flex items-center justify-between bg-red-50/50 p-1.5 rounded-xl border border-red-100 group focus-within:border-red-300 transition-colors">
                       <span className="text-[8px] font-black text-red-400 uppercase ml-1 tracking-wider">
                         Desc. Unit.
                       </span>
-                      <div className="flex items-center gap-1 flex-1 justify-end">
-                        <span className="text-[10px] font-black text-red-300">
-                          R$
-                        </span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] font-black text-red-300">R$</span>
                         <input
                           type="number"
                           step="0.01"
                           min="0"
                           placeholder="0,00"
-                          className="w-16 bg-transparent outline-none text-[11px] font-black text-red-600 text-right placeholder:text-red-200"
+                          className="w-16 bg-transparent outline-none text-xs font-black text-red-600 text-right placeholder:text-red-200"
                           value={item.discount || ""}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) =>
                             updateDiscount(
                               item.id,
@@ -857,17 +925,19 @@ const NewSaleModal: React.FC<NewSaleModalProps> = ({
                         />
                       </div>
                     </div>
+                  </div>
 
-                    {item.wholesalePrice && (
+                  {item.wholesalePrice && (
+                    <div className="flex justify-end">
                       <button
                         type="button"
                         onClick={() => toggleWholesale(item.id)}
-                        className={`text-[9px] font-black px-3 py-2 rounded-xl border transition-all whitespace-nowrap active:scale-95 ${item.useWholesale ? "bg-purple-600 border-purple-600 text-white shadow-md" : "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100"}`}
+                        className={`text-[9px] font-black px-3 py-1.5 rounded-xl border transition-all whitespace-nowrap active:scale-95 ${item.useWholesale ? "bg-purple-600 border-purple-600 text-white shadow-md" : "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100"}`}
                       >
-                        {item.useWholesale ? "ATACADO ON" : "ATACADO"}
+                        {item.useWholesale ? "ATACADO APLICADO" : "APLICAR PREÇO ATACADO"}
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

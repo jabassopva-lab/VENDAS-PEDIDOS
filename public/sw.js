@@ -1,4 +1,4 @@
-const CACHE_NAME = 'omnivenda-v2';
+const CACHE_NAME = 'omnivenda-v3';
 const ASSETS = [
   '/',
   '/index.html',
