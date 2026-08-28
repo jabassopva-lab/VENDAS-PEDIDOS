@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.omnivendas",
+      "sha256_cert_fingerprints": [
+        "35:F6:99:E3:C6:AD:B7:6F:C8:37:C2:41:7E:86:A8:B8:28:99:D3:73:91:AC:CB:F9:EC:82:06:D1:69:A9:65:13"
+      ]
+    }
+  }
+]
