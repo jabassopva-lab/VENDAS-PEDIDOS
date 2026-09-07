@@ -659,32 +659,96 @@ export const db = {
       if (!shouldUseSupabase()) return [];
       
       // Busca todos os perfis cadastrados no sistema
-      const { data: profiles, error: pError } = await supabase.from('profiles').select('*').order('company_name');
-      if (pError) {
-        console.error("ERRO AO BUSCAR EMPRESAS (RLS?):", pError);
-        return [];
+      let profiles: any[] | null = null;
+      const { data: orderedProfiles, error: pError } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('updated_at', { ascending: false });
+
+      if (pError || !orderedProfiles) {
+        // Fallback ordenando por company_name se updated_at falhar
+        const { data: fallbackProfiles, error: fError } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('company_name');
+        if (fError) {
+          console.error("ERRO AO BUSCAR EMPRESAS (RLS?):", fError);
+          return [];
+        }
+        profiles = fallbackProfiles;
+      } else {
+        profiles = orderedProfiles;
       }
 
       if (!profiles || profiles.length === 0) return [];
 
       const stats = profiles.map((p: any) => {
         return {
-          id: p.user_id,
+          id: p.user_id || p.id,
           companyName: p.company_name,
           email: p.email,
           planStatus: p.plan_status || 'ATIVO',
           planType: p.plan_type || 'START',
           nextBilling: p.next_billing || '2026-05-15',
-          role: p.role
+          role: p.role,
+          updatedAt: p.updated_at
         };
       });
 
       return stats;
     },
+    logDemoAccess: async (demoName?: string) => {
+      try {
+        const cleanName = (demoName || '').trim() || 'Usuário Teste Demo';
+        const now = new Date();
+        const dateStr = now.toISOString();
+
+        // 1. Salva localmente para contingência
+        try {
+          const localHistory = JSON.parse(localStorage.getItem('omnivenda_demo_history') || '[]');
+          localHistory.unshift({ name: cleanName, date: dateStr });
+          localStorage.setItem('omnivenda_demo_history', JSON.stringify(localHistory.slice(0, 50)));
+        } catch (e) {
+          // ignora falha local
+        }
+
+        if (!isConfigured) return;
+
+        // 2. Registra na nuvem (Supabase) via criação de perfil de telemetria
+        const rand = Math.random().toString(36).substring(7);
+        const email = `demo_${Date.now()}_${rand}@omnivenda.com`;
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password: 'demo_password_secure_123',
+          options: {
+            data: { company_name: cleanName, is_demo: true }
+          }
+        });
+
+        if (data?.user) {
+          await supabase.from('profiles').insert({
+            id: data.user.id,
+            user_id: data.user.id,
+            company_name: cleanName,
+            email: email,
+            plan_status: 'DEMO',
+            role: 'DEMO'
+          });
+        }
+      } catch (err) {
+        console.warn("Telemetria demo silenciosa:", err);
+      }
+    },
     deleteBusiness: async (userId: string) => {
-      // Deleta o perfil (o usuário do Auth precisa ser deletado manualmente no console do Supabase por segurança ou via Edge Function)
-      const { error } = await supabase.from('profiles').delete().eq('user_id', userId);
-      if (error) throw error;
+      // Deleta o perfil (por user_id ou id)
+      try {
+        const { error } = await supabase.from('profiles').delete().or(`user_id.eq.${userId},id.eq.${userId}`);
+        if (error) {
+          await supabase.from('profiles').delete().eq('user_id', userId);
+        }
+      } catch (e) {
+        await supabase.from('profiles').delete().eq('user_id', userId);
+      }
       return true;
     }
   }

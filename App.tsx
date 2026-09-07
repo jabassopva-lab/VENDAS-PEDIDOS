@@ -435,7 +435,7 @@ const App: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [allBusinessesStats, setAllBusinessesStats] = useState<any[]>([]);
   const [isImpersonating, setIsImpersonating] = useState(false);
-  const [devPanelTab, setDevPanelTab] = useState<"BUSINESSES" | "PLANS">("BUSINESSES");
+  const [devPanelTab, setDevPanelTab] = useState<"BUSINESSES" | "DEMOS" | "PLANS">("BUSINESSES");
   const [subscriptionModal, setSubscriptionModal] = useState<{
     isOpen: boolean;
     business: any | null;
@@ -765,6 +765,18 @@ const App: React.FC = () => {
     return email === "omnvenda_adm@omnivenda.com" || email === "jabasso.pva@gmail.com";
   }, [session]);
 
+  const officialBusinesses = useMemo(() => {
+    return allBusinessesStats.filter(
+      (b) => b.planStatus !== "DEMO" && b.role !== "DEMO"
+    );
+  }, [allBusinessesStats]);
+
+  const demoBusinesses = useMemo(() => {
+    return allBusinessesStats.filter(
+      (b) => b.planStatus === "DEMO" || b.role === "DEMO"
+    );
+  }, [allBusinessesStats]);
+
   const isProfileIncomplete = useMemo(() => {
     if (isPureAdmin || isImpersonating || isResettingPassword || isTestMode) return false;
     return (
@@ -1035,6 +1047,8 @@ const App: React.FC = () => {
         nextBilling: demoTrialDateStr,
       });
       localStorage.setItem("omnivenda_test_session", "active");
+      // Registra o acesso demo silenciosamente para o painel admin
+      db.admin.logDemoAccess(testName || "Usuário Demo");
       fetchAllData(true);
     } else {
       const {
@@ -5027,6 +5041,17 @@ Obrigado pela preferência!`;
     }
   };
 
+  const handleDeleteDemo = async (demoId: string) => {
+    if (!confirm("Remover este registro de teste demo do histórico?")) return;
+    try {
+      await db.admin.deleteBusiness(demoId);
+      setAllBusinessesStats((prev) => prev.filter((b) => b.id !== demoId));
+      triggerNotify("Registro demo removido!");
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleSendNotification = (biz: any) => {
     const message = `Olá ${biz.companyName}! Vencimento OmniVenda em ${biz.nextBilling}.`;
     const phone = biz.phone?.replace(/\D/g, "") || "";
@@ -6062,21 +6087,67 @@ Obrigado pela preferência!`;
         <div className="min-h-screen bg-slate-50 pb-24">
           <Header title="Painel Admin" showBack={!isPureAdmin} />
           
+          {/* Métricas e Resumo Rápido */}
+          <div className="mx-6 mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold shrink-0">
+                <Store size={20} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">Contas Oficiais</p>
+                <p className="text-xl font-black text-slate-800">{officialBusinesses.length}</p>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-amber-200/80 shadow-xs flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold shrink-0">
+                <DatabaseZap size={20} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest truncate">Acessos Demo</p>
+                <p className="text-xl font-black text-amber-950">{demoBusinesses.length}</p>
+              </div>
+            </div>
+
+            <div className="col-span-2 sm:col-span-1 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shrink-0">
+                <DollarSign size={20} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">Plano Google Play</p>
+                <p className="text-xl font-black text-emerald-600">R$ 19,90</p>
+              </div>
+            </div>
+          </div>
+
           {/* Segmented Control Header */}
-          <div className="mx-6 mt-6 flex bg-slate-200/55 p-1.5 rounded-2xl border border-slate-200 shadow-xs">
+          <div className="mx-6 mt-4 flex bg-slate-200/55 p-1.5 rounded-2xl border border-slate-200 shadow-xs">
             <button
               onClick={() => setDevPanelTab("BUSINESSES")}
-              className={`flex-1 py-4 text-center rounded-xl text-sm sm:text-base font-black uppercase tracking-widest transition-all ${
+              className={`flex-1 py-3.5 text-center rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all ${
                 devPanelTab === "BUSINESSES"
                   ? "bg-white text-slate-800 shadow-sm"
                   : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              Clientes SaaS ({allBusinessesStats.length})
+              Clientes Oficiais ({officialBusinesses.length})
+            </button>
+            <button
+              onClick={() => setDevPanelTab("DEMOS")}
+              className={`flex-1 py-3.5 text-center rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                devPanelTab === "DEMOS"
+                  ? "bg-white text-amber-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <span>Acessos Demo</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${devPanelTab === "DEMOS" ? "bg-amber-100 text-amber-900" : "bg-slate-300 text-slate-700"}`}>
+                {demoBusinesses.length}
+              </span>
             </button>
             <button
               onClick={() => setDevPanelTab("PLANS")}
-              className={`flex-1 py-4 text-center rounded-xl text-sm sm:text-base font-black uppercase tracking-widest transition-all ${
+              className={`flex-1 py-3.5 text-center rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all ${
                 devPanelTab === "PLANS"
                   ? "bg-white text-slate-800 shadow-sm"
                   : "text-slate-500 hover:text-slate-700"
@@ -6088,12 +6159,12 @@ Obrigado pela preferência!`;
 
           {devPanelTab === "BUSINESSES" ? (
             <div className="px-6 py-6 space-y-4 animate-in fade-in duration-200">
-              {allBusinessesStats.length === 0 ? (
+              {officialBusinesses.length === 0 ? (
                 <div className="text-center py-12 bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-                  <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">Nenhuma empresa cadastrada no sistema.</p>
+                  <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">Nenhuma empresa oficial cadastrada no sistema.</p>
                 </div>
               ) : (
-                allBusinessesStats.map((biz) => (
+                officialBusinesses.map((biz) => (
                   <div
                     key={biz.id}
                     className="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition-all group animate-[slideIn_0.3s_ease-out]"
@@ -6127,6 +6198,74 @@ Obrigado pela preferência!`;
                     </button>
                   </div>
                 ))
+              )}
+            </div>
+          ) : devPanelTab === "DEMOS" ? (
+            <div className="px-6 py-6 space-y-4 animate-in fade-in duration-200">
+              <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 flex items-start gap-3">
+                <DatabaseZap className="text-amber-600 shrink-0 mt-0.5" size={20} />
+                <div>
+                  <p className="text-xs font-black text-amber-900 uppercase tracking-wide">
+                    Telemetria da Versão Demo ({demoBusinesses.length} {demoBusinesses.length === 1 ? 'acesso' : 'acessos'})
+                  </p>
+                  <p className="text-[11px] text-amber-800/80 font-medium mt-0.5">
+                    Estes registros representam usuários que clicaram em <strong>"Modo Demo / Testar Agora"</strong> no aplicativo no Google Play ou no navegador para experimentar o sistema.
+                  </p>
+                </div>
+              </div>
+
+              {demoBusinesses.length === 0 ? (
+                <div className="text-center py-12 bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                  <DatabaseZap size={36} className="mx-auto text-slate-300 mb-2" />
+                  <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">
+                    Nenhum acesso demo registrado até o momento.
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Assim que novos usuários testarem o sistema no Modo Demo, eles aparecerão aqui automaticamente em tempo real.
+                  </p>
+                </div>
+              ) : (
+                demoBusinesses.map((demoItem, index) => {
+                  const dateDisplay = demoItem.updatedAt
+                    ? new Date(demoItem.updatedAt).toLocaleString("pt-BR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "Data recente";
+                  return (
+                    <div
+                      key={demoItem.id || index}
+                      className="bg-white p-5 rounded-[2rem] shadow-sm border border-amber-100 flex items-center justify-between hover:shadow-md transition-all group"
+                    >
+                      <div className="min-w-0 pr-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-black text-slate-800 text-sm uppercase italic truncate">
+                            {demoItem.companyName || "Usuário Demo"}
+                          </h4>
+                          <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-amber-100 text-amber-900 border border-amber-200">
+                            TESTOU DEMO
+                          </span>
+                        </div>
+                        <p className="text-[10px] font-bold text-slate-500">
+                          Data do Teste: {dateDisplay}
+                        </p>
+                        <p className="text-[9px] font-medium text-slate-400 truncate mt-0.5">
+                          ID: {demoItem.email || demoItem.id}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteDemo(demoItem.id)}
+                        className="bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-500 p-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 shrink-0 flex items-center gap-1 border border-slate-200/60"
+                        title="Remover do histórico"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  );
+                })
               )}
             </div>
           ) : (

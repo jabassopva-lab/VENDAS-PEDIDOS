@@ -112,11 +112,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (viewState === 'DEMO') {
-      if (!identifier.trim()) {
-        setError("Por favor, digite seu nome ou nome da empresa para testar.");
-        return;
-      }
-      onAuthSuccess(true, identifier.trim());
+      const demoName = identifier.trim() || "Usuário Demo";
+      onAuthSuccess(true, demoName);
       return;
     }
 
@@ -273,13 +270,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                   isForgotPassword
                     ? "Seu E-mail Real de Recuperação"
                     : viewState === 'DEMO'
-                    ? "Seu Nome (Apenas para teste demo)"
+                    ? "Seu Nome ou Empresa (Ex: Maria / Loja Central)"
                     : "Nome da Empresa ou Usuário"
                 } 
                 className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
                 value={identifier}
                 onChange={e => setIdentifier(e.target.value)}
-                required
+                required={viewState !== 'DEMO'}
                 autoComplete="off"
               />
             </div>
