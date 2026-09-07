@@ -17,7 +17,8 @@ import {
   ImageOff,
   Loader2,
   CheckCircle2,
-  Upload
+  Upload,
+  RefreshCw
 } from 'lucide-react';
 import { BusinessProfile } from '../types';
 import { convertDriveLink } from '../App';
@@ -118,6 +119,22 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
   };
 
   const currentLogo = convertDriveLink(formData.logoUrl || '');
+
+  const handleSyncUpdates = async () => {
+    try {
+      if (typeof window !== 'undefined' && 'caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map((name) => caches.delete(name)));
+      }
+      if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.update()));
+      }
+    } catch (err) {
+      console.error('Erro ao sincronizar cache:', err);
+    }
+    window.location.reload();
+  };
 
   return (
     <form id="settings-form" onSubmit={handleSubmit} className="p-1 sm:p-2 space-y-2 pb-20">
@@ -496,6 +513,30 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Versão e Sincronização de Atualizações (PWA & Google Play) */}
+      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-2.5 text-left w-full sm:w-auto">
+          <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+            <RefreshCw size={15} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] font-black text-slate-800 uppercase tracking-wider">Versão do App</p>
+              <span className="bg-emerald-100 text-emerald-800 text-[9px] font-black px-1.5 py-0.5 rounded-md">v4.0.0</span>
+            </div>
+            <p className="text-[10px] text-slate-500 font-medium">Toque para verificar e carregar atualizações da nuvem instantaneamente.</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={handleSyncUpdates}
+          className="w-full sm:w-auto px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-100 active:scale-95 text-slate-800 rounded-xl text-[10px] font-black uppercase tracking-wider shrink-0 cursor-pointer shadow-xs transition-all text-center flex items-center justify-center gap-1.5"
+        >
+          <RefreshCw size={12} className="text-blue-600" />
+          <span>Sincronizar Atualização</span>
+        </button>
       </div>
 
 
