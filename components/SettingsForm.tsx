@@ -271,7 +271,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
                 SaaS
               </span>
               <h3 className="text-sm sm:text-base font-black flex items-center gap-1.5">
-                PLANO {(formData.planType || 'START').toUpperCase()}
+                PLANO LANÇAMENTO GOOGLE PLAY
                 <span className={`text-[8px] px-1.5 py-0.5 rounded font-black uppercase ${
                   (formData.planStatus || 'ATIVO').toUpperCase() === 'ATIVO' 
                     ? 'bg-emerald-500 text-white' 
@@ -283,32 +283,11 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
             </div>
             
             <p className="text-blue-100 text-[10px] opacity-90 font-semibold leading-none">
-              Renovação: {formData.nextBilling && formData.nextBilling !== '-' ? formData.nextBilling : 'Vencimento não configurado'}
+              Renovação: {formData.nextBilling && formData.nextBilling !== '-' ? formData.nextBilling : 'Vencimento não configurado'} • R$ 19,90/mês
             </p>
             
-            <p className="text-white text-[10px] font-semibold leading-none pt-0.5 opacity-95">
-              {(() => {
-                const t = (formData.planType || 'START').toUpperCase();
-                const saved = localStorage.getItem("omnivenda_plan_configs");
-                let plans: any = {
-                  START: { maxProducts: 15, maxClients: 20, maxSellers: 2 },
-                  PREMIUM: { maxProducts: 50, maxClients: 100, maxSellers: 5 },
-                  ULTRA: { maxProducts: 200, maxClients: 300, maxSellers: 10 },
-                  MASTER: { maxProducts: Infinity, maxClients: Infinity, maxSellers: Infinity },
-                };
-                if (saved) {
-                  try { plans = JSON.parse(saved); } catch (e) {}
-                }
-                const planValue = plans[t] || plans.START;
-                const prodStr = planValue.maxProducts === Infinity || !isFinite(planValue.maxProducts) ? 'Ilimitados' : planValue.maxProducts;
-                const clientStr = planValue.maxClients === Infinity || !isFinite(planValue.maxClients) ? 'Ilimitados' : planValue.maxClients;
-                const sellerStr = planValue.maxSellers === Infinity || !isFinite(planValue.maxSellers) ? 'Ilimitados' : planValue.maxSellers;
-
-                if (t === 'MASTER') {
-                  return '✓ Limites: Ilimitado (Produtos, Clientes e Vendedores)';
-                }
-                return `✓ Limites: ${prodStr} Prod • ${clientStr} Clientes • ${sellerStr} Vend`;
-              })()}
+            <p className="text-white text-[10px] font-semibold leading-none pt-0.5 opacity-95 flex items-center gap-1">
+              <span className="text-emerald-300 font-black">✓</span> Todas as funções liberadas • Produtos e Clientes Ilimitados
             </p>
           </div>
 
@@ -320,7 +299,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
               className="inline-flex items-center gap-1 bg-white text-indigo-700 hover:bg-slate-50 px-2.5 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest shadow-sm active:scale-95 transition-all cursor-pointer shrink-0"
             >
               <Zap size={10} className="fill-indigo-600 shrink-0" />
-              Solicitar Upgrade
+              Ver Assinatura
             </button>
             <ShieldCheck size={18} className="text-blue-200 hidden sm:block shrink-0" />
           </div>
@@ -446,11 +425,11 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
               {(formData.planStatus || "TESTE").toUpperCase() === "ATIVO" ? "Assinatura Ativa" : "Período de Testes"}
             </span>
           </div>
-          <div className="p-3 space-y-2">
+          <div className="p-3 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100">
                 <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest">Plano do SaaS</p>
-                <p className="text-xs font-black text-slate-700 uppercase mt-0.5">Essential (R$ 19,90)</p>
+                <p className="text-xs font-black text-slate-700 uppercase mt-0.5">Lançamento Google Play (R$ 19,90)</p>
               </div>
               <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100">
                 <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest">Vencimento</p>
@@ -460,13 +439,20 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ profile, onSave, onLogout, 
               </div>
             </div>
 
+            <div className="bg-emerald-50/70 border border-emerald-100 rounded-xl p-2.5 flex items-center gap-2">
+              <ShieldCheck size={16} className="text-emerald-600 shrink-0" />
+              <p className="text-[10px] text-emerald-800 font-semibold leading-tight">
+                <strong>Sem restrições:</strong> Acesso 100% liberado a todas as funções, controle de estoque, PDV, relatórios e sem limites de produtos ou clientes cadastrados.
+              </p>
+            </div>
+
             <button
               type="button"
               onClick={onManageSubscription}
               className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white rounded-xl shadow-md text-xs font-black uppercase tracking-widest cursor-pointer transition-all active:scale-95"
             >
               <Zap size={14} className="animate-pulse" />
-              {(formData.planStatus || "TESTE").toUpperCase() === "ATIVO" ? "Estender Assinatura (R$ 19,90)" : "Ativar Assinatura (R$ 19,90)"}
+              {(formData.planStatus || "TESTE").toUpperCase() === "ATIVO" ? "Gerenciar / Renovar Assinatura (R$ 19,90)" : "Ativar Assinatura (R$ 19,90)"}
             </button>
           </div>
         </div>

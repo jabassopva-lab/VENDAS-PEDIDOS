@@ -456,20 +456,47 @@ const App: React.FC = () => {
   } | null>(null);
 
   const [plansConfig, setPlansConfig] = useState<Record<string, { price: number; maxProducts: number; maxClients: number; maxSellers: number; label: string }>>(() => {
+    const launchPlan = {
+      price: 19.90,
+      maxProducts: Infinity,
+      maxClients: Infinity,
+      maxSellers: Infinity,
+      label: "Lançamento Google Play (R$ 19,90)",
+    };
     const saved = localStorage.getItem("omnivenda_plan_configs");
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === "object") {
+          let updated = false;
+          for (const key of Object.keys(parsed)) {
+            // Garante que todos os planos reflitam o plano único de lançamento sem restrições
+            if (parsed[key].maxProducts !== Infinity || parsed[key].maxClients !== Infinity) {
+              parsed[key].maxProducts = Infinity;
+              parsed[key].maxClients = Infinity;
+              parsed[key].maxSellers = Infinity;
+              parsed[key].price = 19.90;
+              parsed[key].label = "Lançamento Google Play (R$ 19,90)";
+              updated = true;
+            }
+          }
+          if (updated) {
+            localStorage.setItem("omnivenda_plan_configs", JSON.stringify(parsed));
+          }
+          return parsed;
+        }
       } catch (e) {
         console.error(e);
       }
     }
-    return {
-      START: { price: 19.90, maxProducts: 15, maxClients: 20, maxSellers: 1, label: "Essential (R$ 19,90)" },
-      PREMIUM: { price: 49.90, maxProducts: 50, maxClients: 100, maxSellers: 5, label: "Premium (R$ 49,90)" },
-      ULTRA: { price: 149.90, maxProducts: 200, maxClients: 300, maxSellers: 10, label: "Ultra" },
-      MASTER: { price: 199.90, maxProducts: Infinity, maxClients: Infinity, maxSellers: Infinity, label: "Master" },
+    const defaultPlans = {
+      START: launchPlan,
+      PREMIUM: launchPlan,
+      ULTRA: launchPlan,
+      MASTER: launchPlan,
     };
+    localStorage.setItem("omnivenda_plan_configs", JSON.stringify(defaultPlans));
+    return defaultPlans;
   });
 
   const [saasLogoUrl, setSaasLogoUrl] = useState<string>(() => {
@@ -750,7 +777,13 @@ const App: React.FC = () => {
 
   const currentPlanLimits = useMemo(() => {
     const type = (businessProfile.planType || "START").toUpperCase();
-    return plansConfig[type] || plansConfig.START;
+    return plansConfig[type] || plansConfig.START || {
+      price: 19.90,
+      maxProducts: Infinity,
+      maxClients: Infinity,
+      maxSellers: Infinity,
+      label: "Lançamento Google Play (R$ 19,90)",
+    };
   }, [businessProfile, plansConfig]);
 
   const trialDaysRemaining = useMemo(() => {
@@ -1023,7 +1056,12 @@ const App: React.FC = () => {
     try {
       const isEdit =
         productModal.type === ModalType.EDIT && !!productModal.data;
-      if (!isEdit && products.length >= currentPlanLimits.maxProducts) {
+      if (
+        !isEdit &&
+        currentPlanLimits.maxProducts !== Infinity &&
+        isFinite(currentPlanLimits.maxProducts) &&
+        products.length >= currentPlanLimits.maxProducts
+      ) {
         setUpgradeMessage({
           isOpen: true,
           limitName: "Produtos",
@@ -1050,7 +1088,12 @@ const App: React.FC = () => {
   const handleSaveClient = async (data: Omit<Client, "id">) => {
     try {
       const isEdit = clientModal.type === ModalType.EDIT && !!clientModal.data;
-      if (!isEdit && clients.length >= currentPlanLimits.maxClients) {
+      if (
+        !isEdit &&
+        currentPlanLimits.maxClients !== Infinity &&
+        isFinite(currentPlanLimits.maxClients) &&
+        clients.length >= currentPlanLimits.maxClients
+      ) {
         setUpgradeMessage({
           isOpen: true,
           limitName: "Clientes",
@@ -6157,21 +6200,26 @@ Obrigado pela preferência!`;
                 </div>
               </div>
 
-              {["START", "PREMIUM", "ULTRA", "MASTER"].map((planKey) => {
-                const planValue = plansConfig[planKey];
-                if (!planValue) return null;
+              {["START"].map((planKey) => {
+                const planValue = plansConfig[planKey] || {
+                  label: "Lançamento Google Play (R$ 19,90)",
+                  price: 19.90,
+                  maxProducts: Infinity,
+                  maxClients: Infinity,
+                  maxSellers: Infinity,
+                };
                 
                 return (
                   <div key={planKey} className="bg-white rounded-[2rem] p-8 shadow-md border border-slate-100 space-y-6">
                     <div className="flex justify-between items-center border-b border-slate-100 pb-4">
                       <div>
-                        <span className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest block mb-1">Plano</span>
+                        <span className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest block mb-1">Plano Único</span>
                         <h4 className="font-black text-slate-800 uppercase tracking-tight italic text-xl sm:text-3xl">
-                          {planValue.label} ({planKey})
+                          Lançamento Google Play (R$ 19,90)
                         </h4>
                       </div>
-                      <span className="bg-slate-100 text-slate-700 px-4 py-1.5 rounded-xl text-xs font-black uppercase">
-                        Configuração
+                      <span className="bg-emerald-50 text-emerald-700 px-4 py-1.5 rounded-xl text-xs font-black uppercase">
+                        Plano Ativo
                       </span>
                     </div>
 
@@ -6188,10 +6236,10 @@ Obrigado pela preferência!`;
                           onChange={(e) => {
                             const val = parseFloat(e.target.value) || 0;
                             setPlansConfig(prev => {
-                              const updated = {
-                                ...prev,
-                                [planKey]: { ...prev[planKey], price: val }
-                              };
+                              const updated = { ...prev };
+                              for (const k of ["START", "PREMIUM", "ULTRA", "MASTER"]) {
+                                updated[k] = { ...(prev[k] || planValue), price: val };
+                              }
                               localStorage.setItem("omnivenda_plan_configs", JSON.stringify(updated));
                               return updated;
                             });
@@ -6214,10 +6262,10 @@ Obrigado pela preferência!`;
                               ? Infinity 
                               : (parseInt(inputVal) || 0);
                             setPlansConfig(prev => {
-                              const updated = {
-                                ...prev,
-                                [planKey]: { ...prev[planKey], maxSellers: val }
-                              };
+                              const updated = { ...prev };
+                              for (const k of ["START", "PREMIUM", "ULTRA", "MASTER"]) {
+                                updated[k] = { ...(prev[k] || planValue), maxSellers: val };
+                              }
                               localStorage.setItem("omnivenda_plan_configs", JSON.stringify(updated));
                               return updated;
                             });
@@ -6241,10 +6289,10 @@ Obrigado pela preferência!`;
                               ? Infinity 
                               : (parseInt(inputVal) || 0);
                             setPlansConfig(prev => {
-                              const updated = {
-                                ...prev,
-                                [planKey]: { ...prev[planKey], maxProducts: val }
-                              };
+                              const updated = { ...prev };
+                              for (const k of ["START", "PREMIUM", "ULTRA", "MASTER"]) {
+                                updated[k] = { ...(prev[k] || planValue), maxProducts: val };
+                              }
                               localStorage.setItem("omnivenda_plan_configs", JSON.stringify(updated));
                               return updated;
                             });
@@ -6268,10 +6316,10 @@ Obrigado pela preferência!`;
                               ? Infinity 
                               : (parseInt(inputVal) || 0);
                             setPlansConfig(prev => {
-                              const updated = {
-                                ...prev,
-                                [planKey]: { ...prev[planKey], maxClients: val }
-                              };
+                              const updated = { ...prev };
+                              for (const k of ["START", "PREMIUM", "ULTRA", "MASTER"]) {
+                                updated[k] = { ...(prev[k] || planValue), maxClients: val };
+                              }
                               localStorage.setItem("omnivenda_plan_configs", JSON.stringify(updated));
                               return updated;
                             });

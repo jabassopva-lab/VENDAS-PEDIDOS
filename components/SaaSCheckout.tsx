@@ -159,13 +159,13 @@ export const SaaSCheckout: React.FC<SaaSCheckoutProps> = ({
           <div className="text-center space-y-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 text-sky-600 border border-sky-100">
               <Sparkles size={12} className="animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Plano Essential</span>
+              <span className="text-[10px] font-black uppercase tracking-widest">Plano Único • Lançamento Google Play</span>
             </div>
             <h3 className="text-2xl font-black text-slate-800 tracking-tight italic uppercase">
               Assinatura OmniVenda
             </h3>
             <p className="text-xs text-slate-500 font-medium">
-              Tenha acesso completo e impulsione suas vendas sem intermediação ou taxas adicionais.
+              Acesso 100% completo e ilimitado a todas as funções, sem restrições e sem taxas sobre vendas.
             </p>
           </div>
 
@@ -176,16 +176,36 @@ export const SaaSCheckout: React.FC<SaaSCheckoutProps> = ({
             </div>
             <div>
               <p className="text-[9px] font-black text-sky-400 uppercase tracking-widest">
-                Mensalidade recorrente
+                Assinatura Mensal
               </p>
               <h4 className="text-3xl font-black text-white italic">
                 R$ 19,90<span className="text-xs text-slate-400 font-bold">/mês</span>
               </h4>
             </div>
             <div className="text-right">
-              <span className="text-[9px] font-extrabold uppercase bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2.5 py-1 rounded-md">
-                15 dias grátis inclusos
+              <span className="text-[9px] font-extrabold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-md">
+                Tudo Liberado
               </span>
+            </div>
+          </div>
+
+          {/* Highlights */}
+          <div className="grid grid-cols-2 gap-2 text-left">
+            <div className="bg-slate-50 border border-slate-100 rounded-xl p-2.5 flex items-center gap-2">
+              <Check size={14} className="text-emerald-500 shrink-0" strokeWidth={3} />
+              <span className="text-[10px] font-bold text-slate-700">Produtos Ilimitados</span>
+            </div>
+            <div className="bg-slate-50 border border-slate-100 rounded-xl p-2.5 flex items-center gap-2">
+              <Check size={14} className="text-emerald-500 shrink-0" strokeWidth={3} />
+              <span className="text-[10px] font-bold text-slate-700">Clientes Ilimitados</span>
+            </div>
+            <div className="bg-slate-50 border border-slate-100 rounded-xl p-2.5 flex items-center gap-2">
+              <Check size={14} className="text-emerald-500 shrink-0" strokeWidth={3} />
+              <span className="text-[10px] font-bold text-slate-700">PDV e Vendas a Prazo</span>
+            </div>
+            <div className="bg-slate-50 border border-slate-100 rounded-xl p-2.5 flex items-center gap-2">
+              <Check size={14} className="text-emerald-500 shrink-0" strokeWidth={3} />
+              <span className="text-[10px] font-bold text-slate-700">Sem taxas por venda</span>
             </div>
           </div>
 
@@ -531,8 +551,8 @@ export const SaaSCheckout: React.FC<SaaSCheckoutProps> = ({
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
                 Plano Atual
               </span>
-              <span className="bg-sky-50 text-sky-600 px-2 py-0.5 rounded text-[8px] font-black uppercase">
-                Essential
+              <span className="bg-emerald-50 text-emerald-600 px-2.5 py-0.5 rounded text-[8px] font-black uppercase">
+                Lançamento Google Play
               </span>
             </div>
             <div className="grid grid-cols-2 gap-4 text-xs font-bold text-slate-600">
